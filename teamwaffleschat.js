@@ -39,8 +39,26 @@ var firebaseConfig = {
   
   }
   
+
+
+
   getData();
   
+
+
+ // firebase.auth().onAuthStateChanged(function(user) {
+  //  if (!user) {
+        // No user is signed in, redirect to login page
+    //    window.location.href = "index.html";
+ //   } else {
+        // User is signed in, proceed as normal
+    //    user_name = user.displayName;
+   //     document.getElementById("user_name").innerHTML = "Welcome " + user_name + "!";
+ //   }
+// });
+
+
+
   function redirectToRoomName(name)
   {
     console.log(name);

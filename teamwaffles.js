@@ -5,6 +5,6 @@ function addUser() {
   
     localStorage.setItem("user_name", user_name);
     
-      window.location = "teamwafflesintro.html";
+      window.location = "teamwafflesroomselector.html";
   }
   

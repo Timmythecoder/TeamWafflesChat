@@ -13,6 +13,13 @@ var firebaseConfig = {
       user_name = localStorage.getItem("user_name");
       room_name = localStorage.getItem("room_name");
   
+
+      
+  function back()
+  {
+    window.location.replace("teamwafflesroomselector.html");
+  }
+
   function send()
   {
     msg = document.getElementById("msg").value;
@@ -22,6 +29,7 @@ var firebaseConfig = {
       like:0
      });
   
+
     document.getElementById("msg").value = "";
   }
   
@@ -59,6 +67,16 @@ var firebaseConfig = {
   
   }
   
+
+// use/fix auth from starting channel selection page
+
+
+
+
+
+
+
+
   function logout() {
   localStorage.removeItem("user_name");
   localStorage.removeItem("room_name");

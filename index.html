@@ -1,44 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Team Waffles</title>
-    <link href="https://fonts.googleapis.com/css?family=Yeon+Sung&display=swap" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/live/3.1/firebase.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="teamwaffles.js"></script>
-</head>
-<body>
-
-<center>
-    <h1 class="header">
-        Team Waffles <sup><img src="TWL O - Copy.png"></sup>
-    </h1>
-
-    <div class="col-lg-4 col-md-6 col-sm-6 col-xs-11 login_div">
-        <img src="TWL O - Copy.png" class="logo">
-        <h3>See what is being talked about in Team Waffles</h3>
-        <h4>Join Team Waffles today</h4>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login/Signup</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Optional for styling -->
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Team Waffles - Login/Sign Up</title>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
         
-        <div class="form-group">
-            <label>User Name (don't put a dodgy name (you're not cool)):</label>
-            <input type="text" id="user_name" class="form-control" placeholder="User Name">
+    </head>
+    <body>
+    
+    <div class="auth-container">
+        <div class="logo">
+            <img src="TWL O - Copy.png" alt="Team Waffles Logo"> <!-- Replace with your logo URL -->
         </div>
-
-        <button id="login_button" class="btn btn-primary" onclick="addUser()">Log in</button>
-        <br><br>
+    
+        <h2 id="form-title">Sign In</h2>
+        <h3 id="form-title">Use Real Emails
+    
+        <div class="error-message" id="error-message"></div>
+    
+        <input type="email" id="email" placeholder="Enter your email" required>
+        <input type="password" id="password" placeholder="Enter your password" required>
+    
+        <button id="auth-button" onclick="authAction()">Sign In</button>
+    
+        <div class="toggle-text" id="toggle-text">
+            Don't have an account? <a href="#" onclick="toggleForm()">Sign Up</a>
+        </div>
     </div>
-</center>
-
 <!-- Back to Team Waffles Website Button -->
 <a href="https://bit.ly/teamwaffleswebsite" class="home-button">
-   
-</a>
+    </div>
 
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    
+    <script src="teamwafflesauth.js"></script>
 </body>
 </html>
