@@ -17,37 +17,31 @@
 <link rel="stylesheet" type="text/css" href="style.css">
 
 </head>
-<body>
 
-
-<div class="container">
-	<button id="logout" onclick="logout();" class="glyphicon glyphicon-log-out btn btn-danger">Logout</button>
-
-	<center>
-		<h1  class="header">	
-			Team Waffles Chat Room	
-			<sup>
-				<img src="Team Waffles Checkmark.png">
-			</sup>
-		</h1>
-		<h3 id="user_name" class="color_white"></h3>
-
-		<div class="form-group input_div_room_page">
-			<label>#Add Room:</label>
-			<input type="text" id="room_name" class="form-control" placeholder="#Room Name">
+	<body>
+		<div class="container-fluid">
+			<header class="d-flex justify-content-between align-items-center p-3 bg-primary text-white">
+				<h1 class="header">Team Waffles Chat Room</h1>
+				<br>
+				<button id="logout" onclick="logout();" class="btn btn-danger">Logout</button>
+				<br>
+			</header>
+	
+			<main class="my-4">
+				<h3 id="user_name" class="text-center text-muted"></h3>
+				<div class="form-group">
+					<label for="room_name" class="font-weight-bold">Add Room:</label>
+					<input type="text" id="room_name" class="form-control" placeholder="#Room Name">
+				</div>
+				<button onclick="addRoom();" class="btn btn-success btn-block mb-3">#Add Room</button>
+	
+				<h3 class="text-muted">Trending Rooms</h3>
+				<div id="output" class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;"></div>
+			</main>
+	
+			<a href="index.html" class="home-button">Home</a>
 		</div>
-		
-		<button onclick="addRoom();" class="btn btn-success">#Add Room</button>
-
-		<h3 class="color_white">#TRENDINGROOMS</h3>
-
-		<div id="output"></div>
-		
-	</center>
-</div>
-
-<a href="index.html" class="home-button"></a>
-
-<script src="teamwaffleschat.js"></script>
+	
+		<script src="teamwaffleschat.js"></script>
 </body>
 </html>

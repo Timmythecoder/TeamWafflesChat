@@ -1,0 +1,164 @@
+/* style.css */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #e9ecef; /* Light gray background for a professional look */
+}
+
+#chat_container {
+    background-color: #ffffff; /* White background for contrast */
+    padding: 30px;
+    border-radius: 10px; /* More rounded corners */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+    max-width: 600px;
+    margin: 50px auto; /* Center the container and add margin on top */
+}
+
+#logo {
+    max-width: 120px; /* Slightly larger logo */
+    margin-bottom: 20px; /* Increased space below the logo */
+}
+
+h1 {
+    font-size: 2em; /* Larger heading */
+    color: #343a40; /* Dark gray color for the heading */
+    margin-bottom: 20px; /* Space below the heading */
+    text-align: center; /* Centered heading */
+}
+
+#output {
+    height: 400px; /* Fixed height */
+    overflow-y: auto; /* Allow scrolling */
+    border: 1px solid #ced4da; /* Light gray border */
+    padding: 15px; /* More padding inside */
+    border-radius: 5px; /* Slightly rounded corners */
+    margin-bottom: 20px; /* Increased space below output */
+    background-color: #a3c6e9; /* Light background for messages */
+}
+
+.date_sent {
+    font-size: 0.9em; /* Slightly larger date text */
+    color: #6c757d; /* Muted gray for the date */
+}
+
+.message_h4 {
+    margin: 5px 0;
+    line-height: 1.5; /* Improved line height for readability */
+}
+
+input[type="text"],
+input[type="file"] {
+    width: calc(100% - 22px); /* Full width with some padding */
+    padding: 10px; /* Padding inside the input */
+    margin: 10px 0; /* Space above and below the input */
+    border: 1px solid #ced4da; /* Light gray border */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 1em; /* Standard font size */
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+    border-color: #007bff; /* Blue border on focus */
+    outline: none; /* Remove outline */
+}
+
+button {
+    background-color: #007bff; /* Bootstrap primary color */
+    color: white; /* White text */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px 15px; /* Padding for button */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 1em; /* Standard font size */
+    transition: background-color 0.3s; /* Smooth background change */
+}
+
+button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+button:active {
+    background-color: #004085; /* Even darker blue when pressed */
+}
+
+hr {
+    border: 1px solid #e9ecef; /* Light gray line */
+    margin: 10px 0; /* Space above and below the line */
+}
+
+a {
+    color: #007bff; /* Link color */
+    text-decoration: none; /* Remove underline */
+}
+
+a:hover {
+    text-decoration: underline; /* Underline on hover */
+}
+
+
+
+#backButton {
+    background-color: #6c757d; /* Gray background for back button */
+    color: white; /* White text */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px 15px; /* Padding for button */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 1em; /* Standard font size */
+    margin-bottom: 20px; /* Space below the button */
+    display: block; /* Make the button a block element */
+    width: 100%; /* Full width */
+    transition: background-color 0.3s; /* Smooth background change */
+}
+
+#backButton:hover {
+    background-color: #5a6268; /* Darker gray on hover */
+}
+
+#backButton:active {
+    background-color: #4e555b; /* Even darker gray when pressed */
+}
+
+
+
+
+.reaction-buttons {
+    display: flex;
+    gap: 10px; /* Space between buttons */
+    margin-top: 5px; /* Space above buttons */
+}
+
+.reaction-buttons button {
+    background: transparent;
+    border: none;
+    font-size: 20px; /* Emoji size */
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.reaction-buttons button:hover {
+    transform: scale(1.1); /* Slightly enlarge on hover */
+}
+
+
+
+.badge {
+    display: inline-block;
+    background-color: gold;
+    color: white;
+    padding: 3px 7px;
+    margin: 0 5px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+
+
+.reactions {
+    margin-top: 10px; /* Space above reactions */
+}
+
+.reactions button {
+    margin-left: 5px; /* Space between reaction buttons */
+}
