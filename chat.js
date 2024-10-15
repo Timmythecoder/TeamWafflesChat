@@ -43,46 +43,34 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-
-
-
-
-// Check if user is signed in
-function checkLogin() {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-
-    // Randomly decide if we should prompt the user to log in
-    if (!isLoggedIn && Math.random() < 0.5) { // 50% chance to ask for login
-        promptLogin();
-    }
-}
-
-// Function to prompt user to log in
-function promptLogin() {
-    if (confirm("You need to log in to access this site. Would you like to log in now?")) {
-        window.location.href = "index.html"; // Redirect to your login page
+// Function to check notification permission
+function checkNotificationPermission() {
+    if (Notification.permission === "default") {
+        Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+                console.log("Notification permission granted.");
+            } else {
+                console.log("Notification permission denied.");
+            }
+        });
+    } else if (Notification.permission === "granted") {
+        console.log("Notifications already granted.");
     } else {
-        // Optionally, redirect to an information page or close the site
-        alert("You must log in to continue using the site.");
-        window.location.href = "index.html"; // Or wherever you want to redirect
+        console.log("Notifications denied.");
     }
 }
 
-// Call the checkLogin function on page load
-checkLogin();
+// Call notification permission check on page load
+checkNotificationPermission();
 
-
-
-
-
-
-
-
-
-
-
-function goBack() {
-    window.location.href = 'teamwafflesroomselector.html'; // Redirects to the specified page
+// Function to trigger a notification
+function showNotification(message) {
+    if (Notification.permission === "granted") {
+        new Notification("New message in Team Waffles!", {
+            body: message,
+            icon: "TWL O - Copy.png", // Replace with your own icon URL
+        });
+    }
 }
 
 // Function to format time as "7:20pm"
@@ -105,30 +93,28 @@ function formatDate(date) {
     return `${dayName}, ${dayNumber}, ${timeString}`;
 }
 
-// Function to update the reaction count displayed in the UI
-function updateReactionCount(messageId, emoji) {
-    const countElement = document.getElementById(`reaction-count-${messageId}-${emoji}`);
-    if (countElement) {
-        let currentCount = parseInt(countElement.innerText) || 0;
-        countElement.innerText = currentCount + 1; // Increment by 1
-    }
-}
-
 // Function to send a message
 window.send = function() {
     let msg = document.getElementById("msg").value;
     let fileInput = document.getElementById("fileInput");
-    let dateSent = formatDate(new Date()); // Updated to use the new formatDate function
+    let dateSent = formatDate(new Date());
 
     if (fileInput.files.length > 0) {
         let file = fileInput.files[0];
+
+        // Check file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            alert("File size exceeds 5MB limit. Please upload a smaller file.");
+            return;
+        }
+
         let fileRef = storageRef(storage, 'files/' + file.name);
 
         uploadBytes(fileRef, file).then((snapshot) => {
             console.log("File uploaded successfully!");
             return getDownloadURL(fileRef);
         }).then((downloadURL) => {
-            // Send message along with file URL and initialize reactions
+            // Send message along with file URL
             push(ref(database, room_name), {
                 name: user_name,
                 message: msg,
@@ -139,6 +125,9 @@ window.send = function() {
             });
             document.getElementById("msg").value = "";
             document.getElementById("fileInput").value = "";
+
+            // Trigger notification
+            showNotification(msg);
         }).catch((error) => {
             console.error("Error uploading file: ", error);
         });
@@ -152,6 +141,9 @@ window.send = function() {
             reactions: {} // Initialize reactions here
         });
         document.getElementById("msg").value = "";
+
+        // Trigger notification
+        showNotification(msg);
     }
 };
 
@@ -177,10 +169,6 @@ window.updateLike = function(messageId) {
 };
 
 // Function to add reactions
-let pendingReactions = {};
-let reactionTimeouts = {};
-const REACTION_UPDATE_DELAY = 1000; // Adjust the delay as needed
-
 window.addReaction = function(messageId, emoji) {
     const messageRef = ref(database, `${room_name}/${messageId}`);
 
@@ -189,21 +177,16 @@ window.addReaction = function(messageId, emoji) {
             const messageData = snapshot.val();
             const currentReactions = messageData.reactions || {};
 
-            // Check if the emoji has already been reacted
-            const currentCount = currentReactions[emoji] || 0;
-
             // Update reactions to increment by 1 for this emoji
             const updatedReactions = {
                 ...currentReactions,
-                [emoji]: currentCount + 1 // Increment reaction count
+                [emoji]: (currentReactions[emoji] || 0) + 1 // Increment reaction count
             };
 
             // Update the database with the new reactions count
             update(messageRef, { reactions: updatedReactions })
                 .then(() => {
                     console.log(`Reaction added: ${emoji} for message ID: ${messageId}`);
-                    // Optionally update the UI for immediate feedback
-                    updateReactionCount(messageId, emoji);
                 })
                 .catch((error) => {
                     console.error("Error updating reactions: ", error);
@@ -214,53 +197,48 @@ window.addReaction = function(messageId, emoji) {
     });
 };
 
+// Function to retrieve and display chat data
 function getData() {
     onValue(ref(database, room_name), function(snapshot) {
         document.getElementById("output").innerHTML = ""; // Clear previous output
         snapshot.forEach(function(childSnapshot) {
             let childKey = childSnapshot.key;
-            let message_data = childSnapshot.val();
-            if (childKey !== "purpose") {
-                let firebase_message_id = childKey;
-                let name = message_data['name'];
-                let message = message_data['message'];
-                let like = message_data['like'] || 0;
-                let dateSent = message_data['dateSent'];
-                let reactions = message_data['reactions'] || {};
-                let fileURL = message_data['fileURL']; // Get file URL
+            let childData = childSnapshot.val();
 
-                // Create message HTML
-                let row = `
-                    <h4>${name}</h4>
-                    <h4 class='message_h4'>${message}</h4>
-                    <h5 class='date_sent'>${dateSent}</h5>
-                    <button class='btn btn-warning' id="${firebase_message_id}" onclick='updateLike(this.id)'>Like: ${like}</button>
-                `;
+            let messageText = childData.message || "";
+            let fileURL = childData.fileURL || "";
+            let userName = childData.name || "Unknown";
+            let likeCount = childData.like || 0;
+            let dateSent = childData.dateSent || "";
+            let reactions = childData.reactions || {};
 
-                // Add file link if it exists
-                if (fileURL) {
-                    row += `<a href="${fileURL}" target="_blank">View File</a>`;
-                }
-
-                // Add reactions
-                row += `<div class="reactions">`;
-                const emojis = ['👍', '❤️', '😂', '😢', '😡']; // Define the emojis to be used
-                emojis.forEach(emoji => {
-                    let count = reactions[emoji] || 0;
-                    row += `
-                        <span id="reaction-count-${firebase_message_id}-${emoji}">${count}</span> ${emoji}
-                        <button onclick="addReaction('${firebase_message_id}', '${emoji}')">React</button>
-                    `;
-                });
-                row += `</div>`;
-
-                // Append to output
-                document.getElementById("output").innerHTML += row + "<hr>";
-            }
+            let row = `<div>
+                            <h4>${userName} <img class='user_tick' src='TWL O.png'></h4>
+                            <p>${messageText}</p>
+                            ${fileURL ? `<a href="${fileURL}" target="_blank">Download file</a>` : ""}
+                            <p><span class='time_date'>${dateSent}</span></p>
+                            <button class="btn btn-warning" id="${childKey}" value="${likeCount}" onclick="updateLike(this.id)">
+                                Like: ${likeCount}
+                            </button>
+                            <div class="reaction-buttons">
+                                <button onclick="addReaction('${childKey}', '👍')">👍</button>
+                                <button onclick="addReaction('${childKey}', '❤️')">❤️</button>
+                                <button onclick="addReaction('${childKey}', '😂')">😂</button>
+                                <button onclick="addReaction('${childKey}', '😲')">😲</button>
+                                <button onclick="addReaction('${childKey}', '😢')">😢</button>
+                            </div>
+                            <div class="reaction-counts">
+                                <span id="reaction-count-${childKey}-👍">${reactions["👍"] || 0}</span> 👍
+                                <span id="reaction-count-${childKey}-❤️">${reactions["❤️"] || 0}</span> ❤️
+                                <span id="reaction-count-${childKey}-😂">${reactions["😂"] || 0}</span> 😂
+                                <span id="reaction-count-${childKey}-😲">${reactions["😲"] || 0}</span> 😲
+                                <span id="reaction-count-${childKey}-😢">${reactions["😢"] || 0}</span> 😢
+                            </div>
+                        </div><hr>`;
+            document.getElementById("output").innerHTML += row;
         });
     });
 }
 
-// Call the function to retrieve messages on page load
+// Call the getData function to retrieve chat data on page load
 getData();
-
