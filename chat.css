@@ -1,0 +1,161 @@
+/* style.css */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #e9ecef;
+}
+
+#chat_container {
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    max-width: 700px;
+    margin: 20px auto;
+}
+
+#logo {
+    max-width: 80px;
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-size: 1.2em;
+    color: #343a40;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#output {
+    height: 500px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    padding: 5px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    background-color: #a3c6e9;
+}
+
+.date_sent {
+    font-size: 0.7em;
+    color: #6c757d;
+}
+
+.message_h4 {
+    margin: 2px 0;
+    line-height: 1.2;
+}
+
+input[type="text"],
+input[type="file"] {
+    width: calc(100% - 16px);
+    padding: 5px;
+    margin: 5px 0;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 0.8em;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:active {
+    background-color: #004085;
+}
+
+hr {
+    border: 1px solid #e9ecef;
+    margin: 5px 0;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+#backButton {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.8em;
+    margin-bottom: 10px;
+    display: block;
+    width: 100%;
+    transition: background-color 0.3s;
+}
+
+#backButton:hover {
+    background-color: #5a6268;
+}
+
+#backButton:active {
+    background-color: #4e555b;
+}
+
+.reaction-buttons {
+    display: flex;
+    gap: 3px;
+    margin-top: 2px;
+}
+
+.reaction-buttons button {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.reaction-buttons button:hover {
+    transform: scale(1.1);
+}
+
+.badge {
+    display: inline-block;
+    background-color: gold;
+    color: white;
+    padding: 2px 4px;
+    margin: 0 2px;
+    border-radius: 5px;
+    font-size: 0.8em;
+}
+
+.reactions {
+    margin-top: 5px;
+}
+
+.reactions button {
+    margin-left: 2px;
+}
+
+.user_tick {
+    max-width: 20px;
+    border-radius: 5px;
+    position: middle;
+}

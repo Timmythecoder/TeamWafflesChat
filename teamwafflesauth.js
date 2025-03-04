@@ -39,7 +39,8 @@ function authAction() {
                     const user = userCredential.user;
                     saveUserToDatabase(user.uid, email);
                     alert("Sign up successful!");
-                    window.location = "auth.html"; // Redirect after successful sign up
+                    localStorage.setItem("isLoggedIn", true);
+                    window.location = "dashboard.html"; // Redirect after successful sign up
                 }
             })
             .catch((error) => {
@@ -55,7 +56,8 @@ function authAction() {
                     getUserFromDatabase(user.uid).then((userData) => {
                         console.log("User Data: ", userData);
                         alert("Login successful!");
-                        window.location = "auth.html"; // Redirect after successful login
+                        localStorage.setItem("isLoggedIn", true);
+                        window.location = "dashboard.html"; // Redirect after successful login
                     });
                 }
             })
@@ -65,6 +67,36 @@ function authAction() {
             });
     }
 }
+
+
+
+
+
+const auth = getAuth(app);
+
+// Check if the user is already signed in
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log("User is signed in:", user.uid);
+    } else {
+        // Sign in the user anonymously
+        signInAnonymously(auth)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                console.log("User signed in:", user.uid);
+            })
+            .catch((error) => {
+                console.error("Error signing in:", error);
+            });
+    }
+});
+
+
+
+
+
+
+
 
 // Save user to Firebase Realtime Database
 function saveUserToDatabase(userId, email) {
@@ -99,6 +131,6 @@ firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
         console.log("User already logged in: ", user.email);
         // Optionally, redirect to the main page if the user is already logged in
-        // window.location = "teamwafflesroomselector.html";
+        window.location = "dashboard.html";
     }
 });

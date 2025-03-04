@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Waffles Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap");
+
+        :root {
+            --c-gray-900: #000000;
+            --c-gray-800: #1f1f1f;
+            --c-gray-700: #2e2e2e;
+            --c-gray-600: #313131;
+            --c-gray-500: #969593;
+            --c-gray-400: #a6a6a6;
+            --c-gray-300: #bdbbb7;
+            --c-gray-200: #f1f1f1;
+            --c-gray-100: #ffffff;
+
+            --c-green-500: #45ffbc;
+            --c-olive-500: #e3ffa8;
+
+            --c-white: var(--c-gray-100);
+
+            --c-text-primary: var(--c-gray-100);
+            --c-text-secondary: var(--c-gray-200);
+            --c-text-tertiary: var(--c-gray-500);
+        }
+
+
+
+        body {
+            line-height: 1.5;
+            min-height: 100vh;
+            font-family: "Be Vietnam Pro", sans-serif;
+            background-color: #f6b98dd0;
+            color: var(--c-text-primary);
+            display: flex;
+            padding-top: 3vw;
+            padding-bottom: 3vw;
+            justify-content: center;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        button,
+        select,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .responsive-wrapper {
+            width: 90%;
+            max-width: 1600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .app {
+            min-height: 80vh;
+            width: 95%;
+            max-width: 1600px;
+            background-color: var(--c-gray-800);
+            padding: 2vw 4vw 6vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h3 {
+            color: var(--c-text-primary);
+        }
+
+        h2 {
+            color: black;
+        }
+
+        .card {
+            background: #333;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .room-list {
+            max-width: 500px;
+            margin: auto;
+        }
+
+        .room-item {
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .btn-custom {
+            margin-top: 15px;
+            background-color: rgb(92, 193, 92);
+            color: var(--c-white);
+            border-radius: 8px;
+            padding: 10px 20px;
+            border: none;
+        }
+
+        .btn-custom:hover {
+            background-color: var(--c-olive-500);
+        }
+
+        .previous-chats {
+            margin-top: 30px;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .form-control {
+            max-width: 300px;
+            margin: auto;
+            background-color: var(--c-gray-600);
+            color: var(--c-text-primary);
+            border-radius: 5px;
+        }
+
+        .form-control:focus {
+            background-color: var(--c-gray-700);
+            border-color: var(--c-green-500);
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+            border-radius: 8px;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border: none;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+
+        .footer {
+            margin-top: auto;
+            color: var(--c-text-tertiary);
+            font-size: 0.75rem;
+        }
+
+        .footer div {
+            border-top: 1px solid var(--c-gray-600);
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .logo {
+            width: 100px;
+            border-radius: 5px;
+        }
+    </style>
+
+    <div class="logo">
+        <img src="TWL O - Copy.png" alt="Team Waffles Logo"> <!-- logo URL -->
+    </div>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Welcome, <span id="user_name"></span></h2>
+
+        <div class="card">
+            <input type="text" id="update_name" class="form-control" placeholder="Update your username">
+            <button onclick="updateUserName()" class="btn-custom">Update Username</button>
+        </div>
+
+        <button onclick="toggleRooms()" class="btn-custom">Toggle Rooms</button>
+        <button onclick="toggleAddRooms()" class="btn-custom">Add Room</button>
+        <button onclick="togglePrevious()" class="btn-custom">Previous Rooms</button>
+        <button onclick="logout()" class="logout-btn">Logout</button>
+        <br>
+        <br>
+        <div class="room-list hidden" id="room_list">
+            <h3>Available Chat Rooms</h3>
+        </div>
+
+
+
+        <div class="form-group hidden" id="add-room">
+            <label for="room_name" class="font-weight-bold">Add Room:</label>
+            <input type="text" id="room_name" class="form-control" placeholder="#Room Name">
+            <br>
+            <button onclick="addRoom();" class="btn btn-success btn-block mb-3">#Add Room</button>
+        </div>
+
+
+        <div class="previous-chats hidden" id="previous_chats"></div>
+
+
+
+    </div>
+
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+            authDomain: "team-waffles.firebaseapp.com",
+            databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+            projectId: "team-waffles",
+            storageBucket: "team-waffles.appspot.com",
+            messagingSenderId: "891460090478",
+            appId: "1:891460090478:web:c01b6db1af21745769047f"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        let userName = localStorage.getItem("user_name");
+        document.getElementById("user_name").innerText = userName || "Guest Test Account";
+
+        function loadRooms() {
+            firebase.database().ref("/").on("value", function (snapshot) {
+                let output = "";
+                snapshot.forEach(function (childSnapshot) {
+                    let roomName = childSnapshot.key;
+                    output += `<div class='room-item'><button class='btn btn-primary' onclick='joinRoom("${roomName}")'>#${roomName}</button></div>`;
+                });
+                document.getElementById("room_list").innerHTML = output;
+            });
+        }
+
+        function loadPreviousChats() {
+            let userName = localStorage.getItem("user_name");
+            if (userName) {
+                firebase.database().ref(`/users/${userName}/chats`).once("value", function (snapshot) {
+                    let output = "";
+                    snapshot.forEach(function (chatSnapshot) {
+                        let chatRoom = chatSnapshot.val();
+                        output += `<div>${chatRoom}</div>`;
+                    });
+                    document.getElementById("previous_chats").innerHTML = output || "No previous chats.";
+                });
+            }
+        }
+
+        function joinRoom(roomName) {
+            localStorage.setItem("room_name", roomName);
+            let userName = localStorage.getItem("user_name");
+            if (userName) {
+                firebase.database().ref(`/users/${userName}/chats`).push(roomName);
+            }
+            window.location.href = "chat.html";
+        }
+
+        function updateUserName() {
+            let newUserName = document.getElementById("update_name").value;
+            if (newUserName) {
+                localStorage.setItem("user_name", newUserName);
+                document.getElementById("user_name").innerText = newUserName;
+                alert("Username updated!");
+            }
+        }
+
+
+
+        function addRoom() {
+            room_name = document.getElementById("room_name").value;
+
+            firebase.database().ref("/").child(room_name).update({
+                purpose: "adding room name"
+            });
+
+            localStorage.setItem("room_name", room_name);
+
+            window.location = "chat.html";
+        }
+
+
+        function logout() {
+            localStorage.removeItem("user_name");
+            localStorage.removeItem("room_name");
+            window.location.href = "index.html";
+        }
+
+        function toggleRooms() {
+            const roomList = document.getElementById("room_list");
+            roomList.classList.toggle("hidden");
+        }
+
+        function toggleAddRooms() {
+            const roomList = document.getElementById("add-room");
+            roomList.classList.toggle("hidden");
+        }
+
+        function togglePrevious() {
+            const roomList = document.getElementById("previous_chats");
+            roomList.classList.toggle("hidden");
+        }
+
+
+        loadRooms();
+        loadPreviousChats();
+    </script>
+</body>
+
+</html>

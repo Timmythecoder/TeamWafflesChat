@@ -26,7 +26,7 @@ var firebaseConfig = {
   
       localStorage.setItem("room_name", room_name);
       
-      window.location = "teamwaffleschatroom.html";
+      window.location = "chat.html";
   }
   
   function getData() {  firebase.database().ref("/").on('value', function(snapshot) { document.getElementById("output").innerHTML = ""; snapshot.forEach(function(childSnapshot) { childKey  = childSnapshot.key;
@@ -46,6 +46,43 @@ var firebaseConfig = {
   
 
 
+
+
+
+
+// Check if user is signed in
+function checkLogin() {
+  const isLoggedIn = localStorage.getItem("isLoggedIn");
+
+  // Randomly decide if we should prompt the user to log in
+  if (!isLoggedIn && Math.random() < 100) { // 50% chance to ask for login
+      promptLogin();
+  }
+}
+
+// Function to prompt user to log in
+function promptLogin() {
+  if (confirm("You need to log in to access this site. Would you like to log in now?")) {
+      window.location.href = "index.html"; // Redirect to your login page
+  } else {
+      // Optionally, redirect to an information page or close the site
+      alert("You must log in to continue using the site.");
+      window.location.href = "index.html"; // Or wherever you want to redirect
+  }
+}
+
+// Call the checkLogin function on page load
+checkLogin();
+
+
+
+
+
+
+
+
+
+
  // firebase.auth().onAuthStateChanged(function(user) {
   //  if (!user) {
         // No user is signed in, redirect to login page
@@ -63,7 +100,7 @@ var firebaseConfig = {
   {
     console.log(name);
     localStorage.setItem("room_name", name);
-      window.location = "teamwaffleschatroom.html";
+      window.location = "chat.html";
   }
   
   function logout() {
