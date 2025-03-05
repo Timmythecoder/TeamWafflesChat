@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Waffles Chat</title>
+    
+    <!-- CSS Link -->
+    <link rel="stylesheet" href="chat.css">
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="chat.js" defer></script>
+</head>
+<body>
+    <div id="chat_container">
+        <img id="logo" src="Team Waffles Checkmark.png" alt="Team Waffles Logo">
+        <h1>Team Waffles Chat</h1>
+
+        <!-- Back Button -->
+        <button onclick="window.history.back()">Go Back</button> <!-- Directly use window.history.back() -->
+
+        <div id="output" class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;"></div>
+
+        <input id="msg" type="text" placeholder="Enter your message">
+        <input type="file" id="fileInput" placeholder="Choose a file">
+        <button onclick="send()">Send</button>
+    </div>
+</body>
+</html>
