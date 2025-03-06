@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Waffles Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap");
+
+        :root {
+            --c-gray-900: #000000;
+            --c-gray-800: #1f1f1f;
+            --c-gray-700: #2e2e2e;
+            --c-gray-600: #313131;
+            --c-gray-500: #969593;
+            --c-gray-400: #a6a6a6;
+            --c-gray-300: #bdbbb7;
+            --c-gray-200: #f1f1f1;
+            --c-gray-100: #ffffff;
+
+            --c-green-500: #45ffbc;
+            --c-olive-500: #e3ffa8;
+
+            --c-white: var(--c-gray-100);
+
+            --c-text-primary: var(--c-gray-100);
+            --c-text-secondary: var(--c-gray-200);
+            --c-text-tertiary: var(--c-gray-500);
+        }
+
+        body {
+            line-height: 1.5;
+            min-height: 100vh;
+            font-family: "Be Vietnam Pro", sans-serif;
+            background-color: #f6b98dd0;
+            color: var(--c-text-primary);
+            display: flex;
+            padding-top: 3vw;
+            padding-bottom: 3vw;
+            justify-content: center;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        button,
+        select,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .responsive-wrapper {
+            width: 90%;
+            max-width: 1600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .app {
+            min-height: 80vh;
+            width: 95%;
+            max-width: 1600px;
+            background-color: var(--c-gray-800);
+            padding: 2vw 4vw 6vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h3 {
+            color: var(--c-text-primary);
+        }
+
+        h2 {
+            color: black;
+        }
+
+        .card {
+            background: #333;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .room-list {
+            max-width: 500px;
+            margin: auto;
+        }
+
+        .room-item {
+            margin-bottom: 15px;
+            border: 2px solid var(--c-gray-500);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .room-item input {
+            margin-left: 10px;
+        }
+
+        .form-group {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .btn-custom {
+            margin-top: 15px;
+            background-color: rgb(92, 193, 92);
+            color: var(--c-white);
+            border-radius: 8px;
+            padding: 10px 20px;
+            border: none;
+        }
+
+        .btn-custom:hover {
+            background-color: var(--c-olive-500);
+        }
+
+        .form-control {
+            max-width: 300px;
+            margin: auto;
+            background-color: var(--c-gray-600);
+            color: var(--c-text-primary);
+            border-radius: 5px;
+        }
+
+        .form-control:focus {
+            background-color: var(--c-gray-700);
+            border-color: var(--c-green-500);
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+            border-radius: 8px;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border: none;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+
+        .footer {
+            margin-top: auto;
+            color: var(--c-text-tertiary);
+            font-size: 0.75rem;
+        }
+
+        .footer div {
+            border-top: 1px solid var(--c-gray-600);
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .logo {
+            width: 100px;
+            border-radius: 5px;
+        }
+
+        .locked-icon {
+            color: red;
+        }
+        .public-icon {
+            color: green;
+        }
+
+        .password-error {
+            color: red;
+            font-size: 12px;
+            margin-top: 5px;
+            background-color: #f8d7da;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .room-item {
+            background-color: gray;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome, <span id="user_name"></span></h2>
+        <div class="card">
+            <input type="text" id="update_name" class="form-control" placeholder="Update your username">
+            <button onclick="updateUserName()" class="btn-custom">Update Username</button>
+        </div>
+        <button onclick="toggleRooms()" class="btn-custom">Toggle Rooms</button>
+        <button onclick="toggleAddRooms()" class="btn-custom">Add Room</button>
+        <button onclick="logout()" class="logout-btn">Logout</button>
+        <br><br>
+        <div class="room-list hidden" id="room_list">
+            <h3>Available Chat Rooms</h3>
+        </div>
+        <div class="form-group hidden" id="add-room">
+            <label for="room_name" class="font-weight-bold">Add Room:</label>
+            <input type="text" id="room_name" class="form-control" placeholder="#Room Name">
+            <input type="text" id="room_password" class="form-control" placeholder="Password (Leave empty for public)">
+            <label for="room_type">Room Type:</label>
+            <select id="room_type" class="form-control">
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+            </select>
+            <br>
+            <button onclick="addRoom();" class="btn btn-success btn-block mb-3">#Add Room</button>
+        </div>
+    </div>
+
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+            authDomain: "team-waffles.firebaseapp.com",
+            databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+            projectId: "team-waffles",
+            storageBucket: "team-waffles.appspot.com",
+            messagingSenderId: "891460090478",
+            appId: "1:891460090478:web:c01b6db1af21745769047f"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        let userName = localStorage.getItem("user_name");
+        document.getElementById("user_name").innerText = userName || "Guest Test Account";
+
+        function loadRooms() {
+            firebase.database().ref("/").on("value", function (snapshot) {
+                let output = "";
+                snapshot.forEach(function (childSnapshot) {
+                    let roomName = childSnapshot.key;
+                    let roomData = childSnapshot.val();
+                    let roomIcon = roomData.type === 'private' ? "<span class='locked-icon'>🔒</span>" : "<span class='public-icon'>🌍</span>";
+                    let passwordInput = roomData.type === 'private' ? `<input type="password" placeholder="Enter Password" class="form-control" id="password_${roomName}" />` : '';
+                    output += `<div class='room-item'>
+                                <button class='btn btn-primary' onclick='joinRoom("${roomName}")'>#${roomName}</button>
+                                ${roomIcon}
+                                ${passwordInput}
+                               </div>`;
+                });
+                document.getElementById("room_list").innerHTML = output;
+            });
+        }
+        function joinRoom(roomName) {
+    // Retrieve room data from Firebase
+    firebase.database().ref("/" + roomName).once("value").then(function(snapshot) {
+        let roomData = snapshot.val();
+        let passwordInputField = document.getElementById(`password_${roomName}`);
+        let errorBanner = document.getElementById(`error_${roomName}`);
+
+        // If room is private, check the password
+        if (roomData.type === "private") {
+            let password = passwordInputField.value;
+
+            // If password matches
+            if (password === roomData.password) {
+                localStorage.setItem("room_name", roomName);  // Only set room name if password is correct
+                localStorage.setItem("room_password", password);  // Store password in localStorage
+                window.location.href = "chat.html";  // Redirect to the chat room
+            } else {
+                // If password is incorrect, show error message
+                if (!errorBanner) {
+                    let errorElement = document.createElement('div');
+                    errorElement.id = `error_${roomName}`;
+                    errorElement.classList.add('password-error');
+                    errorElement.textContent = 'Incorrect password!';
+                    passwordInputField.parentElement.appendChild(errorElement);
+                }
+
+                // Clear room name and password from localStorage
+                localStorage.removeItem("room_name");
+                localStorage.removeItem("room_password");
+            }
+        } else {
+            // If room is public, no password needed
+            localStorage.setItem("room_name", roomName);
+            localStorage.removeItem("room_password");  // Ensure password is cleared for public rooms
+            window.location.href = "chat.html";  // Redirect to the chat room
+        }
+    });
+}
+
+
+
+        function updateUserName() {
+            let newUserName = document.getElementById("update_name").value;
+            if (newUserName) {
+                localStorage.setItem("user_name", newUserName);
+                document.getElementById("user_name").innerText = newUserName;
+            }
+        }
+
+        function addRoom() {
+            let room_name = document.getElementById("room_name").value;
+            let room_password = document.getElementById("room_password").value;
+            let room_type = document.getElementById("room_type").value;
+
+            if (room_name) {
+                firebase.database().ref("/" + room_name).set({
+                    password: room_password,
+                    type: room_type
+                });
+                document.getElementById("room_name").value = "";
+                document.getElementById("room_password").value = "";
+                document.getElementById("room_type").value = "public";
+                alert("Room added successfully!");
+                loadRooms();
+            }
+        }
+
+        function toggleRooms() {
+            let roomList = document.getElementById("room_list");
+            roomList.classList.toggle("hidden");
+        }
+
+        function toggleAddRooms() {
+            let addRoomForm = document.getElementById("add-room");
+            addRoomForm.classList.toggle("hidden");
+        }
+
+        function logout() {
+            localStorage.removeItem("user_name");
+            localStorage.removeItem("username");
+            localStorage.removeItem("room_name");
+            localStorage.removeItem("isLoggedIn");
+            window.location.href = "index.html";
+        }
+
+        loadRooms();
+    </script>
+</body>
+</html>

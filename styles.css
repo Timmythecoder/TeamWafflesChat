@@ -5,14 +5,14 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #b5bee1;
+    background-color: #e3b598;
 }
 
 .auth-container {
-    background-color: #fff;
+    background-color: #f2e2d0;
     padding: 40px;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    box-shadow: 0 30px 40px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
     width: 100%;
     max-width: 400px;
 }
@@ -40,7 +40,7 @@ input:focus {
 
 button {
     width: 100%;
-    background-color: #2980b9;
+    background-color: #3f90c6;
     color: white;
     padding: 12px 20px;
     font-size: 16px;
@@ -94,4 +94,51 @@ button:hover {
     left: 50%;
     transform: translateX(-50%);
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 1000;
+}
+.loading-spinner video {
+    width: 100px; /* Adjust size as needed */
+    height: 100px; /* Adjust size as needed */
+}
+
+.verification-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(160, 150, 150, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+    z-index: 1000;
+    width: 80%;
+    max-width: 400px;
+}
+
+.popup-content {
+    background: #e3b598;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.popup-content h3 {
+    margin: 0 0 10px;
+}
+
+.popup-content button {
+    padding: 10px 15px;
+    background: #a5de56;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
 }
