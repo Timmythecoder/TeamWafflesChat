@@ -1,51 +1,45 @@
+<!--25 - VER2-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login/Signup</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Optional for styling -->
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Team Waffles - Login/Sign Up</title>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-        
-    </head>
-    <body>
-    
+    <title>Team Waffles - Login/Sign Up</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+</head>
+
+<body>
     <div class="auth-container">
         <div class="logo">
             <img src="TWL O - Copy.png" alt="Team Waffles Logo"> <!-- Replace with your logo URL -->
         </div>
-    
         <h2 id="form-title">Sign In</h2>
-        <h3 id="form-title">Use Real Emails
-    
+        <h3 id="form-subtitle">Use Your REAL Emails</h3>
         <div class="error-message" id="error-message"></div>
-    
+        <div class="success-message" id="success-message"></div>
         <input type="email" id="email" placeholder="Enter your email" required>
         <input type="password" id="password" placeholder="Enter your password" required>
-    
         <button id="auth-button" onclick="authAction()">Sign In</button>
-    
+        <div class="loading-spinner" id="loading-spinner">
+            <video autoplay loop muted>
+                <source src="Loading.mp4" type="video/mp4"> <!-- Replace with your loading spinner URL -->
+                Your browser does not support the video tag.
+            </video>
+        </div>
         <div class="toggle-text" id="toggle-text">
             Don't have an account? <a href="#" onclick="toggleForm()">Sign Up</a>
         </div>
     </div>
-<!-- Back to Team Waffles Website Button -->
-<a href="https://bit.ly/teamwaffleswebsite" class="home-button">
-    </div>
-
+    <!-- Back to Team Waffles Website Button -->
+    <a href="https://bit.ly/teamwaffleswebsite" class="home-button"></a>
     <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
-
-    
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
     <script src="teamwafflesauth.js"></script>
 </body>
 </html>
