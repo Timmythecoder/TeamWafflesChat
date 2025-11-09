@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Waffles Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <style>
+   @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap");
+
+:root {
+  --bg-main: linear-gradient(135deg, #f6b98d, #ffa07a);
+  --bg-card: #1f1f1f;
+  --text-light: #ffffff;
+  --text-muted: #bbbbbb;
+  --accent: #45ffbc;
+  --accent-hover: #34e3a5;
+  --danger: #dc3545;
+  --danger-hover: #c82333;
+  --border-color: #3c3c3c;
+  --font: "Be Vietnam Pro", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font);
+  background: var(--bg-main);
+  color: var(--text-light);
+  display: flex;
+  justify-content: center;
+  padding: 3vw;
+}
+
+.container {
+  width: 100%;
+  max-width: 1000px;
+  background-color: var(--bg-card);
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+h2 {
+  font-weight: 600;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+h3 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+button {
+  font-family: var(--font);
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+.btn-custom {
+  background: var(--accent);
+  color: #000;
+  padding: 12px 20px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.btn-custom:hover {
+  background: var(--accent-hover);
+}
+
+.logout-btn {
+  background: var(--danger);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.logout-btn:hover {
+  background: var(--danger-hover);
+}
+
+.room-list,
+#add-room {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #2e2e2e;
+  border-radius: 12px;
+  box-shadow: inset 0 0 10px #111;
+}
+
+.room-item {
+  background-color: #3a3a3a;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border-color);
+  transition: background 0.2s;
+}
+
+.room-item:hover {
+  background-color: #505050;
+}
+
+.room-item button {
+  background-color: #2196f3;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+}
+
+.room-item input {
+  margin-left: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  max-width: 200px;
+}
+
+.form-group input,
+.form-group select {
+   background-color: #1f1f1f;
+  color: white;
+  border: 1px solid #555;
+  line-height: 1.6;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  height: auto;
+  border-radius: 18px;
+}
+
+
+.form-group label {
+  margin-top: 10px;
+  display: block;
+  font-weight: 500;
+}
+
+.btn-success {
+  margin-top: 15px;
+  background-color: #28a745;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+}
+
+.password-error {
+  color: #721c24;
+  font-size: 14px;
+  margin-top: 10px;
+  background-color: #f8d7da;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+}
+
+.locked-icon {
+  color: #ff6666;
+  font-size: 1.2rem;
+  margin-left: 8px;
+}
+
+.public-icon {
+  color: #90ee90;
+  font-size: 1.2rem;
+  margin-left: 8px;
+}
+
+.hidden {
+  display: none;
+}
+
+#loading_video {
+  width: 40px;
+  vertical-align: middle;
+  margin-left: 10px;
+}
+
+  </style>
+</head>
+<body>
+  
+  <div class="container">
+    <h2>Welcome, <span id="user_name"><video id="loading_video" autoplay muted loop><source src="Loading.mp4" type="video/mp4"></video></span></h2>
+
+    <button onclick="toggleRooms()" class="btn-custom">Toggle Rooms</button>
+    <button onclick="toggleAddRooms()" class="btn-custom">Add Room</button>
+        <button onclick="settings()" class="btn-custom">Settings</button>
+    <button onclick="logout()" class="logout-btn">Logout</button>
+
+    <br><br>
+    <div class="room-list hidden" id="room_list">
+      <h3>Available Chat Rooms</h3>
+    </div>
+
+    <div class="form-group hidden" id="add-room">
+      <label for="room_name" class="font-weight-bold">Add Room:</label>
+      <input type="text" id="room_name" class="form-control" placeholder="#Room Name"/>
+      <input type="text" id="room_password" class="form-control" placeholder="Password (Leave empty for public)"/>
+      <label for="room_type">Room Type:</label>
+      <select id="room_type" class="form-control">
+        <option value="public">Public</option>
+        <option value="private">Private</option>
+      </select>
+      <br>
+      <button onclick="addRoom();" class="btn btn-success btn-block mb-3">#Add Room</button>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+      authDomain: "team-waffles.firebaseapp.com",
+      databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+      projectId: "team-waffles",
+      storageBucket: "team-waffles.appspot.com",
+      messagingSenderId: "891460090478",
+      appId: "1:891460090478:web:c01b6db1af21745769047f"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const roomsRef = db.ref("/rooms");
+
+   firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    // Fetch user data from Firebase Realtime Database
+    firebase.database().ref("users/" + user.uid).once("value").then((snapshot) => {
+      const data = snapshot.val();
+      const usernameSpan = document.getElementById("user_name");
+
+      if (data && data.displayName) {
+        // Use displayName directly from Firebase DB
+        usernameSpan.innerText = data.displayName;
+
+        // Enable buttons
+        document.querySelector('button[onclick="toggleRooms()"]').disabled = false;
+        document.querySelector('button[onclick="toggleAddRooms()"]').disabled = false;
+      } else {
+        usernameSpan.innerText = "CHANGE USERNAME e1";
+        alert("Please update your username in settings to access other rooms.");
+
+        // Disable buttons
+        document.querySelector('button[onclick="toggleRooms()"]').disabled = true;
+        document.querySelector('button[onclick="toggleAddRooms()"]').disabled = true;
+      }
+    });
+  } else {
+    alert("No user logged in. Redirecting...");
+    window.location.href = "index.html";
+  }
+});
+
+
+function toggleRooms() {
+  const list = document.getElementById("room_list");
+
+  if (list.classList.contains("hidden")) {
+    list.classList.remove("hidden");
+    showLoadingVideo();
+    loadRooms(() => {
+      removeLoadingVideo();
+    });
+  } else {
+    list.classList.add("hidden");
+  }
+}
+
+
+
+function addRoom() {
+  const name = document.getElementById("room_name").value.trim();
+  const password = document.getElementById("room_password").value.trim();
+  const type = document.getElementById("room_type").value;
+
+  if (!name) {
+    alert("Please enter a room name.");
+    return;
+  }
+
+  const roomData = {
+    type: type,
+    password: type === "private" ? password : "", // Only save password if private
+    createdAt: new Date().toISOString()
+  };
+
+  firebase.database().ref("rooms/" + name).set(roomData, (error) => {
+    if (error) {
+      alert("Failed to create room: " + error.message);
+    } else {
+      alert("Room #" + name + " added successfully!");
+      document.getElementById("room_name").value = "";
+      document.getElementById("room_password").value = "";
+      document.getElementById("room_type").value = "public";
+      toggleAddRooms(); // Hide the add room form
+    }
+  });
+}
+
+
+
+
+function loadRooms(callback) {
+  roomsRef.once("value", function(snapshot) {
+    let output = "<h3>Available Chat Rooms</h3>";
+    snapshot.forEach(function(childSnapshot) {
+      let roomName = childSnapshot.key;
+      let roomData = childSnapshot.val();
+      let roomIcon = roomData.type === 'private'
+  ? "<span class='locked-icon' style='font-size: 2rem;'>🔒</span>"
+  : "<span class='public-icon' style='font-size: 2rem;'>🌍</span>";
+
+      let passwordInput = roomData.type === 'private'
+        ? `<input type="password" placeholder="Enter Password" autocomplete="new-password" class="form-control" id="password_${roomName}" />`
+        : '';
+
+      output += `<div class='room-item'>
+                  <button class='btn btn-primary' onclick='joinRoom("${roomName}")'>#${roomName}</button>
+                  ${roomIcon}
+                  ${passwordInput}
+                </div>`;
+    });
+
+    document.getElementById("room_list").innerHTML = output;
+    if (typeof callback === "function") callback();
+  });
+}
+
+
+function toggleRooms() {
+  const list = document.getElementById("room_list");
+
+  if (list.classList.contains("hidden")) {
+    list.classList.remove("hidden");
+    showLoadingVideo();
+    loadRooms(() => {
+      removeLoadingVideo();
+    });
+  } else {
+    list.classList.add("hidden");
+  }
+}
+
+function toggleAddRooms() {
+  const form = document.getElementById("add-room");
+  form.classList.toggle("hidden");
+}
+
+
+
+    function joinRoom(roomName) {
+      roomsRef.child(roomName).once("value").then(function(snapshot) {
+        let roomData = snapshot.val();
+        let passwordInputField = document.getElementById(`password_${roomName}`);
+        let errorBanner = document.getElementById(`error_${roomName}`);
+
+        if (roomData.type === "private") {
+          let password = passwordInputField.value;
+          if (password === roomData.password) {
+            localStorage.setItem("room_name", roomName);
+            localStorage.setItem("room_password", password);
+            window.location.href = "chat.html";
+          } else {
+            if (!errorBanner) {
+              let errorElement = document.createElement('div');
+              errorElement.id = `error_${roomName}`;
+              errorElement.classList.add('password-error');
+              errorElement.textContent = 'Incorrect password!';
+              passwordInputField.parentElement.appendChild(errorElement);
+            }
+            localStorage.removeItem("room_name");
+            localStorage.removeItem("room_password");
+          }
+        } else {
+          localStorage.setItem("room_name", roomName);
+          localStorage.removeItem("room_password");
+          window.location.href = "chat.html";
+        }
+      });
+    }
+
+    function settings() {
+      window.location.href = "settings.html"
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+
+
+
+
+
+    function showLoadingVideo() {
+  const container = document.getElementById("room_list");
+  const loading = document.createElement("video");
+  loading.id = "loading_video";
+  loading.src = "Loading.mp4";
+  loading.autoplay = true;
+  loading.muted = true;
+  loading.loop = true;
+  loading.style.width = "60px";
+  loading.style.display = "block";
+  loading.style.margin = "20px auto";
+  container.innerHTML = ""; // Clear any previous content
+  container.appendChild(loading);
+}
+
+function removeLoadingVideo() {
+  const loading = document.getElementById("loading_video");
+  if (loading) {
+    loading.remove();
+  }
+}
+
+
+
+
+
+
+  </script>
+</body>
+</html>
