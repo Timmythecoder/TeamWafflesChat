@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- mobile layout / zoom control -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link id="favicon" rel="icon" type="image" href="TWL O.png">
+
+  <title>Team Waffles HMW Front End</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="cs.css"/>
+  <style>
+    /* Container for input and buttons in a single row */
+    #inputArea {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: #f5f5f5;
+      border-top: 1px solid #ddd;
+    }
+
+    /* Textarea grows to fill available space */
+    #message {
+      flex-grow: 1;
+      resize: none;
+      padding: 8px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      min-height: 36px;
+      max-height: 96px;
+      line-height: 1.2;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    /* Buttons container (optional grouping, but here buttons are direct children of inputArea) */
+    /* Style buttons */
+    #sendBtn,
+    #openGifPicker,
+    #fileBtn {
+      background-color: #5865F2;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease;
+      white-space: nowrap;
+      min-width: 48px;
+      height: 36px;
+    }
+
+    #sendBtn:hover,
+    #openGifPicker:hover,
+    #fileBtn:hover {
+      background-color: #4752c4;
+    }
+
+    /* Smaller buttons with icons only */
+    #openGifPicker,
+    #fileBtn {
+      padding: 0;
+      width: 36px;
+      font-size: 1.3rem;
+    }
+
+    /* Hidden file input */
+    #fileInput {
+      display: none;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 480px) {
+      #inputArea {
+        padding: 6px;
+      }
+
+      #sendBtn,
+      #openGifPicker,
+      #fileBtn {
+        padding: 6px;
+        height: 32px;
+        font-size: 1.1rem;
+        min-width: 36px;
+      }
+
+      #message {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chat_container">
+    <!-- Loading overlay -->
+    <div id="loadingVideo" hidden>
+      <video src="loading.mp4" autoplay loop muted></video>
+    </div>
+
+<div id="badge-container"></div>
+
+
+    <!-- Logo / heading -->
+    <img id="logo" src="Team Waffles Checkmark.png" alt="Team Waffles logo" />
+    <h1>Team Waffles Chat</h1>
+
+    <!-- Back -->
+    <button id="backButton" type="button">← Go Back</button>
+
+    <!-- Online Users Bar -->
+    <div id="onlineUsersBar"></div>
+
+    <!-- Messages -->
+    <div id="output" class="chat-output"></div>
+
+    <div id="typingIndicator" class="typing-indicator" style="display:none;"></div>
+
+    <!-- Reply Banner -->
+    <div id="replyContainer" class="reply-banner" style="display:none;">
+      <div class="reply-info">
+        <span id="replyingToText">Replying to...</span>
+        <button id="cancelReplyBtn" class="close-reply">✕</button>
+      </div>
+    </div>
+
+    <!-- Input area with text box and buttons inline -->
+    <div id="inputArea" class="input-area">
+      <div class="textarea-wrapper">
+        <textarea id="message" placeholder="Type a message…" rows="1" autocomplete="off" required></textarea>
+        <div id="char-counter"></div>
+      </div>
+      <button id="sendBtn" type="button" title="Send message">Send</button>
+      <button id="openGifPicker" type="button" title="Open GIF picker" aria-label="Open GIF picker">🎞️</button>
+      <button id="fileBtn" type="button" title="Attach file" aria-label="Attach file">📎</button>
+
+      <input type="file" id="fileInput" />
+    </div>
+
+    <!-- GIF modal lives *outside* the form so it never submits -->
+    <div id="gifModal" class="gif-modal" hidden>
+      <div class="gif-modal-content">
+        <button id="closeGifModal" class="close-btn" type="button">❌ Close</button>
+        <input id="gifSearch" type="text" placeholder="Search GIFs…" />
+        <div id="gifResults"></div>
+      </div>
+    </div>
+
+    <!-- Firebase & main script -->
+    <script type="module" src="ch.js"></script>
+
+    <script>
+      // Open file selector when file button clicked
+      document.getElementById("fileBtn").addEventListener("pointerup", () => {
+        document.getElementById("fileInput").click();
+      });
+    </script>
+  </div>
+</body>
+
+</html>

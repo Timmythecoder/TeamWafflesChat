@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Waffles Dashboard</title>
+  <link id="favicon" rel="icon" type="image/png" href="TWL O.png">
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="cs.css"/> <!-- Import cs.css for modal/shop styles -->
+  <style>
+   @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap");
+
+:root {
+  --bg-main: linear-gradient(135deg, #f6b98d, #ffa07a);
+  --bg-card: #1f1f1f;
+  --text-light: #ffffff;
+  --text-muted: #bbbbbb;
+  --accent: #45ffbc;
+  --accent-hover: #34e3a5;
+  --danger: #dc3545;
+  --danger-hover: #c82333;
+  --border-color: #3c3c3c;
+  --font: "Be Vietnam Pro", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font);
+  background: var(--bg-main);
+  color: var(--text-light);
+  display: flex;
+  justify-content: center;
+  padding: 3vw;
+}
+
+.container {
+  width: 100%;
+  max-width: 1000px;
+  background-color: var(--bg-card);
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+h2 {
+  font-weight: 600;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+h3 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+button {
+  font-family: var(--font);
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+.btn-custom {
+  background: var(--accent);
+  color: #000;
+  padding: 12px 20px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.btn-custom:hover {
+  background: var(--accent-hover);
+}
+
+.btn-updates {
+  background: #17a2b8;
+  color: white;
+}
+
+.btn-updates:hover {
+  background: #138496;
+}
+
+.logout-btn {
+  background: var(--danger);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.logout-btn:hover {
+  background: var(--danger-hover);
+}
+
+.room-list,
+#add-room {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #2e2e2e;
+  border-radius: 12px;
+  box-shadow: inset 0 0 10px #111;
+}
+
+.room-item {
+  background-color: #3a3a3a;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border-color);
+  transition: background 0.2s;
+}
+
+.room-item:hover {
+  background-color: #505050;
+}
+
+.room-item button {
+  background-color: #2196f3;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+}
+
+.room-item input {
+  margin-left: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  max-width: 200px;
+}
+
+.form-group input,
+.form-group select {
+   background-color: #1f1f1f;
+  color: white;
+  border: 1px solid #555;
+  line-height: 1.6;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  height: auto;
+  border-radius: 18px;
+}
+
+
+.form-group label {
+  margin-top: 10px;
+  display: block;
+  font-weight: 500;
+}
+
+.btn-success {
+  margin-top: 15px;
+  background-color: #28a745;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+}
+
+.password-error {
+  color: #721c24;
+  font-size: 14px;
+  margin-top: 10px;
+  background-color: #f8d7da;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+}
+
+.locked-icon {
+  color: #ff6666;
+  font-size: 1.2rem;
+  margin-left: 8px;
+}
+
+.public-icon {
+  color: #90ee90;
+  font-size: 1.2rem;
+  margin-left: 8px;
+}
+
+/* Profile Tile Styles */
+.user-tile {
+  display: flex;
+  align-items: center;
+  background-color: #2e2e2e;
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 25px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.user-tile img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 20px;
+  border: 3px solid var(--accent);
+}
+
+.tile-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tile-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
+.tile-username {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Action Buttons Grid */
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.inbox-section {
+  margin-top: 20px;
+}
+.request-item, .chat-item {
+  background: #3a3a3a;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--border-color);
+}
+.request-actions button {
+  margin-left: 10px;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+}
+.chat-item {
+  cursor: pointer;
+}
+.chat-item:hover {
+  background: #444;
+}
+.badge-count {
+  background: var(--danger);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  margin-left: 5px;
+}
+
+.user-result-item {
+  background: #3a3a3a;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--border-color);
+}
+.user-result-item button {
+  background-color: var(--accent);
+  color: #000;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.search-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.action-buttons button {
+  width: 100%;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hidden {
+  display: none;
+}
+
+#loading_video {
+  width: 40px;
+  vertical-align: middle;
+  margin-left: 10px;
+}
+
+.points-display {
+  background: #faa61a;
+  color: #000;
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-weight: bold;
+  margin-left: 10px;
+}
+  </style>
+</head>
+<body>
+  
+  <div class="container">
+    <h2>Dashboard</h2>
+
+    <!-- Profile Tile -->
+    <div id="user_profile_tile" class="user-tile hidden">
+      <img id="tile_pfp" src="TWL O.png" alt="Profile Picture">
+      <div class="tile-info">
+        <div id="tile_display_name" class="tile-name">Loading...</div>
+        <div id="tile_perm_name" class="tile-username">@...</div>
+        <div style="margin-top:5px;"><span id="user_points" class="points-display">0 💎</span></div>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button onclick="toggleRooms()" class="btn-custom">Open Rooms</button>
+      <button onclick="openSpinWheel()" class="btn-custom" style="background:#ff4081; color:white;">Daily Spin 🎡</button>
+      <button onclick="openLeaderboard()" class="btn-custom" style="background:#ffd700; color:black;">Leaderboard 🏆</button>
+      <button onclick="openShop()" class="btn-custom" style="background:#faa61a; color:black;">Shop 🛒</button>
+      <button onclick="window.location.href='minigames.html'" class="btn-custom" style="background:#9c27b0; color:white;">Minigames 🎮</button>
+      <button onclick="toggleInbox()" class="btn-custom">Inbox <span id="inbox_badge" class="hidden badge-count">0</span></button>
+      <button onclick="toggleUpdateLog()" class="btn-custom btn-updates">Updates</button>
+      <button onclick="toggleSearch()" class="btn-custom">Search someone to DM</button>
+      <button onclick="toggleAddRooms()" class="btn-custom">Add Room</button>
+      <button onclick="settings()" class="btn-custom">Settings</button>
+      <button onclick="logout()" class="logout-btn">Logout</button>
+    </div>
+
+    <div class="room-list hidden" id="room_list">
+      <h3>Available Rooms</h3>
+    </div>
+
+    <div class="hidden" id="inbox_list">
+      <h3>Inbox</h3>
+      <div class="inbox-section">
+        <h4>Requests</h4>
+        <div id="pm_requests_list"></div>
+      </div>
+      <div class="inbox-section">
+        <h4>Chats</h4>
+        <div id="pm_chats_list"></div>
+      </div>
+    </div>
+
+    <div class="hidden" id="search_section">
+      <h3>Search Users</h3>
+      <div class="search-container">
+        <input type="text" id="user_search_input" class="form-control" placeholder="Search by username..." onkeydown="if(event.key==='Enter') searchUsers()">
+        <button onclick="searchUsers()" class="btn btn-primary" style="margin-top:0;">Search</button>
+      </div>
+      <div id="user_search_results"></div>
+    </div>
+
+    <div class="hidden" id="update_log_section">
+      <h3>Update Log</h3>
+      <div id="update_log_content" style="background:#3a3a3a; padding:15px; border-radius:8px; border: 1px solid var(--border-color); line-height: 1.5; max-height: 400px; overflow-y: auto;">Loading updates...</div>
+    </div>
+
+    <div class="form-group hidden" id="add-room">
+      <label for="room_name" class="font-weight-bold">Add Room:</label>
+      <input type="text" id="room_name" class="form-control" placeholder="#Room Name"/>
+      <input type="text" id="room_password" class="form-control" placeholder="Password (Leave empty for public)"/>
+      <label for="room_type">Room Type:</label>
+      <select id="room_type" class="form-control">
+        <option value="public">Public</option>
+        <option value="private">Private</option>
+      </select>
+      <br>
+      <button onclick="addRoom();" class="btn btn-success btn-block mb-3">#Add Room</button>
+    </div>
+  </div>
+
+  <!-- Spin Wheel Modal -->
+  <div id="spinModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('spinModal')">&times;</span>
+      <h3>Daily Spin</h3>
+      <p>Spin once every 24 hours to win points!</p>
+      <div class="wheel-wrapper">
+        <div class="wheel-pointer"></div>
+        <div id="theWheel" class="wheel"></div>
+      </div>
+      <button id="spinBtn" onclick="spinTheWheel()" class="btn btn-primary">SPIN!</button>
+      <h4 id="spinResult" style="margin-top:15px; color:#45ffbc;"></h4>
+    </div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div id="leaderboardModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('leaderboardModal')">&times;</span>
+      <h3>Leaderboard 🏆</h3>
+      <div id="leaderboardList" style="text-align:left; max-height:300px; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Shop Modal -->
+  <div id="shopModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+      <span class="close-modal" onclick="closeModal('shopModal')">&times;</span>
+      <h3>Item Shop</h3>
+      <p>Spend your points on custom chat bubbles!</p>
+      <div style="text-align:right; margin-bottom:10px;">Balance: <span id="shop_balance">0</span> 💎</div>
+      <div id="shopGrid" class="shop-grid">
+        <!-- Items injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+      authDomain: "team-waffles.firebaseapp.com",
+      databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+      projectId: "team-waffles",
+      storageBucket: "team-waffles.appspot.com",
+      messagingSenderId: "891460090478",
+      appId: "1:891460090478:web:c01b6db1af21745769047f"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const roomsRef = db.ref("/rooms");
+
+   let currentUserData = null;
+   let isLoggingOut = false;
+
+   firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    // Fetch user data from Firebase Realtime Database
+    firebase.database().ref("users/" + user.uid).once("value").then((snapshot) => {
+      currentUserData = snapshot.val();
+      const data = currentUserData;
+
+      if (data && data.displayName) {
+        // Populate Profile Tile
+        document.getElementById("tile_display_name").innerText = data.displayName;
+        document.getElementById("tile_perm_name").innerText = data.permanentUsername ? "@" + data.permanentUsername : "@unknown";
+        if (data.profilePicURL) {
+          document.getElementById("tile_pfp").src = data.profilePicURL;
+        }
+        document.getElementById("user_points").innerText = (data.points || 0) + " 💎";
+        document.getElementById("user_profile_tile").classList.remove("hidden");
+
+        // Enable buttons
+        document.querySelector('button[onclick="toggleRooms()"]').disabled = false;
+        document.querySelector('button[onclick="toggleAddRooms()"]').disabled = false;
+        
+        // Listen for inbox
+        listenInboxCount(user.uid);
+      } else {
+        alert("Please update your username in settings to access other rooms.");
+        // Disable buttons
+        document.querySelector('button[onclick="toggleRooms()"]').disabled = true;
+        document.querySelector('button[onclick="toggleAddRooms()"]').disabled = true;
+      }
+    });
+  } else {
+    if (!isLoggingOut) {
+      alert("No user logged in. Redirecting...");
+      window.location.href = "index.html";
+    }
+  }
+});
+
+
+function addRoom() {
+  const name = document.getElementById("room_name").value.trim();
+  const password = document.getElementById("room_password").value.trim();
+  const type = document.getElementById("room_type").value;
+
+  if (!name) {
+    alert("Please enter a room name.");
+    return;
+  }
+
+  const roomData = {
+    type: type,
+    password: type === "private" ? password : "", // Only save password if private
+    createdAt: new Date().toISOString()
+  };
+
+  firebase.database().ref("rooms/" + name).set(roomData, (error) => {
+    if (error) {
+      alert("Failed to create room: " + error.message);
+    } else {
+      alert("Room #" + name + " added successfully!");
+      document.getElementById("room_name").value = "";
+      document.getElementById("room_password").value = "";
+      document.getElementById("room_type").value = "public";
+      toggleAddRooms(); // Hide the add room form
+
+      // Auto close rooms list and reset button text
+      const list = document.getElementById("room_list");
+      const btn = document.querySelector('button[onclick="toggleRooms()"]');
+      if (!list.classList.contains("hidden")) {
+        list.classList.add("hidden");
+      }
+      if (btn) btn.innerText = "Open Rooms";
+    }
+  });
+}
+
+
+
+
+function loadRooms(callback) {
+  roomsRef.once("value", function(snapshot) {
+    let output = "<h3>Available Rooms</h3>";
+    snapshot.forEach(function(childSnapshot) {
+      let roomName = childSnapshot.key;
+      let roomData = childSnapshot.val();
+
+      // Filter out private DMs so they don't appear in the public list
+      if (roomData.type === 'dm') return;
+
+      let roomIcon = roomData.type === 'private'
+  ? "<span class='locked-icon' style='font-size: 2rem;'>🔒</span>"
+  : "<span class='public-icon' style='font-size: 2rem;'>🌍</span>";
+
+      let passwordInput = roomData.type === 'private'
+        ? `<input type="password" placeholder="Enter Password" autocomplete="new-password" class="form-control" id="password_${roomName}" />`
+        : '';
+
+      // Parse online users
+      let usersHtml = "";
+      if (roomData.onlineUsers) {
+        const names = Object.values(roomData.onlineUsers).map(u => u.name);
+        if (names.length > 0) {
+          usersHtml = `<div class="room-users-preview">👤 ${names.join(", ")}</div>`;
+        }
+      }
+
+      output += `<div class='room-item'>
+                  <div>
+                    <button class='btn btn-primary' onclick='joinRoom("${roomName}")'>#${roomName}</button>
+                    ${usersHtml}
+                  </div>
+                  <div style="display:flex; align-items:center;">
+                  ${roomIcon}
+                  ${passwordInput}
+                  </div>
+                </div>`;
+    });
+
+    document.getElementById("room_list").innerHTML = output;
+    if (typeof callback === "function") callback();
+  });
+}
+
+
+function toggleRooms() {
+  const list = document.getElementById("room_list");
+  const inbox = document.getElementById("inbox_list");
+  const search = document.getElementById("search_section");
+  const updateLog = document.getElementById("update_log_section");
+  const btn = document.querySelector('button[onclick="toggleRooms()"]');
+
+  if (list.classList.contains("hidden")) {
+    list.classList.remove("hidden");
+    inbox.classList.add("hidden");
+    search.classList.add("hidden");
+    updateLog.classList.add("hidden");
+    if (btn) btn.innerText = "Close Rooms";
+    showLoadingVideo();
+    loadRooms(() => {
+      removeLoadingVideo();
+    });
+  } else {
+    list.classList.add("hidden");
+    if (btn) btn.innerText = "Open Rooms";
+  }
+}
+
+/* ───── Point System & Shop Logic ───── */
+let shopItemsData = {
+  "default": { name: "Default", cost: 0, class: "bubble-default" },
+  "blue": { name: "Ocean", cost: 100, class: "bubble-blue" },
+  "red": { name: "Sunset", cost: 100, class: "bubble-red" },
+  "gold": { name: "Gold", cost: 500, class: "bubble-gold" },
+  "rainbow": { name: "Rainbow", cost: 1000, class: "bubble-rainbow" }
+};
+// Default fallback above, will be overwritten by DB
+
+function closeModal(id) {
+  document.getElementById(id).style.display = "none";
+}
+
+function openSpinWheel() {
+  document.getElementById("spinModal").style.display = "flex";
+  document.getElementById("spinResult").innerText = "";
+  document.getElementById("spinBtn").disabled = false;
+  
+  // Fetch config and render wheel
+  firebase.database().ref("config/wheel").once("value").then(snap => {
+    const config = snap.val() || {};
+    const prizes = config.prizes || [10, 50, 100, 200, 500];
+    renderWheel(prizes);
+  });
+}
+
+function renderWheel(prizes) {
+  const wheel = document.getElementById("theWheel");
+  wheel.innerHTML = ""; // Clear existing
+  wheel.style.transform = "rotate(0deg)";
+  
+  const colors = ["#ff5252", "#ff4081", "#e040fb", "#7c4dff", "#536dfe", "#448aff", "#40c4ff", "#18ffff"];
+  const segAngle = 360 / prizes.length;
+  let gradientStr = "conic-gradient(";
+  
+  prizes.forEach((prize, i) => {
+    const color = colors[i % colors.length];
+    const start = i * segAngle;
+    const end = (i + 1) * segAngle;
+    gradientStr += `${color} ${start}deg ${end}deg, `;
+    
+    // Add text
+    const text = document.createElement("div");
+    text.className = "wheel-text";
+    text.innerText = prize;
+    // Rotate to center of segment, then translate out
+    const rotation = start + segAngle / 2;
+    text.style.transform = `rotate(${rotation}deg) translate(0, -110px) rotate(-${rotation}deg)`;
+    // Note: The second rotate cancels text rotation if you want upright text, 
+    // but for a wheel usually text radiates. Let's keep it radiating:
+    text.style.transform = `rotate(${rotation}deg) translate(0, -110px)`;
+    wheel.appendChild(text);
+  });
+  
+  gradientStr = gradientStr.slice(0, -2) + ")";
+  wheel.style.background = gradientStr;
+}
+
+function spinTheWheel() {
+  const uid = firebase.auth().currentUser.uid;
+  const userRef = firebase.database().ref("users/" + uid);
+  const configRef = firebase.database().ref("config/wheel");
+  
+  Promise.all([
+    userRef.child("lastSpin").once("value"),
+    userRef.child("points").once("value"),
+    configRef.once("value")
+  ]).then(([spinSnap, pointsSnap, configSnap]) => {
+    const lastSpin = spinSnap.val() || 0;
+    const currentPoints = pointsSnap.val() || 0;
+    const config = configSnap.val() || {};
+    
+    const now = Date.now();
+    const cooldownHours = config.cooldown || 24;
+    const cooldown = cooldownHours * 60 * 60 * 1000;
+
+    if (now - lastSpin < cooldown) {
+      const remaining = Math.ceil((cooldown - (now - lastSpin)) / (1000 * 60 * 60));
+      document.getElementById("spinResult").innerText = `Please wait ${remaining} hour(s).`;
+      return;
+    }
+
+    // Spin Logic
+    document.getElementById("spinBtn").disabled = true;
+    const prizes = config.prizes || [10, 50, 100, 200, 500];
+    const prizeIndex = Math.floor(Math.random() * prizes.length);
+    const prize = prizes[prizeIndex];
+    
+    // Calculate rotation to land on prizeIndex
+    // Pointer is at 0deg (top). Segment i is at [i*segAngle, (i+1)*segAngle].
+    // We need to rotate the wheel such that segment i is at top.
+    // Rotation = - (center of segment i)
+    const segAngle = 360 / prizes.length;
+    const segmentCenter = (prizeIndex * segAngle) + (segAngle / 2);
+    
+    // Add extra spins (e.g. 5)
+    // We want final rotation % 360 to place the segment at top.
+    // Actually, since we rotate the container, if we rotate by -segmentCenter, it moves to 0.
+    // To spin clockwise (positive), we target (360 - segmentCenter).
+    // Add randomness within the segment (+/- 40% of width) to look natural
+    const randomOffset = (Math.random() - 0.5) * (segAngle * 0.8);
+    const targetRotation = (360 - segmentCenter) + randomOffset;
+    const totalDeg = (5 * 360) + targetRotation;
+    
+    document.getElementById("theWheel").style.transform = `rotate(${totalDeg}deg)`;
+
+    setTimeout(() => {
+      // Update DB
+      const newPoints = currentPoints + prize;
+      userRef.update({
+        points: newPoints,
+        lastSpin: now
+      });
+      document.getElementById("spinResult").innerText = `You won ${prize} points!`;
+      document.getElementById("user_points").innerText = newPoints + " 💎";
+    }, 4000); // Match CSS transition time
+  });
+}
+
+function openShop() {
+  document.getElementById("shopModal").style.display = "flex";
+  document.getElementById("shopGrid").innerHTML = "Loading shop...";
+  
+  // Fetch dynamic shop config
+  firebase.database().ref("config/shopItems").once("value").then(snap => {
+    if (snap.exists()) shopItemsData = snap.val();
+    // If not exists, we use the default variable defined at top
+    renderShop();
+  });
+}
+
+function renderShop() {
+  const uid = firebase.auth().currentUser.uid;
+  const userRef = firebase.database().ref("users/" + uid);
+  
+  Promise.all([
+    userRef.child("points").once("value"),
+    userRef.child("inventory").once("value"),
+    userRef.child("equipped").once("value")
+  ]).then(([pSnap, iSnap, eSnap]) => {
+    const points = pSnap.val() || 0;
+    const inventory = iSnap.val() || { "default": true };
+    const equipped = eSnap.val() || "default";
+
+    document.getElementById("shop_balance").innerText = points;
+    const grid = document.getElementById("shopGrid");
+    grid.innerHTML = "";
+
+    for (const [id, item] of Object.entries(shopItemsData)) {
+      const isOwned = inventory[id];
+      const isEquipped = equipped === id;
+      
+      const div = document.createElement("div");
+      div.className = `shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}`;
+      
+      let btnHtml = "";
+      if (isEquipped) {
+        btnHtml = `<button class="btn btn-sm btn-secondary" disabled>Equipped</button>`;
+      } else if (isOwned) {
+        btnHtml = `<button class="btn btn-sm btn-success" onclick="equipItem('${id}')">Equip</button>`;
+      } else {
+        btnHtml = `<button class="btn btn-sm btn-primary" onclick="buyItem('${id}', ${item.cost})">Buy (${item.cost})</button>`;
+      }
+
+      // Apply custom style if present, otherwise rely on class
+      const styleAttr = item.style ? `style="background: ${item.style}"` : "";
+      const classAttr = item.class || "";
+
+      div.innerHTML = `
+        <div class="shop-preview ${classAttr}" ${styleAttr}></div>
+        <strong>${item.name}</strong>
+        ${btnHtml}
+      `;
+      grid.appendChild(div);
+    }
+  });
+}
+
+function buyItem(id, cost) {
+  const uid = firebase.auth().currentUser.uid;
+  const userRef = firebase.database().ref("users/" + uid);
+  userRef.child("points").once("value").then(snap => {
+    const points = snap.val() || 0;
+    if (points >= cost) {
+      userRef.child("points").set(points - cost);
+      userRef.child("inventory/" + id).set(true);
+      renderShop(); // Refresh UI
+    } else {
+      alert("Not enough points!");
+    }
+  });
+}
+
+function openLeaderboard() {
+  document.getElementById("leaderboardModal").style.display = "flex";
+  const list = document.getElementById("leaderboardList");
+  list.innerHTML = "Loading...";
+  
+  firebase.database().ref("users").orderByChild("points").limitToLast(10).once("value").then(snap => {
+    const users = [];
+    snap.forEach(child => {
+      users.push(child.val());
+    });
+    // Firebase returns ascending, so reverse it
+    users.reverse();
+    
+    list.innerHTML = "";
+    users.forEach((u, index) => {
+      const div = document.createElement("div");
+      div.className = "leaderboard-item";
+      const name = u.displayName || u.permanentUsername || "Unknown";
+      div.innerHTML = `<div><span class="leaderboard-rank">#${index+1}</span> ${name}</div> <div>${u.points || 0} 💎</div>`;
+      list.appendChild(div);
+    });
+  });
+}
+
+function equipItem(id) {
+  const uid = firebase.auth().currentUser.uid;
+  firebase.database().ref("users/" + uid + "/equipped").set(id).then(() => renderShop());
+}
+function toggleAddRooms() {
+  const form = document.getElementById("add-room");
+  form.classList.toggle("hidden");
+  document.getElementById("search_section").classList.add("hidden");
+  document.getElementById("update_log_section").classList.add("hidden");
+}
+
+function toggleInbox() {
+  const list = document.getElementById("inbox_list");
+  const roomList = document.getElementById("room_list");
+  const addRoom = document.getElementById("add-room");
+  const search = document.getElementById("search_section");
+  const updateLog = document.getElementById("update_log_section");
+  const btn = document.querySelector('button[onclick="toggleRooms()"]');
+
+  if (list.classList.contains("hidden")) {
+    list.classList.remove("hidden");
+    roomList.classList.add("hidden");
+    addRoom.classList.add("hidden");
+    search.classList.add("hidden");
+    updateLog.classList.add("hidden");
+    if (btn) btn.innerText = "Open Rooms";
+    loadInbox();
+  } else {
+    list.classList.add("hidden");
+  }
+}
+
+function toggleSearch() {
+  const search = document.getElementById("search_section");
+  const list = document.getElementById("room_list");
+  const inbox = document.getElementById("inbox_list");
+  const addRoom = document.getElementById("add-room");
+  const updateLog = document.getElementById("update_log_section");
+  const btn = document.querySelector('button[onclick="toggleRooms()"]');
+
+  if (search.classList.contains("hidden")) {
+    search.classList.remove("hidden");
+    list.classList.add("hidden");
+    inbox.classList.add("hidden");
+    addRoom.classList.add("hidden");
+    updateLog.classList.add("hidden");
+    if (btn) btn.innerText = "Open Rooms";
+  } else {
+    search.classList.add("hidden");
+  }
+}
+
+function parseMarkdown(markdown) {
+  if (!markdown) return '';
+  return markdown
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") // Escape HTML
+    .replace(/^# (.*$)/gim, '<h3 style="margin-top:10px; margin-bottom:5px; color:white;">$1</h3>') // H1 -> H3
+    .replace(/^## (.*$)/gim, '<h4 style="margin-top:10px; margin-bottom:5px; color:white;">$1</h4>') // H2 -> H4
+    .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>') // Bold
+    .replace(/\*(.*)\*/gim, '<i>$1</i>') // Italic
+    .replace(/~~(.*)~~/gim, '<del>$1</del>') // Strikethrough
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>') // Links
+    .replace(/^\- (.*$)/gim, '<div style="margin-left:15px;">• $1</div>') // Lists
+    .replace(/\n/gim, '<br>'); // Newlines
+}
+
+function toggleUpdateLog() {
+  const updateLog = document.getElementById("update_log_section");
+  const list = document.getElementById("room_list");
+  const inbox = document.getElementById("inbox_list");
+  const search = document.getElementById("search_section");
+  const addRoom = document.getElementById("add-room");
+  const btn = document.querySelector('button[onclick="toggleRooms()"]');
+
+  if (updateLog.classList.contains("hidden")) {
+    updateLog.classList.remove("hidden");
+    list.classList.add("hidden");
+    inbox.classList.add("hidden");
+    search.classList.add("hidden");
+    addRoom.classList.add("hidden");
+    if (btn) btn.innerText = "Open Rooms";
+    
+    firebase.database().ref("config/updates").limitToLast(20).once("value").then(snap => {
+      if(!snap.exists()) {
+          document.getElementById("update_log_content").innerHTML = "No updates yet.";
+          return;
+      }
+      
+      let html = "";
+      const updates = [];
+      snap.forEach(child => updates.unshift(child.val())); // Reverse order (newest first)
+      
+      updates.forEach(u => {
+          html += `<div style="margin-bottom: 20px; border-bottom: 1px solid #555; padding-bottom: 10px;">
+            <h4 style="margin-top:0; color:var(--accent);">${u.heading}</h4>
+            <div>${parseMarkdown(u.description)}</div>
+          </div>`;
+      });
+      
+      document.getElementById("update_log_content").innerHTML = html;
+    });
+  } else {
+    updateLog.classList.add("hidden");
+  }
+}
+
+function searchUsers() {
+  const query = document.getElementById("user_search_input").value.trim();
+  if (!query) return;
+  
+  const resultsDiv = document.getElementById("user_search_results");
+  resultsDiv.innerHTML = "<p>Searching...</p>";
+  
+  firebase.database().ref("users")
+    .orderByChild("permanentUsername")
+    .startAt(query)
+    .endAt(query + "\uf8ff")
+    .limitToFirst(10)
+    .once("value")
+    .then(snapshot => {
+      resultsDiv.innerHTML = "";
+      if (!snapshot.exists()) {
+        resultsDiv.innerHTML = "<p>No users found.</p>";
+        return;
+      }
+      
+      const myUid = firebase.auth().currentUser.uid;
+      let count = 0;
+      
+      snapshot.forEach(child => {
+        if (count >= 10) return true; // Stop after 10 matches
+
+        const uid = child.key;
+        const data = child.val();
+        
+        if (uid === myUid) return;
+          const div = document.createElement("div");
+          div.className = "user-result-item";
+          div.innerHTML = `
+            <div>
+              <div style="font-weight:bold">${data.displayName || "User"}</div>
+              <div style="font-size:0.85rem;color:#ccc">@${data.permanentUsername || "unknown"}</div>
+            </div>
+            <button onclick="sendPMRequest('${uid}', '${data.displayName || data.permanentUsername}')">Message</button>
+          `;
+          resultsDiv.appendChild(div);
+          count++;
+      });
+      
+      if (count === 0) {
+         resultsDiv.innerHTML = "<p>No other users found.</p>";
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      resultsDiv.innerHTML = "<p style='color:red'>Error searching users.</p>";
+    });
+}
+
+function sendPMRequest(targetUID, targetName) {
+  const currentUser = firebase.auth().currentUser;
+  if (!currentUser) return;
+  
+  const myUID = currentUser.uid;
+  const myName = currentUserData.displayName || currentUserData.permanentUsername || "User";
+
+  if (!confirm(`Send private message request to ${targetName}?`)) return;
+
+  firebase.database().ref(`pm_requests/${targetUID}/${myUID}`).set({
+      fromUID: myUID,
+      fromName: myName,
+      timestamp: firebase.database.ServerValue.TIMESTAMP
+  }).then(() => {
+      alert("Request sent!");
+  }).catch(e => {
+      alert("Error: " + e.message);
+  });
+}
+
+const originalFavicon = "TWL O.png";
+const notificationFavicon = "TWL O NOTIFICATION.ico";
+
+function listenInboxCount(uid) {
+  firebase.database().ref('pm_requests/' + uid).on('value', snap => {
+    const count = snap.numChildren();
+    const badge = document.getElementById('inbox_badge');
+    const favicon = document.getElementById('favicon');
+    if (count > 0) {
+      badge.innerText = count;
+      badge.classList.remove('hidden');
+      if (favicon) favicon.href = notificationFavicon;
+      document.title = `(${count}) Team Waffles Dashboard`;
+    } else {
+      badge.classList.add('hidden');
+      if (favicon) favicon.href = originalFavicon;
+      document.title = "Team Waffles Dashboard";
+    }
+  });
+}
+
+function loadInbox() {
+  const uid = firebase.auth().currentUser.uid;
+  
+  // Requests
+  firebase.database().ref('pm_requests/' + uid).on('value', snap => {
+    const div = document.getElementById('pm_requests_list');
+    div.innerHTML = '';
+    if (!snap.exists()) {
+      div.innerHTML = '<p class="text-muted">No pending requests.</p>';
+      return;
+    }
+    snap.forEach(child => {
+      const req = child.val();
+      const el = document.createElement('div');
+      el.className = 'request-item';
+      el.innerHTML = `
+        <span><strong>${req.fromName}</strong> wants to message you.</span>
+        <div class="request-actions">
+          <button class="btn btn-success btn-sm" onclick="acceptRequest('${child.key}', '${req.fromName}')">Accept</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectRequest('${child.key}')">Decline</button>
+        </div>
+      `;
+      div.appendChild(el);
+    });
+  });
+
+  // Chats
+  firebase.database().ref('users/' + uid + '/private_chats').on('value', snap => {
+    const div = document.getElementById('pm_chats_list');
+    div.innerHTML = '';
+    if (!snap.exists()) {
+      div.innerHTML = '<p class="text-muted">No active chats.</p>';
+      return;
+    }
+    snap.forEach(child => {
+      const chat = child.val();
+      const otherUID = child.key;
+      const el = document.createElement('div');
+      el.className = 'chat-item';
+      el.innerHTML = `
+        <span>Chat with <strong>${chat.name}</strong></span>
+        <div>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openPrivateChat('${chat.roomId}')">Open</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deletePrivateChat('${otherUID}', '${chat.roomId}')" style="margin-left:5px;">Delete</button>
+        </div>
+      `;
+      el.onclick = () => openPrivateChat(chat.roomId);
+      div.appendChild(el);
+    });
+  });
+}
+
+function deletePrivateChat(otherUID, roomId) {
+  if (!confirm("Delete this chat? If both users delete it, the history will be removed.")) return;
+  const uid = firebase.auth().currentUser.uid;
+  firebase.database().ref('users/' + uid + '/private_chats/' + otherUID).remove()
+    .then(() => {
+      return firebase.database().ref('users/' + otherUID + '/private_chats/' + uid).once('value');
+    })
+    .then(snap => {
+      if (!snap.exists()) {
+        firebase.database().ref('rooms/' + roomId).remove();
+        firebase.database().ref('room-messages/' + roomId).remove();
+        firebase.database().ref('room-typing/' + roomId).remove();
+        firebase.database().ref('room-read-receipts/' + roomId).remove();
+      }
+    })
+    .catch(e => alert(e.message));
+}
+
+function acceptRequest(senderUID, senderName) {
+  const uid = firebase.auth().currentUser.uid;
+  const myName = currentUserData.displayName || currentUserData.permanentUsername || "User";
+  
+  // Sort UIDs to create consistent Room ID
+  const uids = [uid, senderUID].sort();
+  const roomId = 'dm_' + uids.join('_');
+  
+  const updates = {};
+  // Create Room Metadata
+  updates['rooms/' + roomId] = {
+    type: 'dm',
+    members: { [uid]: true, [senderUID]: true },
+    createdAt: firebase.database.ServerValue.TIMESTAMP
+  };
+  
+  // Add to my chats
+  updates['users/' + uid + '/private_chats/' + senderUID] = {
+    roomId: roomId,
+    name: senderName
+  };
+  
+  // Add to sender chats
+  updates['users/' + senderUID + '/private_chats/' + uid] = {
+    roomId: roomId,
+    name: myName
+  };
+  
+  // Remove request
+  updates['pm_requests/' + uid + '/' + senderUID] = null;
+  
+  firebase.database().ref().update(updates).then(() => {
+    alert("Request accepted!");
+  }).catch(e => alert(e.message));
+}
+
+function rejectRequest(senderUID) {
+  const uid = firebase.auth().currentUser.uid;
+  firebase.database().ref('pm_requests/' + uid + '/' + senderUID).remove();
+}
+
+function openPrivateChat(roomId) {
+  localStorage.setItem("room_name", roomId);
+  localStorage.removeItem("room_password");
+  window.location.href = "ch.html";
+}
+
+
+    function joinRoom(roomName) {
+      roomsRef.child(roomName).once("value").then(function(snapshot) {
+        let roomData = snapshot.val();
+        let passwordInputField = document.getElementById(`password_${roomName}`);
+        let errorBanner = document.getElementById(`error_${roomName}`);
+
+        if (roomData.type === "private") {
+          let password = passwordInputField.value;
+          if (password === roomData.password) {
+            localStorage.setItem("room_name", roomName);
+            localStorage.setItem("room_password", password);
+            window.location.href = "ch.html";
+          } else {
+            if (!errorBanner) {
+              let errorElement = document.createElement('div');
+              errorElement.id = `error_${roomName}`;
+              errorElement.classList.add('password-error');
+              errorElement.textContent = 'Incorrect password!';
+              passwordInputField.parentElement.appendChild(errorElement);
+            }
+            localStorage.removeItem("room_name");
+            localStorage.removeItem("room_password");
+          }
+        } else {
+          localStorage.setItem("room_name", roomName);
+          localStorage.removeItem("room_password");
+          window.location.href = "ch.html";
+        }
+      });
+    }
+
+    function settings() {
+      window.location.href = "settings.html"
+    }
+
+    function logout() {
+      isLoggingOut = true;
+      firebase.auth().signOut().then(() => {
+        localStorage.clear();
+        window.location.href = "index.html";
+      }).catch((error) => {
+        console.error("Logout error:", error);
+        localStorage.clear();
+        window.location.href = "index.html";
+      });
+    }
+
+
+
+
+
+
+    function showLoadingVideo() {
+  const container = document.getElementById("room_list");
+  const loading = document.createElement("video");
+  loading.id = "loading_video";
+  loading.src = "Loading.mp4";
+  loading.autoplay = true;
+  loading.muted = true;
+  loading.loop = true;
+  loading.style.width = "60px";
+  loading.style.display = "block";
+  loading.style.margin = "20px auto";
+  container.innerHTML = ""; // Clear any previous content
+  container.appendChild(loading);
+}
+
+function removeLoadingVideo() {
+  const loading = document.getElementById("loading_video");
+  if (loading) {
+    loading.remove();
+  }
+}
+
+
+
+
+
+
+  </script>
+</body>
+</html>

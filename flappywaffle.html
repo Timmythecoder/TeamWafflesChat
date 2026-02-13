@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Waffle</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700&display=swap");
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #202225;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: "Be Vietnam Pro", sans-serif;
+    overflow: hidden;
+  }
+  #game-container {
+    position: relative;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  }
+  canvas {
+    background: linear-gradient(#87CEEB, #E0F7FA);
+    display: block;
+    border-radius: 8px;
+  }
+  #ui-layer {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #score-display {
+    position: absolute;
+    top: 20px;
+    font-size: 40px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 0 #000;
+    z-index: 10;
+  }
+  #start-screen, #game-over-screen {
+    background: rgba(0,0,0,0.7);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    color: white;
+    pointer-events: auto;
+  }
+  button {
+    background: #faa61a;
+    border: none;
+    padding: 12px 24px;
+    font-size: 18px;
+    color: #000;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: transform 0.1s;
+  }
+  /* Shop Modal */
+  #shop-modal {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    z-index: 20;
+  }
+  .shop-content {
+    background: #2f3136;
+    padding: 20px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 360px;
+    text-align: center;
+    color: white;
+    position: relative;
+  }
+  .close-shop {
+    position: absolute;
+    top: 10px; right: 15px;
+    font-size: 24px;
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+  }
+  #coin-balance {
+    font-size: 20px;
+    color: #ffd700;
+    margin-bottom: 15px;
+  }
+  #skin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .skin-card {
+    background: #36393f;
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid #202225;
+  }
+  .skin-card .skin-emoji { font-size: 40px; }
+  .skin-card button { width: 100%; font-size: 14px; padding: 6px; }
+  .skin-card button.equipped { background: #43b581; cursor: default; }
+  .skin-card button.equip { background: #7289da; }
+
+
+  button:hover { transform: scale(1.05); }
+  h1 { margin: 0 0 10px 0; color: #faa61a; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="score-display">0</div>
+  
+  <div id="ui-layer">
+    <div id="start-screen">
+      <h1>Flappy Waffle</h1>
+      <p>Click or Spacebar to Jump</p>
+      <button onclick="startGame()">Start Game</button>
+      <button onclick="openShop()">Shop</button>
+    </div>
+    <div id="game-over-screen" style="display:none;">
+      <h1>Game Over</h1>
+      <p>Score: <span id="final-score">0</span></p>
+      <p>Best: <span id="best-score">0</span></p>
+      <button onclick="resetGame()">Try Again</button>
+      <button onclick="openShop()">Shop</button>
+    </div>
+
+    <div id="shop-modal">
+      <div class="shop-content">
+        <button class="close-shop" onclick="closeShop()">×</button>
+        <h1>Skin Shop</h1>
+        <p id="coin-balance">Coins: 0</p>
+        <div id="skin-grid">
+          <!-- Skins will be rendered here by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Game State
+  let frames = 0;
+  let score = 0;
+  let gameRunning = false;
+  let highScore = 0;
+  let waffleCoins = 0;
+
+  const skins = [
+      { id: 'waffle', emoji: '🧇', cost: 0 },
+      { id: 'cookie', emoji: '🍪', cost: 50 },
+      { id: 'pancake', emoji: '🥞', cost: 100 },
+      { id: 'pizza', emoji: '🍕', cost: 250 },
+      { id: 'avocado', emoji: '🥑', cost: 500 },
+      { id: 'rocket', emoji: '🚀', cost: 1000 },
+  ];
+  let unlockedSkins = ['waffle'];
+  let equippedSkin = 'waffle';
+
+
+  // Waffle
+  const waffle = {
+    x: 50, y: 150, w: 30, h: 30,
+    velocity: 0, gravity: 0.25, jump: 4.6,
+    draw: function() {
+      ctx.save();
+      ctx.translate(this.x + this.w/2, this.y + this.h/2);
+      ctx.rotate(this.velocity * 0.1);
+      ctx.font = "30px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const currentSkin = skins.find(s => s.id === equippedSkin) || skins[0];
+      ctx.fillText(currentSkin.emoji, 0, 0);
+      ctx.restore();
+    },
+    update: function() {
+      this.velocity += this.gravity;
+      this.y += this.velocity;
+      // Floor collision
+      if (this.y + this.h >= canvas.height) gameOver();
+      // Ceiling collision
+      if (this.y < 0) this.y = 0;
+    }
+  };
+
+  // Pipes
+  const pipes = {
+    items: [],
+    w: 50, gap: 140, dx: 2,
+    draw: function() {
+      ctx.fillStyle = "#8B4513"; // Syrup bottle color
+      for (let p of this.items) {
+        ctx.fillRect(p.x, 0, this.w, p.top);
+        ctx.fillRect(p.x, canvas.height - p.bottom, this.w, p.bottom);
+      }
+    },
+    update: function() {
+      if (frames % 120 === 0) {
+        let topHeight = Math.random() * (canvas.height - this.gap - 100) + 50;
+        this.items.push({ x: canvas.width, top: topHeight, bottom: canvas.height - this.gap - topHeight });
+      }
+      for (let i = 0; i < this.items.length; i++) {
+        let p = this.items[i];
+        p.x -= this.dx;
+        
+        // Collision
+        if (waffle.x + waffle.w > p.x && waffle.x < p.x + this.w &&
+           (waffle.y < p.top || waffle.y + waffle.h > canvas.height - p.bottom)) {
+          gameOver();
+        }
+        
+        // Score
+        if (p.x + this.w < waffle.x && !p.passed) {
+          score++;
+          p.passed = true;
+          document.getElementById('score-display').innerText = score;
+        }
+
+        if (p.x + this.w < 0) {
+          this.items.shift();
+          i--;
+        }
+      }
+    }
+  };
+
+  function loop() {
+    if (!gameRunning) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pipes.update();
+    pipes.draw();
+    waffle.update();
+    waffle.draw();
+    frames++;
+    requestAnimationFrame(loop);
+  }
+
+  function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    gameRunning = true;
+    loop();
+  }
+
+  function resetGame() {
+    waffle.y = 150;
+    waffle.velocity = 0;
+    pipes.items = [];
+    score = 0;
+    frames = 0;
+    document.getElementById('score-display').innerText = 0;
+    document.getElementById('game-over-screen').style.display = 'none';
+    gameRunning = true;
+    loop();
+  }
+
+  function gameOver() {
+    gameRunning = false;
+    waffleCoins += score;
+    if (score > highScore) {
+      highScore = score;
+    }
+    saveGame();
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('best-score').innerText = highScore;
+    document.getElementById('game-over-screen').style.display = 'block';
+  }
+
+  // Shop Logic
+  function openShop() {
+      document.getElementById('shop-modal').style.display = 'flex';
+      renderShop();
+  }
+
+  function closeShop() {
+      document.getElementById('shop-modal').style.display = 'none';
+  }
+
+  function renderShop() {
+      const grid = document.getElementById('skin-grid');
+      grid.innerHTML = '';
+      document.getElementById('coin-balance').innerText = `Coins: ${waffleCoins}`;
+
+      skins.forEach(skin => {
+          const card = document.createElement('div');
+          card.className = 'skin-card';
+          
+          let buttonHtml = '';
+          if (equippedSkin === skin.id) {
+              buttonHtml = `<button class="equipped" disabled>Equipped</button>`;
+          } else if (unlockedSkins.includes(skin.id)) {
+              buttonHtml = `<button class="equip" onclick="equipSkin('${skin.id}')">Equip</button>`;
+          } else {
+              buttonHtml = `<button onclick="buySkin('${skin.id}', ${skin.cost})">Buy (${skin.cost})</button>`;
+          }
+
+          card.innerHTML = `
+              <div class="skin-emoji">${skin.emoji}</div>
+              ${buttonHtml}
+          `;
+          grid.appendChild(card);
+      });
+  }
+
+  function buySkin(skinId, cost) {
+      if (waffleCoins >= cost) {
+          waffleCoins -= cost;
+          unlockedSkins.push(skinId);
+          equipSkin(skinId); // Auto-equip on buy
+      } else {
+          alert("Not enough coins!");
+      }
+  }
+
+  function equipSkin(skinId) {
+      equippedSkin = skinId;
+      saveGame();
+      renderShop();
+  }
+
+  // Save/Load
+  function saveGame() {
+      localStorage.setItem('flappyWaffleSave', JSON.stringify({ highScore, waffleCoins, unlockedSkins, equippedSkin }));
+  }
+
+  function loadGame() {
+      const saveData = JSON.parse(localStorage.getItem('flappyWaffleSave'));
+      if (saveData) {
+          highScore = saveData.highScore || 0;
+          waffleCoins = saveData.waffleCoins || 0;
+          unlockedSkins = saveData.unlockedSkins || ['waffle'];
+          equippedSkin = saveData.equippedSkin || 'waffle';
+      }
+      document.getElementById('best-score').innerText = highScore;
+  }
+
+  // Controls
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') {
+      if (gameRunning) waffle.velocity = -waffle.jump;
+      else if (document.getElementById('start-screen').style.display !== 'none') startGame();
+      else if (document.getElementById('game-over-screen').style.display !== 'none') resetGame();
+    }
+  });
+  canvas.addEventListener('mousedown', () => {
+    if (gameRunning) waffle.velocity = -waffle.jump;
+  });
+
+  // Initial Load
+  loadGame();
+</script>
+</body>
+</html>
