@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minigames - Snow Rider 3D</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #202225;
+      color: white;
+      font-family: sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 10px 20px;
+      background-color: #2f3136;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .back-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back-btn:hover {
+      background-color: #c82333;
+      text-decoration: none;
+      color: white;
+    }
+    /* Gallery Styles */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .game-card {
+      background: #2f3136;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 1px solid #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+    }
+    .game-card:hover {
+      transform: scale(1.05);
+      border-color: #7289da;
+    }
+    .game-thumb {
+      font-size: 50px;
+      margin-bottom: 10px;
+    }
+    .game-title {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    /* Game View Styles */
+    #game-view {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    .game-frame-wrapper {
+      flex-grow: 1;
+      position: relative;
+      background-color: #000;
+    }
+    .game-footer {
+      height: 60px;
+      background-color: #202225;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      border-top: 1px solid #444;
+    }
+    .game-footer button {
+      margin: 0;
+      width: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header" id="mainHeader">
+  <h2>Minigames Gallery</h2>
+  <a href="dashboard.html" class="back-btn">Back to Dashboard</a>
+</div>
+
+<!-- Gallery Grid -->
+<div class="gallery-grid" id="galleryGrid">
+  <!-- Game 1: Snow Rider 3D -->
+  <div class="game-card" onclick="playGame('snowrider.html')">
+    <div class="game-thumb">🏂</div>
+    <div class="game-title">Snow Rider 3D</div>
+  </div>
+  
+  <!-- Placeholder for more games -->
+  <div class="game-card" onclick="playGame('chess.html')">
+    <div class="game-thumb">♟️</div>
+    <div class="game-title">Chess</div>
+  </div>
+
+  <!-- Placeholder for more games -->
+  <div class="game-card" onclick="alert('More games coming soon!')">
+    <div class="game-thumb">🎮</div>
+    <div class="game-title">More Coming Soon</div>
+  </div>
+</div>
+
+<!-- Game View Container -->
+<div id="game-view">
+  <div class="game-frame-wrapper" id="gameContainer">
+    <iframe id="gameIframe" allowtransparency="yes" allow="autoplay" frameborder="0"
+      width="100%" height="100%"
+      style="position:absolute; top:0; left:0; right:0; bottom:0;"
+      marginheight="0" marginwidth="0" scrolling="no"></iframe>
+  </div>
+  
+  <div class="game-footer">
+    <button class="back-btn" onclick="closeGame()">Back to Gallery of Games</button>
+    <button class="back-btn" style="background-color:#007bff;" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+    <button class="back-btn" style="background-color:#6c757d;" id="fullscreenBtn">⛶ Fullscreen</button>
+  </div>
+</div>
+
+<script>
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const gameContainer = document.getElementById('gameContainer');
+  const galleryGrid = document.getElementById('galleryGrid');
+  const gameView = document.getElementById('game-view');
+  const gameIframe = document.getElementById('gameIframe');
+  const mainHeader = document.getElementById('mainHeader');
+
+  function playGame(url) {
+    galleryGrid.style.display = 'none';
+    mainHeader.style.display = 'none';
+    gameView.style.display = 'flex';
+    gameIframe.src = url;
+  }
+
+  function closeGame() {
+    gameIframe.src = ''; // Stop the game
+    gameView.style.display = 'none';
+    galleryGrid.style.display = 'grid';
+    mainHeader.style.display = 'flex';
+    
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+  }
+
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      gameContainer.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+</script>
+
+</body>
+</html>
