@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waffle Clicker Ultimate</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap");
+
+  :root {
+    --bg-dark: #202225;
+    --bg-panel: #2f3136;
+    --accent: #faa61a;
+    --accent-hover: #e69510;
+    --text-main: #ffffff;
+    --text-dim: #b9bbbe;
+  }
+
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: "Be Vietnam Pro", sans-serif;
+    display: flex;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    user-select: none;
+  }
+  .left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 4px solid #1a1b1e;
+    background: radial-gradient(circle, #36393f 0%, #202225 100%);
+    position: relative;
+    z-index: 1;
+  }
+  .right-panel {
+    flex: 1;
+    background-color: var(--bg-panel);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: #202225;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 15px;
+    background: #202225;
+    border: none;
+    color: #888;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: 0.2s;
+  }
+  .tab-btn:hover { background: #292b2f; color: #ddd; }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: var(--bg-panel);
+  }
+
+  .store-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+  }
+
+  #waffle-btn {
+    width: 250px;
+    height: 250px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23e6a15c" stroke="%23d48840" stroke-width="4"/><path d="M25 25 h50 v50 h-50 z" fill="none" stroke="%23c27835" stroke-width="2"/><path d="M25 37.5 h50 M25 50 h50 M25 62.5 h50 M37.5 25 v50 M50 25 v50 M62.5 25 v50" stroke="%23c27835" stroke-width="2"/></svg>');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    font-size: 0; /* Hide emoji if we use image, or keep emoji */
+    cursor: pointer;
+    transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
+    z-index: 10;
+    border-radius: 50%;
+  }
+  /* Use emoji as fallback or main if SVG is too complex to inline nicely without file */
+  #waffle-btn::after {
+    content: "🧇";
+    font-size: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+  #waffle-btn { background: none; } /* Reset SVG background to use emoji */
+
+  #waffle-btn:active {
+    transform: scale(0.95);
+  }
+  #waffle-btn:hover {
+    transform: scale(1.05);
+  }
+
+  .score-container {
+    text-align: center;
+    margin-bottom: 40px;
+    z-index: 10;
+  }
+  #score {
+    font-size: 3em;
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: 2px 2px 0 #000;
+  }
+  .wps {
+    font-size: 1.1em;
+    color: var(--text-dim);
+    margin-top: 5px;
+    background: rgba(0,0,0,0.3);
+    padding: 5px 15px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+
+  /* Store Items */
+  .store-item {
+    background-color: #36393f;
+    margin-bottom: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #202225;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+  .store-item:hover {
+    transform: translateX(-2px);
+    background-color: #40444b;
+    border-color: var(--accent);
+  }
+  .store-item:active {
+    transform: scale(0.98);
+  }
+  .store-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.8);
+  }
+  .store-item.disabled:hover {
+    transform: none;
+    border-color: #202225; 
+    background-color: #36393f;
+  }
+  
+  .item-icon { font-size: 32px; margin-right: 15px; width: 40px; text-align: center; }
+  .item-info { flex: 1; }
+  .item-info h4 { margin: 0; font-size: 1em; color: #fff; }
+  .item-info p { margin: 2px 0 0; color: #45ffbc; font-size: 0.8em; }
+  .item-cost {
+    font-weight: bold;
+    color: var(--accent);
+    font-size: 0.95em;
+    text-align: right;
+  }
+  .item-count {
+    font-size: 1.5em;
+    color: #555;
+    font-weight: bold;
+    margin-left: 15px;
+    min-width: 30px;
+    text-align: right;
+  }
+  .store-item:hover .item-count { color: #777; }
+
+  /* Floating text animation */
+  .floating-text {
+    position: absolute;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    pointer-events: none;
+    animation: floatUp 1s ease-out forwards;
+    text-shadow: 1px 1px 2px black;
+    z-index: 100;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-100px) scale(1.2); }
+  }
+
+  /* Golden Waffle */
+  #golden-waffle {
+    position: absolute;
+    font-size: 60px;
+    cursor: pointer;
+    display: none;
+    z-index: 50;
+    animation: spin 2s linear infinite;
+    filter: drop-shadow(0 0 10px gold);
+  }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+
+  /* Particles */
+  .bg-particle {
+    position: absolute;
+    font-size: 20px;
+    opacity: 0.1;
+    pointer-events: none;
+    animation: fall linear infinite;
+    z-index: 0;
+  }
+  @keyframes fall {
+    0% { transform: translateY(-10vh) rotate(0deg); }
+    100% { transform: translateY(110vh) rotate(360deg); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #202225; }
+  ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+  .btn-group { display: flex; gap: 10px; padding: 15px; background: #202225; }
+  .btn-action {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+  }
+  .btn-save { background: #43b581; }
+  .btn-reset { background: #f04747; }
+  .btn-prestige { 
+    background: linear-gradient(45deg, #faa61a, #f04747);
+    color: white;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 10px 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+  .btn-prestige:hover { filter: brightness(1.1); }
+
+  .stats-grid { display: flex; flex-direction: column; gap: 10px; }
+  .stat-item { display: flex; justify-content: space-between; padding: 10px; background: #36393f; border-radius: 5px; border: 1px solid #202225; }
+  .stat-item span:last-child { font-weight: bold; color: var(--accent); }
+
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+  <div id="bg-particles"></div>
+  <div class="score-container">
+    <div id="score">0 Waffles</div>
+    <div class="wps" id="wps">per second: 0</div>
+  </div>
+  <div id="waffle-btn"></div>
+  <div id="golden-waffle">🧇</div>
+</div>
+
+<div class="right-panel">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('buildings')">Buildings</button>
+    <button class="tab-btn" onclick="switchTab('upgrades')">Upgrades</button>
+    <button class="tab-btn" onclick="switchTab('heavenly')">Heavenly</button>
+    <button class="tab-btn" onclick="switchTab('stats')">Stats</button>
+    <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+  </div>
+
+  <div class="store-container" id="buildings-tab">
+    <div id="buildings-list"></div>
+  </div>
+
+  <div class="store-container" id="upgrades-tab" style="display:none;">
+    <div id="upgrades-list"></div>
+  </div>
+
+  <div class="store-container" id="heavenly-tab" style="display:none;">
+    <div style="text-align:center; padding:10px; background:#36393f; margin-bottom:10px; border-radius:5px;">
+        <h3 style="margin:0; color:var(--accent);">Heavenly Shop</h3>
+        <p style="margin:5px 0 0; font-size:0.8em; color:#aaa;">Costs <b>Prestige Multiplier</b> and <b>Golden Waffles (Run)</b>.<br>Spending Multiplier reduces your production!</p>
+        <div style="display:flex; justify-content:space-around; margin-top:10px; font-weight:bold;">
+            <span style="color:#f04747;">Mult: <span id="h-mult-display">1x</span></span>
+            <span style="color:gold;">GW (Run): <span id="h-gw-display">0</span></span>
+        </div>
+    </div>
+    <div id="heavenly-list"></div>
+  </div>
+
+  <div class="store-container" id="stats-tab" style="display:none;">
+    <h3 style="color:white; margin-top:0;">Statistics</h3>
+    <div class="stats-grid">
+      <h4 style="color:var(--accent); margin:5px 0;">Current Run</h4>
+      <div class="stat-item"><span>Waffles (Run):</span> <span id="stat-run-waffles">0</span></div>
+      <div class="stat-item"><span>Clicks (Run):</span> <span id="stat-run-clicks">0</span></div>
+      <div class="stat-item"><span>Golden Clicks (Run):</span> <span id="stat-run-golden">0</span></div>
+
+      <h4 style="color:var(--accent); margin:5px 0;">Lifetime</h4>
+      <div class="stat-item"><span>Lifetime Waffles:</span> <span id="stat-lifetime">0</span></div>
+      <div class="stat-item"><span>Total Clicks:</span> <span id="stat-clicks">0</span></div>
+      <div class="stat-item"><span>Total Golden Clicks:</span> <span id="stat-golden">0</span></div>
+      <div class="stat-item"><span>Prestige Multiplier:</span> <span id="stat-prestige">1x</span></div>
+    </div>
+  </div>
+
+  <div class="store-container" id="settings-tab" style="display:none;">
+    <h3 style="color:white; margin-top:0;">Game Management</h3>
+    <button class="btn-prestige" onclick="prestige()">Prestige (Reset for Bonus)</button>
+    <p style="color:#aaa; font-size:0.9em; text-align:center;">
+      Current Multiplier: <span id="prestige-mult-display" style="color:var(--accent)">1x</span>
+    </p>
+    <hr style="border-color:#444;">
+    <div class="btn-group">
+      <button class="btn-action btn-save" onclick="manualSave()">Save Game</button>
+      <button class="btn-action btn-reset" onclick="resetGame()">Wipe Save</button>
+    </div>
+    <div class="btn-group" style="margin-top:0; padding-top:0;">
+      <button class="btn-action" style="background:#7289da;" onclick="exportSave()">Export File</button>
+      <button class="btn-action" style="background:#7289da;" onclick="document.getElementById('import-file').click()">Import File</button>
+      <input type="file" id="import-file" style="display:none" onchange="importSave(this)">
+    </div>
+    <p style="color:#666; font-size:0.8em; text-align:center; margin-top:20px;">
+      Waffle Clicker Ultimate v2.0<br>
+      Auto-saves every 10 seconds.
+    </p>
+  </div>
+</div>
+
+<script>
+  // --- Game State ---
+  let waffles = 0;
+  let lifetimeWaffles = 0;
+  let prestigeMultiplier = 1;
+  let goldenWafflesClicked = 0;
+  let totalClicks = 0;
+  let runWaffles = 0;
+  let runClicks = 0;
+  let runGoldenClicks = 0;
+  let heavenlyChips = 0;
+
+  // --- Data ---
+  const buildings = [
+    { id: 'cursor', name: 'Cursor', baseCost: 100, baseRate: 0.1, count: 0, icon: '👆', desc: 'Autoclicks once in a while.' },
+    { id: 'grandma', name: 'Grandma', baseCost: 2000, baseRate: 1, count: 0, icon: '👵', desc: 'Bakes waffles with love.' },
+    { id: 'farm', name: 'Waffle Farm', baseCost: 50000, baseRate: 8, count: 0, icon: '🚜', desc: 'Growing waffles in the fields.' },
+    { id: 'mine', name: 'Syrup Mine', baseCost: 1000000, baseRate: 47, count: 0, icon: '⛏️', desc: 'Mining deep for syrup.' },
+    { id: 'factory', name: 'Factory', baseCost: 25000000, baseRate: 260, count: 0, icon: '🏭', desc: 'Mass production.' },
+    { id: 'bank', name: 'Waffle Bank', baseCost: 500000000, baseRate: 1400, count: 0, icon: '🏦', desc: 'Generates interest in waffles.' },
+    { id: 'temple', name: 'Temple', baseCost: 10000000000, baseRate: 7800, count: 0, icon: '🏛️', desc: 'Waffles from the heavens.' },
+    { id: 'portal', name: 'Portal', baseCost: 500000000000, baseRate: 44000, count: 0, icon: '🌀', desc: 'Interdimensional waffles.' },
+    { id: 'alchemy', name: 'Alchemy Lab', baseCost: 10000000000000, baseRate: 260000, count: 0, icon: '⚗️', desc: 'Turning gold into waffles.' },
+    { id: 'engine', name: 'Time Machine', baseCost: 500000000000000, baseRate: 1600000, count: 0, icon: '⏳', desc: 'Bring waffles from the past.' },
+    { id: 'prism', name: 'Prism', baseCost: 25000000000000000, baseRate: 10000000, count: 0, icon: '🌈', desc: 'Convert light into waffles.' },
+    { id: 'chance', name: 'Chance Maker', baseCost: 1000000000000000000, baseRate: 65000000, count: 0, icon: '🎲', desc: 'Generates waffles out of thin air.' },
+    { id: 'fractal', name: 'Fractal Engine', baseCost: 50000000000000000000, baseRate: 430000000, count: 0, icon: '💠', desc: 'Self-replicating waffles.' },
+    { id: 'javascript', name: 'Javascript Console', baseCost: 1000000000000000000000, baseRate: 2900000000, count: 0, icon: '💻', desc: 'Code waffles into existence.' },
+    { id: 'quantum', name: 'Quantum Bakery', baseCost: 50000000000000000000000, baseRate: 20000000000, count: 0, icon: '⚛️', desc: 'Bakes waffles in superpositions.' }
+  ];
+
+  const clickUpgrades = [
+    { id: 'click1', name: 'Plastic Mouse', cost: 2000, mult: 2, owned: false, icon: '🖱️', desc: 'Clicking is 2x efficient.' },
+    { id: 'click2', name: 'Iron Mouse', cost: 200000, mult: 2, owned: false, icon: '🖱️', desc: 'Clicking is 2x efficient.' },
+    { id: 'click3', name: 'Titanium Mouse', cost: 20000000, mult: 2, owned: false, icon: '🖱️', desc: 'Clicking is 2x efficient.' },
+    { id: 'click4', name: 'Diamond Mouse', cost: 2000000000, mult: 2, owned: false, icon: '💎', desc: 'Clicking is 2x efficient.' },
+    { id: 'click5', name: 'Antimatter Mouse', cost: 200000000000, mult: 3, owned: false, icon: '⚛️', desc: 'Clicking is 3x efficient.' },
+    { id: 'click6', name: 'Cosmic Mouse', cost: 100000000000000, mult: 3, owned: false, icon: '🌌', desc: 'Clicking is 3x efficient.' },
+    { id: 'click7', name: 'Divine Mouse', cost: 2000000000000000, mult: 5, owned: false, icon: '👼', desc: 'Clicking is 5x efficient.' },
+    { id: 'click8', name: 'Godly Mouse', cost: 1000000000000000000, mult: 5, owned: false, icon: '⚡', desc: 'Clicking is 5x efficient.' }
+  ];
+
+  const heavenlyUpgrades = [
+    { id: 'h_starter', name: 'Starter Kit', prestigeCost: 1, goldenCost: 1, owned: false, icon: '📦', desc: 'Start new runs with 10,000 waffles.' },
+    { id: 'h_cheaper', name: 'Seasoned Baker', prestigeCost: 50, goldenCost: 20, owned: false, icon: '🏷️', desc: 'Buildings are 10% cheaper.' },
+    { id: 'h_golden', name: 'Golden Touch', prestigeCost: 100, goldenCost: 30, owned: false, icon: '✨', desc: 'Golden Waffles appear 2x as often.' },
+    { id: 'h_synergy', name: 'Divine Synergy', prestigeCost: 250, goldenCost: 50, owned: false, icon: '🔗', desc: 'Click power gains +0.5% of WPS (5x boost).' },
+    { id: 'h_prod', name: 'Heavenly Bakeries', prestigeCost: 500, goldenCost: 100, owned: false, icon: '😇', desc: '+50% Global Production Multiplier.' },
+    { id: 'h_warp', name: 'Time Warp', prestigeCost: 1000, goldenCost: 150, owned: false, icon: '⏩', desc: 'Start runs with 5 Cursors and 5 Grandmas.' },
+    { id: 'h_wrath', name: 'Wrath of Waffles', prestigeCost: 5000, goldenCost: 300, owned: false, icon: '🌋', desc: '+100% Global Production Multiplier.' },
+    { id: 'h_autoclick', name: 'Auto-Clicker 9000', prestigeCost: 10000, goldenCost: 500, owned: false, icon: '🤖', desc: 'Automatically clicks 5 times per second.' }
+  ];
+
+  // --- Derived Stats ---
+  let wps = 0;
+  let clickPower = 1;
+
+  // --- Initialization ---
+  function loadGame() {
+    const save = JSON.parse(localStorage.getItem('waffleClickerSaveV2'));
+    if (save) {
+      waffles = save.waffles || 0;
+      lifetimeWaffles = save.lifetimeWaffles || 0;
+      prestigeMultiplier = save.prestigeMultiplier || 1;
+      goldenWafflesClicked = save.goldenWafflesClicked || 0;
+      totalClicks = save.totalClicks || 0;
+      runWaffles = save.runWaffles || 0;
+      runClicks = save.runClicks || 0;
+      runGoldenClicks = save.runGoldenClicks || 0;
+      heavenlyChips = save.heavenlyChips || 0;
+
+      if (save.buildings) {
+        save.buildings.forEach((savedB, i) => {
+          if (buildings[i]) buildings[i].count = savedB;
+        });
+      }
+      if (save.upgrades) {
+        save.upgrades.forEach((owned, i) => {
+          if (clickUpgrades[i]) clickUpgrades[i].owned = owned;
+        });
+      }
+      if (save.heavenlyUpgrades) {
+        save.heavenlyUpgrades.forEach((owned, i) => {
+          if (heavenlyUpgrades[i]) heavenlyUpgrades[i].owned = owned;
+        });
+      }
+    }
+  }
+
+  function saveGame() {
+    const save = {
+      waffles,
+      lifetimeWaffles,
+      prestigeMultiplier,
+      goldenWafflesClicked,
+      totalClicks,
+      runWaffles,
+      runClicks,
+      runGoldenClicks,
+      buildings: buildings.map(b => b.count),
+      upgrades: clickUpgrades.map(u => u.owned),
+      heavenlyChips,
+      heavenlyUpgrades: heavenlyUpgrades.map(u => u.owned)
+    };
+    localStorage.setItem('waffleClickerSaveV2', JSON.stringify(save));
+  }
+
+  function exportSave() {
+    saveGame(); // Ensure latest state is saved
+    const save = localStorage.getItem('waffleClickerSaveV2');
+    if (!save) return alert("No save data found!");
+    
+    const blob = new Blob([save], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "waffle_clicker_save_" + new Date().toISOString().slice(0,10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importSave(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const save = JSON.parse(e.target.result);
+        if (typeof save.waffles !== 'number') throw new Error("Invalid save file format");
+        localStorage.setItem('waffleClickerSaveV2', JSON.stringify(save));
+        alert("Save loaded successfully! Reloading...");
+        location.reload();
+      } catch (err) {
+        alert("Failed to load save: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function manualSave() {
+    saveGame();
+    alert("Game Saved!");
+  }
+
+  function resetGame() {
+    if (confirm("Are you sure you want to wipe your save completely?")) {
+      localStorage.removeItem('waffleClickerSaveV2');
+      location.reload();
+    }
+  }
+
+  // --- Logic ---
+  function formatNumber(num) {
+    if (num >= 1e24) return (num / 1e24).toFixed(2) + 'Sp';
+    if (num >= 1e21) return (num / 1e21).toFixed(2) + 'Sx';
+    if (num >= 1e18) return (num / 1e18).toFixed(2) + 'Qi';
+    if (num >= 1e15) return (num / 1e15).toFixed(2) + 'Qa';
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'k';
+    return Math.floor(num).toLocaleString();
+  }
+
+  function calculateRates() {
+    // Calculate WPS
+    let rawWPS = 0;
+    buildings.forEach(b => {
+      rawWPS += b.count * b.baseRate;
+    });
+    
+    if (heavenlyUpgrades[4].owned) rawWPS *= 1.5; // Heavenly Bakeries
+    if (heavenlyUpgrades[6].owned) rawWPS *= 2.0; // Wrath of Waffles
+
+    wps = rawWPS * prestigeMultiplier;
+
+    // Calculate Click Power
+    let rawClick = 1;
+    // Add 1% of WPS to click power for synergy
+    rawClick += (rawWPS * 0.01); 
+    // Add 0.1% of WPS to click power for synergy (Nerfed from 1%)
+    let synergyFactor = 0.001;
+    if (heavenlyUpgrades[3].owned) synergyFactor = 0.005; // Divine Synergy
+    rawClick += (rawWPS * synergyFactor); 
+    
+    clickUpgrades.forEach(u => {
+      if (u.owned) rawClick *= u.mult;
+    });
+    clickPower = rawClick * prestigeMultiplier;
+  }
+
+  // --- UI Updates ---
+  function updateDisplay() {
+    document.getElementById('score').innerText = formatNumber(waffles) + ' Waffles';
+    document.getElementById('wps').innerText = 'per second: ' + formatNumber(wps);
+    document.getElementById('prestige-mult-display').innerText = formatNumber(prestigeMultiplier) + 'x';
+
+    // Update Buildings
+    buildings.forEach((b, i) => {
+      const el = document.getElementById('build-' + i);
+      if (el) {
+        let cost = Math.floor(b.baseCost * Math.pow(1.6, b.count)); // Increased scaling from 1.4 to 1.6
+        if (heavenlyUpgrades[1].owned) cost = Math.floor(cost * 0.9); // Seasoned Baker
+        el.querySelector('.item-cost').innerText = formatNumber(cost);
+        el.querySelector('.item-count').innerText = b.count;
+        if (waffles >= cost) el.classList.remove('disabled');
+        else el.classList.add('disabled');
+      }
+    });
+
+    // Update Upgrades
+    clickUpgrades.forEach((u, i) => {
+      const el = document.getElementById('upg-' + i);
+      if (el) {
+        if (u.owned) {
+          el.style.display = 'none'; // Hide bought upgrades
+        } else {
+          if (waffles >= u.cost) el.classList.remove('disabled');
+          else el.classList.add('disabled');
+        }
+      }
+    });
+
+    // Update Heavenly Upgrades
+    heavenlyUpgrades.forEach((u, i) => {
+      const el = document.getElementById('h-upg-' + i);
+      if (el) {
+        if (u.owned) {
+          el.style.display = 'none';
+        } else {
+          if (prestigeMultiplier >= u.prestigeCost && runGoldenClicks >= u.goldenCost) el.classList.remove('disabled');
+          else el.classList.add('disabled');
+        }
+      }
+    });
+
+    if (document.getElementById('heavenly-tab').style.display !== 'none') {
+        document.getElementById('h-mult-display').innerText = formatNumber(prestigeMultiplier) + 'x';
+        document.getElementById('h-gw-display').innerText = formatNumber(runGoldenClicks);
+    }
+
+    if (document.getElementById('stats-tab').style.display !== 'none') {
+      document.getElementById('stat-lifetime').innerText = formatNumber(lifetimeWaffles);
+      document.getElementById('stat-clicks').innerText = formatNumber(totalClicks);
+      document.getElementById('stat-golden').innerText = formatNumber(goldenWafflesClicked);
+      document.getElementById('stat-prestige').innerText = formatNumber(prestigeMultiplier) + 'x';
+      document.getElementById('stat-run-waffles').innerText = formatNumber(runWaffles);
+      document.getElementById('stat-run-clicks').innerText = formatNumber(runClicks);
+      document.getElementById('stat-run-golden').innerText = formatNumber(runGoldenClicks);
+    }
+  }
+
+  function renderStore() {
+    const bList = document.getElementById('buildings-list');
+    bList.innerHTML = '';
+    buildings.forEach((b, i) => {
+      const div = document.createElement('div');
+      div.className = 'store-item disabled';
+      div.id = 'build-' + i;
+      div.onclick = () => buyBuilding(i);
+      div.innerHTML = `
+        <div class="item-icon">${b.icon}</div>
+        <div class="item-info">
+          <h4>${b.name}</h4>
+          <p>+${formatNumber(b.baseRate * prestigeMultiplier)} WPS</p>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end;">
+          <div class="item-cost">...</div>
+          <div class="item-count">${b.count}</div>
+        </div>
+      `;
+      bList.appendChild(div);
+    });
+
+    const uList = document.getElementById('upgrades-list');
+    uList.innerHTML = '';
+    clickUpgrades.forEach((u, i) => {
+      const div = document.createElement('div');
+      div.className = 'store-item disabled';
+      div.id = 'upg-' + i;
+      div.onclick = () => buyClickUpgrade(i);
+      div.innerHTML = `
+        <div class="item-icon">${u.icon}</div>
+        <div class="item-info">
+          <h4>${u.name}</h4>
+          <p>${u.desc}</p>
+        </div>
+        <div class="item-cost">${formatNumber(u.cost)}</div>
+      `;
+      uList.appendChild(div);
+    });
+
+    const hList = document.getElementById('heavenly-list');
+    hList.innerHTML = '';
+    heavenlyUpgrades.forEach((u, i) => {
+      const div = document.createElement('div');
+      div.className = 'store-item disabled';
+      div.id = 'h-upg-' + i;
+      div.onclick = () => buyHeavenlyUpgrade(i);
+      div.innerHTML = `
+        <div class="item-icon">${u.icon}</div>
+        <div class="item-info">
+          <h4>${u.name}</h4>
+          <p>${u.desc}</p>
+        </div>
+        <div class="item-cost">
+            <div>${formatNumber(u.prestigeCost)} Mult</div>
+            <div style="font-size:0.8em; color:gold;">${u.goldenCost} GW</div>
+        </div>
+      `;
+      hList.appendChild(div);
+    });
+  }
+
+  // --- Actions ---
+  function buyBuilding(index) {
+    const b = buildings[index];
+    let cost = Math.floor(b.baseCost * Math.pow(1.6, b.count)); // Increased scaling
+    if (heavenlyUpgrades[1].owned) cost = Math.floor(cost * 0.9); // Seasoned Baker
+    if (waffles >= cost) {
+      waffles -= cost;
+      b.count++;
+      calculateRates();
+      updateDisplay();
+    }
+  }
+
+  function buyClickUpgrade(index) {
+    const u = clickUpgrades[index];
+    if (!u.owned && waffles >= u.cost) {
+      waffles -= u.cost;
+      u.owned = true;
+      calculateRates();
+      updateDisplay();
+    }
+  }
+
+  function buyHeavenlyUpgrade(index) {
+    const u = heavenlyUpgrades[index];
+    if (!u.owned && prestigeMultiplier >= u.prestigeCost && runGoldenClicks >= u.goldenCost) {
+      prestigeMultiplier -= u.prestigeCost;
+      runGoldenClicks -= u.goldenCost;
+      u.owned = true;
+      calculateRates();
+      updateDisplay();
+      saveGame();
+      renderStore();
+    }
+  }
+
+  let lastClickTime = 0;
+  function clickWaffle(e) {
+    const now = Date.now();
+    if (now - lastClickTime < 50) return; // Anti-autoclicker: Max 20 clicks/sec
+    lastClickTime = now;
+
+    const amount = clickPower;
+    waffles += amount;
+    lifetimeWaffles += amount;
+    runWaffles += amount;
+    totalClicks++;
+    runClicks++;
+    updateDisplay();
+    spawnParticle(e.clientX, e.clientY, '+' + formatNumber(amount));
+  }
+
+  document.getElementById('waffle-btn').addEventListener('mousedown', clickWaffle);
+
+  function spawnParticle(x, y, text) {
+    const floatEl = document.createElement('div');
+    floatEl.className = 'floating-text';
+    floatEl.innerText = text;
+    floatEl.style.left = (x - 20) + 'px';
+    floatEl.style.top = (y - 40) + 'px';
+    document.body.appendChild(floatEl);
+    setTimeout(() => floatEl.remove(), 800);
+  }
+
+  // --- Game Loop ---
+  setInterval(() => {
+    if (wps > 0) {
+      const earned = wps / 10;
+      waffles += earned;
+      lifetimeWaffles += earned;
+      runWaffles += earned;
+      updateDisplay();
+    }
+    // Auto-Clicker 9000 logic (5 clicks/sec)
+    if (heavenlyUpgrades[7].owned) {
+        // We simulate 0.5 clicks per 100ms tick
+        if (Math.random() < 0.5) clickWaffle({ clientX: window.innerWidth/2, clientY: window.innerHeight/2 });
+    }
+  }, 100);
+
+  // Auto-save
+  setInterval(saveGame, 10000);
+
+  // --- Golden Waffle ---
+  const goldenEl = document.getElementById('golden-waffle');
+  function spawnGoldenWaffle() {
+    const x = Math.random() * (window.innerWidth - 100);
+    const y = Math.random() * (window.innerHeight - 100);
+    goldenEl.style.left = x + 'px';
+    goldenEl.style.top = y + 'px';
+    goldenEl.style.display = 'block';
+    
+    // Disappear after 15s
+    setTimeout(() => { goldenEl.style.display = 'none'; }, 15000);
+  }
+
+  goldenEl.onclick = (e) => {
+    goldenEl.style.display = 'none';
+    goldenWafflesClicked++;
+    // Bonus: 15 minutes of production or 15% of current bank
+    const bonus = Math.max(wps * 900, waffles * 0.15);
+    waffles += bonus;
+    lifetimeWaffles += bonus;
+    runWaffles += bonus;
+    goldenWafflesClicked++;
+    runGoldenClicks++;
+    spawnParticle(e.clientX, e.clientY, 'GOLDEN! +' + formatNumber(bonus));
+    updateDisplay();
+  };
+
+  // Spawn check every second
+  setInterval(() => {
+    let chance = 0.005;
+    if (heavenlyUpgrades[2].owned) chance = 0.01; // Golden Touch
+    if (Math.random() < chance) { 
+      spawnGoldenWaffle();
+    }
+  }, 1000);
+
+  function prestige() {
+    const bonus = Math.floor(Math.sqrt(runWaffles / 1000000000)); // 1 Billion requirement
+    if (bonus < 1) {
+      alert("You need to have earned at least 1,000,000,000 waffles THIS RUN to prestige!");
+      return;
+    }
+    if (confirm(`Prestige now?\n\nReset buildings, upgrades, and current run progress to gain +${bonus}x multiplier!\nCurrent: ${formatNumber(prestigeMultiplier)}x\nNew: ${formatNumber(prestigeMultiplier + bonus)}x`)) {
+      prestigeMultiplier += bonus; // Additive bonus
+      heavenlyChips += bonus; // Currency
+      waffles = 0;
+      if (heavenlyUpgrades[0].owned) waffles = 10000; // Starter Kit
+      runWaffles = 0;
+      runClicks = 0;
+      runGoldenClicks = 0;
+      buildings.forEach(b => b.count = 0);
+      if (heavenlyUpgrades[5].owned) { // Time Warp
+         buildings[0].count = 5;
+         buildings[1].count = 5;
+      }
+      clickUpgrades.forEach(u => u.owned = false);
+      calculateRates();
+      updateDisplay();
+      saveGame();
+      renderStore(); // Re-render to reset costs
+    }
+  }
+
+  // --- Tabs ---
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    document.getElementById('buildings-tab').style.display = 'none';
+    document.getElementById('upgrades-tab').style.display = 'none';
+    document.getElementById('stats-tab').style.display = 'none';
+    document.getElementById('settings-tab').style.display = 'none';
+    document.getElementById('heavenly-tab').style.display = 'none';
+
+    document.getElementById(tab + '-tab').style.display = 'block';
+  }
+
+  // --- Background Particles ---
+  function initBackground() {
+    const panel = document.getElementById('bg-particles');
+    for(let i=0; i<15; i++) {
+      const d = document.createElement('div');
+      d.className = 'bg-particle';
+      d.innerText = '🧇';
+      d.style.left = Math.random() * 100 + '%';
+      d.style.animationDuration = (10 + Math.random() * 20) + 's';
+      d.style.animationDelay = (Math.random() * 10) + 's';
+      panel.appendChild(d);
+    }
+  }
+
+  // Start
+  loadGame();
+  initBackground();
+  calculateRates();
+  renderStore();
+  updateDisplay();
+</script>
+</body>
+
+</html>
