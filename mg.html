@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TWC MG</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function(){
+      emailjs.init("leVlaWevudCP2DxpD"); // Replace with your EmailJS Public Key
+    })();
+  </script>
+  <script>
+    if (!localStorage.getItem("isLoggedIn")) {
+      alert("You must be logged in to access TWC MG.");
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #202225;
+      color: white;
+      font-family: sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 10px 20px;
+      background-color: #2f3136;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .back-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back-btn:hover {
+      background-color: #c82333;
+      text-decoration: none;
+      color: white;
+    }
+    /* Gallery Styles */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .game-card {
+      background: #2f3136;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 1px solid #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+    }
+    .game-card:hover {
+      transform: scale(1.05);
+      border-color: #7289da;
+    }
+    .game-thumb {
+      font-size: 50px;
+      margin-bottom: 10px;
+    }
+    .game-title {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .fav-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 10;
+      line-height: 1;
+      padding: 0;
+      transition: transform 0.2s, color 0.2s;
+    }
+    .fav-btn.active {
+      color: #ffd700;
+    }
+    .fav-btn:hover {
+      transform: scale(1.2);
+      color: #aaa;
+    }
+    .fav-btn.active:hover {
+      color: #ffed4a;
+    }
+
+    /* Game View Styles */
+    #game-view {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    .game-frame-wrapper {
+      flex-grow: 1;
+      position: relative;
+      background-color: #000;
+    }
+    .game-footer {
+      height: 60px;
+      background-color: #202225;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      border-top: 1px solid #444;
+    }
+    .game-footer button {
+      margin: 0;
+      width: auto;
+    }
+    /* Modal Styles */
+    .modal {
+      display: none; 
+      position: fixed; 
+      z-index: 2000; 
+      left: 0; top: 0; 
+      width: 100%; height: 100%; 
+      background-color: rgba(0,0,0,0.85);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background-color: #2f3136;
+      padding: 20px;
+      border: 1px solid #444;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      color: white;
+      text-align: center;
+      position: relative;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px; right: 15px;
+      color: #aaa;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close-modal:hover { color: white; }
+  </style>
+</head>
+<body>
+
+<div class="header" id="mainHeader">
+  <h2>Minigames Gallery</h2>
+  <input type="text" id="gameSearch" placeholder="Search games..." style="padding: 8px; border-radius: 5px; border: none; background: #40444b; color: white; width: 30%; min-width: 150px;">
+  <div>
+    <button onclick="openSuggestModal()" class="back-btn" style="background-color: #17a2b8; margin-right: 10px;">Suggest Game</button>
+    <a href="dashboard.html" class="back-btn">Back to Dashboard</a>
+  </div>
+</div>
+
+<!-- Gallery Grid -->
+<div class="gallery-grid" id="galleryGrid">
+  <!-- Game 1: Snow Rider 3D -->
+  <div class="game-card" onclick="playGame('snowrider.html')">
+    <div class="game-thumb">🏂</div>
+    <div class="game-title">Snow Rider 3D</div>
+  </div>
+  
+  <!-- Game 2: Waffle Clicker -->
+  <div class="game-card" onclick="playGame('waffleclicker.html')">
+    <div class="game-thumb">🧇</div>
+    <div class="game-title">Waffle Clicker</div>
+  </div>
+
+  <!-- Game 3: Flappy Waffle -->
+  <div class="game-card" onclick="playGame('flappywaffle.html')">
+    <div class="game-thumb">🐦</div>
+    <div class="game-title">Flappy Waffle</div>
+  </div>
+
+  <!-- Game 4: Waffle Tower -->
+  <div class="game-card" onclick="playGame('waffletower.html')">
+    <div class="game-thumb">🏗️</div>
+    <div class="game-title">Waffle Tower</div>
+  </div>
+
+  <!-- Game 5: Waffle Breaker -->
+  <div class="game-card" onclick="playGame('wafflebreaker.html')">
+    <div class="game-thumb">🧱</div>
+    <div class="game-title">Waffle Breaker</div>
+  </div>
+
+  <!-- Game 6: Wafflefall -->
+  <div class="game-card" onclick="playGame('wafflefall.html')">
+    <div class="game-thumb">💧</div>
+    <div class="game-title">Wafflefall</div>
+  </div>
+
+  <!-- Game 7: Waffle Jump -->
+  <div class="game-card" onclick="playGame('wafflejump.html')">
+    <div class="game-thumb">🚀</div>
+    <div class="game-title">Waffle Jump</div>
+  </div>
+
+  <!-- Game 8: 2048 Waffles -->
+  <div class="game-card" onclick="playGame('2048waffles.html')">
+    <div class="game-thumb">🔢</div>
+    <div class="game-title">2048 Waffles</div>
+  </div>
+
+  <!-- Game 9: Waffle Pong -->
+  <div class="game-card" onclick="playGame('wafflepong.html')">
+    <div class="game-thumb">🏓</div>
+    <div class="game-title">Waffle Pong</div>
+  </div>
+
+  <!-- Game 10: Waffle Memory -->
+  <div class="game-card" onclick="playGame('wafflememory.html')">
+    <div class="game-thumb">🃏</div>
+    <div class="game-title">Waffle Memory</div>
+  </div>
+
+  <!-- Game 11: Waffle Invaders -->
+  <div class="game-card" onclick="playGame('waffleinvaders.html')">
+    <div class="game-thumb">👾</div>
+    <div class="game-title">Waffle Invaders</div>
+  </div>
+
+  <!-- Game 12: Waffle Whack -->
+  <div class="game-card" onclick="playGame('wafflewhack.html')">
+    <div class="game-thumb">🔨</div>
+    <div class="game-title">Waffle Whack</div>
+  </div>
+
+  <!-- Game 13: Waffle Slots -->
+  <div class="game-card" onclick="playGame('waffleslots.html')">
+    <div class="game-thumb">🎰</div>
+    <div class="game-title">Waffle Slots</div>
+  </div>
+
+  <!-- Game 14: Slope -->
+  <div class="game-card" onclick="playGame('slope.html')">
+    <div class="game-thumb">⛷️</div>
+    <div class="game-title">Slope</div>
+  </div>
+
+  <!-- Game 15: Geometry Dash -->
+  <div class="game-card" onclick="playGame('geometrydash.html')">
+    <div class="game-thumb">🔺</div>
+    <div class="game-title">Geometry Dash</div>
+  </div>
+
+  <!-- Game 16: Paper.io 2 -->
+  <div class="game-card" onclick="playGame('paperio2.html')">
+    <div class="game-thumb">🗺️</div>
+    <div class="game-title">Paper.io 2</div>
+  </div>
+
+  <!-- Placeholder for more games -->
+  <div class="game-card" onclick="alert('More games coming soon!')">
+    <div class="game-thumb">🎮</div>
+    <div class="game-title">More Coming Soon</div>
+  </div>
+</div>
+
+<!-- Suggest Game Modal -->
+<div id="suggestModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeSuggestModal()">&times;</span>
+    <h3>Suggest a New Game</h3>
+    <form id="suggestForm">
+      <div class="form-group">
+        <label for="gameName" style="display:block; text-align:left;">Game Name</label>
+        <input type="text" id="gameName" required class="form-control" style="background:#40444b; color:white; border:none;">
+      </div>
+      <div class="form-group">
+        <label for="gameLink" style="display:block; text-align:left;">Link (optional)</label>
+        <input type="text" id="gameLink" class="form-control" style="background:#40444b; color:white; border:none;">
+      </div>
+      <div class="form-group">
+        <label for="gameDesc" style="display:block; text-align:left;">Description / Why?</label>
+        <textarea id="gameDesc" class="form-control" rows="3" style="background:#40444b; color:white; border:none; resize:vertical;"></textarea>
+      </div>
+      <button type="submit" class="btn btn-success" style="width:100%;">Send Suggestion (please don't spam so I don't get charged too much)</button>
+    </form>
+  </div>
+</div>
+
+<!-- Game View Container -->
+<div id="game-view">
+  <div class="game-frame-wrapper" id="gameContainer">
+    <iframe id="gameIframe" allowtransparency="yes" allow="autoplay" frameborder="0"
+      width="100%" height="100%"
+      style="position:absolute; top:0; left:0; right:0; bottom:0;"
+      marginheight="0" marginwidth="0" scrolling="no" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+  </div>
+  
+  <div class="game-footer">
+    <button class="back-btn" onclick="closeGame()">Back to Gallery of Games</button>
+    <button class="back-btn" style="background-color:#007bff;" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+    <button class="back-btn" style="background-color:#6c757d;" id="fullscreenBtn">⛶ Fullscreen</button>
+  </div>
+</div>
+
+<script>
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const gameContainer = document.getElementById('gameContainer');
+  const galleryGrid = document.getElementById('galleryGrid');
+  const gameView = document.getElementById('game-view');
+  const gameIframe = document.getElementById('gameIframe');
+  const mainHeader = document.getElementById('mainHeader');
+
+  document.getElementById('gameSearch').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('.game-card').forEach(card => {
+      const title = card.querySelector('.game-title').innerText.toLowerCase();
+      card.style.display = title.includes(term) ? 'flex' : 'none';
+    });
+  });
+
+  // --- Favorites System ---
+  const favoritesKey = 'twc_mg_favorites';
+  let favorites = JSON.parse(localStorage.getItem(favoritesKey)) || [];
+
+  function initFavorites() {
+    const cards = document.querySelectorAll('.game-card');
+    cards.forEach(card => {
+      const title = card.querySelector('.game-title').innerText;
+      const isFav = favorites.includes(title);
+
+      // Check if button already exists
+      if (card.querySelector('.fav-btn')) return;
+
+      const btn = document.createElement('button');
+      btn.className = `fav-btn ${isFav ? 'active' : ''}`;
+      btn.innerHTML = '★';
+      btn.title = isFav ? 'Unpin' : 'Pin to top';
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        toggleFavorite(title, btn);
+      };
+
+      card.appendChild(btn);
+    });
+    sortGallery();
+  }
+
+  function toggleFavorite(title, btn) {
+    const index = favorites.indexOf(title);
+    if (index === -1) {
+      favorites.push(title);
+      btn.classList.add('active');
+      btn.title = 'Unpin';
+    } else {
+      favorites.splice(index, 1);
+      btn.classList.remove('active');
+      btn.title = 'Pin to top';
+    }
+    localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+    sortGallery();
+  }
+
+  function sortGallery() {
+    const cards = Array.from(galleryGrid.children);
+
+    cards.sort((a, b) => {
+      const titleA = a.querySelector('.game-title').innerText;
+      const titleB = b.querySelector('.game-title').innerText;
+      const isFavA = favorites.includes(titleA);
+      const isFavB = favorites.includes(titleB);
+
+      if (isFavA && !isFavB) return -1;
+      if (!isFavA && isFavB) return 1;
+      return 0;
+    });
+
+    cards.forEach(card => galleryGrid.appendChild(card));
+  }
+
+  initFavorites();
+
+  function playGame(url) {
+    galleryGrid.style.display = 'none';
+    mainHeader.style.display = 'none';
+    gameView.style.display = 'flex';
+    gameIframe.onload = function() {
+      gameIframe.contentWindow.focus();
+    };
+    gameIframe.src = url;
+  }
+
+  function closeGame() {
+    gameIframe.src = ''; // Stop the game
+    gameView.style.display = 'none';
+    galleryGrid.style.display = 'grid';
+    mainHeader.style.display = 'flex';
+    
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+  }
+
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      gameContainer.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  // --- Suggestion Modal Logic ---
+  function openSuggestModal() {
+    document.getElementById('suggestModal').style.display = 'flex';
+  }
+
+  function closeSuggestModal() {
+    document.getElementById('suggestModal').style.display = 'none';
+  }
+
+  // Close modal if clicking outside content
+  window.onclick = function(event) {
+    const modal = document.getElementById('suggestModal');
+    if (event.target == modal) {
+      closeSuggestModal();
+    }
+  }
+
+  document.getElementById('suggestForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+    btn.innerText = 'Sending...';
+    btn.disabled = true;
+
+    const templateParams = {
+        game_name: document.getElementById('gameName').value,
+        game_link: document.getElementById('gameLink').value,
+        game_desc: document.getElementById('gameDesc').value,
+        from_name: localStorage.getItem("user_name") || "User" 
+    };
+
+    // Replace 'YOUR_SERVICE_ID' and 'YOUR_TEMPLATE_ID' with actual values from EmailJS
+    emailjs.send('service_86yn1kd', 'template_sl8ypua', templateParams)
+        .then(function() {
+            alert('Suggestion sent successfully!');
+            closeSuggestModal();
+            document.getElementById('suggestForm').reset();
+        }, function(error) {
+            alert('Failed to send suggestion: ' + JSON.stringify(error));
+        })
+        .finally(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+  });
+</script>
+
+</body>
+</html>
