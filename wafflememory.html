@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waffle Memory</title>
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700&display=swap");
+    body { background: #202225; color: white; font-family: "Be Vietnam Pro", sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .grid { display: grid; grid-template-columns: repeat(4, 80px); gap: 10px; }
+    .card { width: 80px; height: 80px; background: #2f3136; border: 2px solid #faa61a; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 40px; transition: transform 0.3s; transform-style: preserve-3d; }
+    .card.flipped { background: #e6a15c; transform: rotateY(180deg); }
+    .card.matched { background: #43b581; border-color: #43b581; cursor: default; }
+    .card-content { display: none; }
+    .card.flipped .card-content, .card.matched .card-content { display: block; transform: rotateY(180deg); }
+    h1 { color: #faa61a; margin-bottom: 20px; }
+    button { margin-top: 20px; padding: 10px 20px; background: #faa61a; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    .stats { color: #b9bbbe; font-size: 1.2em; margin-bottom: 15px; }
+    .stats span { color: #fff; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Waffle Memory</h1>
+<div class="stats">Time: <span id="time">60</span>s | Moves: <span id="moves">0</span> | Best: <span id="best">-</span></div>
+<div class="grid" id="grid"></div>
+<button onclick="initGame()">Restart</button>
+
+<script>
+    const emojis = ['🧇', '🥞', '🥓', '🍳', '🧈', '🍯', '🥛', '☕'];
+    let cards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let canFlip = true;
+    let moves = 0;
+    let bestScore = localStorage.getItem('waffleMemoryBest') || '-';
+    let timeLeft = 60;
+    let timerInterval;
+
+    document.getElementById('best').innerText = bestScore;
+
+    function initGame() {
+        const grid = document.getElementById('grid');
+        clearInterval(timerInterval);
+        grid.innerHTML = '';
+        cards = [...emojis, ...emojis];
+        cards.sort(() => Math.random() - 0.5);
+        flippedCards = [];
+        matchedPairs = 0;
+        canFlip = true;
+        moves = 0;
+        timeLeft = 60;
+        document.getElementById('time').innerText = timeLeft;
+        document.getElementById('moves').innerText = moves;
+
+        cards.forEach((emoji, index) => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.index = index;
+            card.innerHTML = `<span class="card-content">${emoji}</span>`;
+            card.onclick = () => flipCard(card, emoji);
+            grid.appendChild(card);
+        });
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('time').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                canFlip = false;
+                alert("Time's Up! Game Over.");
+            }
+        }, 1000);
+    }
+
+    function flipCard(card, emoji) {
+        if (!canFlip || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+        
+        card.classList.add('flipped');
+        flippedCards.push({ card, emoji });
+
+        if (flippedCards.length === 2) {
+            canFlip = false;
+            moves++;
+            document.getElementById('moves').innerText = moves;
+            checkMatch();
+        }
+    }
+
+    function checkMatch() {
+        const [c1, c2] = flippedCards;
+        if (c1.emoji === c2.emoji) {
+            c1.card.classList.add('matched');
+            c2.card.classList.add('matched');
+            matchedPairs++;
+            flippedCards = [];
+            canFlip = true;
+            if (matchedPairs === emojis.length) {
+                if (bestScore === '-' || moves < bestScore) {
+                    clearInterval(timerInterval);
+                    bestScore = moves;
+                    localStorage.setItem('waffleMemoryBest', bestScore);
+                    document.getElementById('best').innerText = bestScore;
+                }
+                setTimeout(() => alert("You Win! Moves: " + moves), 500);
+            }
+        } else {
+            setTimeout(() => {
+                c1.card.classList.remove('flipped');
+                c2.card.classList.remove('flipped');
+                flippedCards = [];
+                canFlip = true;
+            }, 1000);
+        }
+    }
+
+    initGame();
+</script>
+</body>
+</html>
