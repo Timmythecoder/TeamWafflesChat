@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TWC MG</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+  <script>
+    if (!localStorage.getItem("isLoggedIn")) {
+      alert("You must be logged in to access TWC MG.");
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #2f3136 0%, #000000 100%);
+      color: white;
+      font-family: sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 10px 20px;
+      background-color: #2f3136;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      animation: slideDown 0.8s ease-out;
+      z-index: 100;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .back-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back-btn:hover {
+      background-color: #c82333;
+      text-decoration: none;
+      color: white;
+    }
+    /* Gallery Styles */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .game-card {
+      background: #2f3136;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 1px solid #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+    }
+    .game-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(255,255,255,0.15) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .game-card:hover::after {
+      opacity: 1;
+    }
+    .game-card:hover {
+      transform: scale(1.1) translateY(-10px);
+      border-color: #7289da;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+    .game-thumb {
+      font-size: 50px;
+      margin-bottom: 10px;
+    }
+    .game-title {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .fav-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 10;
+      line-height: 1;
+      padding: 0;
+      transition: transform 0.2s, color 0.2s;
+    }
+    .fav-btn.active {
+      color: #ffd700;
+    }
+    .fav-btn:hover {
+      transform: scale(1.2);
+      color: #aaa;
+    }
+    .fav-btn.active:hover {
+      color: #ffed4a;
+    }
+
+    /* Game View Styles */
+    #game-view {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    .game-frame-wrapper {
+      flex-grow: 1;
+      position: relative;
+      background-color: #000;
+    }
+    .game-footer {
+      height: 60px;
+      background-color: #202225;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      border-top: 1px solid #444;
+    }
+    .game-footer button {
+      margin: 0;
+      width: auto;
+    }
+    /* Modal Styles */
+    .modal {
+      display: none; 
+      position: fixed; 
+      z-index: 2000; 
+      left: 0; top: 0; 
+      width: 100%; height: 100%; 
+      background-color: rgba(0,0,0,0.85);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background-color: #2f3136;
+      padding: 20px;
+      border: 1px solid #444;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      color: white;
+      text-align: center;
+      position: relative;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px; right: 15px;
+      color: #aaa;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close-modal:hover { color: white; }
+
+    /* Animations */
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(50px) scale(0.8) rotate(-5deg); }
+      to { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+    .game-card {
+      animation: cardEnter 1.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+    /* Stagger first few */
+    .game-card:nth-child(1) { animation-delay: 0.05s; }
+    .game-card:nth-child(2) { animation-delay: 0.1s; }
+    .game-card:nth-child(3) { animation-delay: 0.15s; }
+    .game-card:nth-child(4) { animation-delay: 0.2s; }
+    .game-card:nth-child(5) { animation-delay: 0.25s; }
+    
+    #gameSearch {
+      transition: width 0.3s ease, background-color 0.3s;
+    }
+    #gameSearch:focus {
+      width: 40%;
+      background-color: #50545c;
+      outline: none;
+    }
+
+    /* Background Particles */
+    #bg-particles {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .bg-particle {
+      position: absolute;
+      font-size: 24px;
+      opacity: 0.1;
+      pointer-events: none;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg); }
+      100% { transform: translateY(110vh) rotate(360deg); }
+    }
+
+    .tab-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ccc;
+      padding: 12px 24px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+      color: white;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #5865F2, #4752c4);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
+    }
+    .tab-btn.active-challenge {
+      background: linear-gradient(135deg, #faa61a, #f04747);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 15px rgba(250, 166, 26, 0.4);
+    }
+
+    .challenges-header {
+      grid-column: 1 / -1;
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 30px;
+      background: linear-gradient(135deg, rgba(250, 166, 26, 0.1), rgba(240, 71, 71, 0.1));
+      border-radius: 20px;
+      border: 1px solid rgba(250, 166, 26, 0.3);
+      animation: fadeIn 0.5s ease-out;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+    .challenges-header h3 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      background: linear-gradient(to right, #faa61a, #f04747, #faa61a);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 0;
+      animation: shine 3s linear infinite;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .challenges-header p {
+      color: #ddd;
+      font-size: 1.2rem;
+      margin: 8px 0;
+      font-weight: 500;
+    }
+    #challengePointsDisplay {
+      color: #45ffbc;
+      font-weight: 800;
+      font-size: 1.4rem;
+      text-shadow: 0 0 10px rgba(69, 255, 188, 0.4);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shine {
+      to {
+        background-position: 200% center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="bg-particles"></div>
+
+<div class="header" id="mainHeader">
+  <h2>Minigames Gallery</h2>
+  <input type="text" id="gameSearch" placeholder="Search games..." style="padding: 8px; border-radius: 5px; border: none; background: #40444b; color: white; width: 30%; min-width: 150px;">
+  <div>
+    <button onclick="openSuggestModal()" class="back-btn" style="background-color: #17a2b8; margin-right: 10px;">Suggest Game</button>
+    <a href="dashboard.html" class="back-btn" id="backToDash">Back to Dashboard</a>
+  </div>
+</div>
+
+<div class="tab-container">
+  <button id="btn-freeplay" class="tab-btn active" onclick="showTab('gallery')">Free Play</button>
+  <button id="btn-challenges" class="tab-btn" onclick="showTab('challenges')">Challenges (Earn Points)</button>
+</div>
+
+<!-- Gallery Grid -->
+<div class="gallery-grid" id="galleryGrid">
+  <!-- Game 1: Snow Rider 3D -->
+  <div class="game-card" onclick="playGame('snowrider.html')">
+    <div class="game-thumb">🏂</div>
+    <div class="game-title">Snow Rider 3D</div>
+  </div>
+  
+  <!-- Game 2: Waffle Clicker -->
+  <div class="game-card" onclick="playGame('waffleclicker.html')">
+    <div class="game-thumb">🧇</div>
+    <div class="game-title">Waffle Clicker</div>
+  </div>
+
+  <!-- Game 3: Flappy Waffle -->
+  <div class="game-card" onclick="playGame('flappywaffle.html')">
+    <div class="game-thumb">🐦</div>
+    <div class="game-title">Flappy Waffle</div>
+  </div>
+
+  <!-- Game 4: Waffle Tower -->
+  <div class="game-card" onclick="playGame('waffletower.html')">
+    <div class="game-thumb">🏗️</div>
+    <div class="game-title">Waffle Tower</div>
+  </div>
+
+  <!-- Game 5: Waffle Breaker -->
+  <div class="game-card" onclick="playGame('wafflebreaker.html')">
+    <div class="game-thumb">🧱</div>
+    <div class="game-title">Waffle Breaker</div>
+  </div>
+
+  <!-- Game 5.5: Waffle Breaker Infinite -->
+  <div class="game-card" onclick="playGame('wafflebreaker.html?mode=infinite')">
+    <div class="game-thumb">🧱∞</div>
+    <div class="game-title">Waffle Breaker Infinite</div>
+  </div>
+
+  <!-- Game 6: Wafflefall -->
+  <div class="game-card" onclick="playGame('wafflefall.html')">
+    <div class="game-thumb">💧</div>
+    <div class="game-title">Wafflefall</div>
+  </div>
+
+  <!-- Game 7: Waffle Jump -->
+  <div class="game-card" onclick="playGame('wafflejump.html')">
+    <div class="game-thumb">🚀</div>
+    <div class="game-title">Waffle Jump</div>
+  </div>
+
+  <!-- Game 8: 2048 Waffles -->
+  <div class="game-card" onclick="playGame('2048waffles.html')">
+    <div class="game-thumb">🔢</div>
+    <div class="game-title">2048 Waffles</div>
+  </div>
+
+  <!-- Game 9: Waffle Pong -->
+  <div class="game-card" onclick="playGame('wafflepong.html')">
+    <div class="game-thumb">🏓</div>
+    <div class="game-title">Waffle Pong</div>
+  </div>
+
+  <!-- Game 10: Waffle Memory -->
+  <div class="game-card" onclick="playGame('wafflememory.html')">
+    <div class="game-thumb">🃏</div>
+    <div class="game-title">Waffle Memory</div>
+  </div>
+
+  <!-- Game 11: Waffle Invaders -->
+  <div class="game-card" onclick="playGame('waffleinvaders.html')">
+    <div class="game-thumb">👾</div>
+    <div class="game-title">Waffle Invaders</div>
+  </div>
+
+  <!-- Game 12: Waffle Whack -->
+  <div class="game-card" onclick="playGame('wafflewhack.html')">
+    <div class="game-thumb">🔨</div>
+    <div class="game-title">Waffle Whack</div>
+  </div>
+
+  <!-- Game 14: Slope -->
+  <div class="game-card" onclick="playGame('slope.html')">
+    <div class="game-thumb">⛷️</div>
+    <div class="game-title">Slope</div>
+  </div>
+
+  <!-- Game 15: Geometry Dash -->
+  <div class="game-card" onclick="playGame('geometrydash.html')">
+    <div class="game-thumb">🔺</div>
+    <div class="game-title">Geometry Dash</div>
+  </div>
+
+  <!-- Game 16: Paper.io 2 -->
+  <div class="game-card" onclick="playGame('paperio2.html')">
+    <div class="game-thumb">🗺️</div>
+    <div class="game-title">Paper.io 2</div>
+  </div>
+
+  <!-- Game 17: Escape Road -->
+  <div class="game-card" onclick="playGame('escaperoad.html')">
+    <div class="game-thumb">🚓</div>
+    <div class="game-title">Escape Road</div>
+  </div>
+
+  <!-- Game 18: WorldGuessr 
+  <div class="game-card" onclick="playGame('worldguessr.html')">
+    <div class="game-thumb">🌍</div>
+    <div class="game-title">WorldGuessr</div>
+  </div> -->
+
+  <!-- Game 20: Stacker -->
+  <div class="game-card" onclick="playGame('stacker.html')">
+    <div class="game-thumb">🧩</div>
+    <div class="game-title">Stacker</div>
+  </div>
+
+  <!-- Game 21: Run 3 
+  <div class="game-card" onclick="playGame('run3.html')">
+    <div class="game-thumb">🏃</div>
+    <div class="game-title">Run 3</div>
+  </div> -->
+
+  <!-- Game 22: Snake -->
+  <div class="game-card" onclick="playGame('snake.html')">
+    <div class="game-thumb">🐍</div>
+    <div class="game-title">Snake</div>
+  </div>
+
+  <!-- Game 23: Pac-Man -->
+  <div class="game-card" onclick="playGame('pacman.html')">
+    <div class="game-thumb">👻</div>
+    <div class="game-title">Pac-Man</div>
+  </div>
+
+  <!-- Game 24: Halloween 2016 -->
+  <div class="game-card" onclick="playGame('halloween.html')">
+    <div class="game-thumb">🎃</div>
+    <div class="game-title">Halloween 2016</div>
+  </div>
+
+  <!-- Game 25: Lotería -->
+  <div class="game-card" onclick="playGame('loteria.html')">
+    <div class="game-thumb">🎴</div>
+    <div class="game-title">Lotería (MULTIPLAYER)</div>
+  </div>
+
+  <!-- Game 26: Cricket -->
+  <div class="game-card" onclick="playGame('cricket.html')">
+    <div class="game-thumb">🏏</div>
+    <div class="game-title">Cricket</div>
+  </div>
+
+ <!-- Game 27: Cricket 
+  <div class="game-card" onclick="playGame('cricket.html')">
+    <div class="game-thumb">🏏</div>
+    <div class="game-title">Cricket</div>
+  </div> -->
+
+ <!-- Game 28: Champion Island -->
+  <div class="game-card" onclick="playGame('championisland.html')">
+    <div class="game-thumb">🏝️</div>
+    <div class="game-title">Champion Island</div>
+  </div>
+
+  <!-- Game 29: Moto X3M 1 -->
+  <div class="game-card" onclick="playGame('motox3m.html')">
+    <div class="game-thumb">🏍️</div>
+    <div class="game-title">Moto X3M 1</div>
+  </div>
+
+  <!-- Game 30: Moto X3M 2 -->
+  <div class="game-card" onclick="playGame('motox3m2.html')">
+    <div class="game-thumb">🏍️</div>
+    <div class="game-title">Moto X3M 2</div>
+  </div>
+
+  <!-- Game 31: Moto X3M 3 -->
+  <div class="game-card" onclick="playGame('motox3m3.html')">
+    <div class="game-thumb">🏍️</div>
+    <div class="game-title">Moto X3M 3</div>
+  </div>
+
+  <!-- Game 32: Drift Hunters -->
+  <div class="game-card" onclick="playGame('drifthunters.html')">
+    <div class="game-thumb">🚗</div>
+    <div class="game-title">Drift Hunters</div>
+  </div>
+
+  <!-- Game 33: Rooftop Snipers -->
+  <div class="game-card" onclick="playGame('rooftopsnipers.html')">
+    <div class="game-thumb">🔫</div>
+    <div class="game-title">Rooftop Snipers</div>
+  </div>
+
+  <!-- Game 34: Rooftop Snipers 2 -->
+  <div class="game-card" onclick="playGame('rooftopsnipers2.html')">
+    <div class="game-thumb">🔫</div>
+    <div class="game-title">Rooftop Snipers 2</div>
+  </div>
+
+  <!-- Game 35: Getaway Shootout -->
+  <div class="game-card" onclick="playGame('getawayshootout.html')">
+    <div class="game-thumb">🏃</div>
+    <div class="game-title">Getaway Shootout</div>
+  </div>
+
+  <!-- Game 36: Basketball Legends -->
+  <div class="game-card" onclick="playGame('basketballlegends.html')">
+    <div class="game-thumb">🏀</div>
+    <div class="game-title">Basketball Legends</div>
+  </div>
+
+  <!-- Game 38: Idle Breakout -->
+  <div class="game-card" onclick="playGame('idlebreakout.html')">
+    <div class="game-thumb">🧱</div>
+    <div class="game-title">Idle Breakout</div>
+  </div>
+
+  <!-- Game 39: BitLife -->
+  <div class="game-card" onclick="playGame('bitlife.html')">
+    <div class="game-thumb">🧬</div>
+    <div class="game-title">BitLife</div>
+  </div>
+
+  <!-- Game 40: Little Alchemy 2 -->
+  <div class="game-card" onclick="playGame('littlealchemy2.html')">
+    <div class="game-thumb">⚗️</div>
+    <div class="game-title">Little Alchemy 2</div>
+  </div>
+
+  <!-- Game 41: Helix Jump -->
+  <div class="game-card" onclick="playGame('helixjump.html')">
+    <div class="game-thumb">🌀</div>
+    <div class="game-title">Helix Jump</div>
+  </div>
+
+  <!-- Game 42: Knife Hit -->
+  <div class="game-card" onclick="playGame('knifehit.html')">
+    <div class="game-thumb">🔪</div>
+    <div class="game-title">Knife Hit</div>
+  </div>
+
+  <!-- Game 43: Toy Defense -->
+  <div class="game-card" onclick="playGame('toydefense.html')">
+    <div class="game-thumb">💂</div>
+    <div class="game-title">Toy Defense</div>
+  </div>
+
+  <!-- Game 44: Subway Surfers -->
+  <div class="game-card" onclick="playGame('subwaysurfers.html')">
+    <div class="game-thumb">🏄</div>
+    <div class="game-title">Subway Surfers</div>
+  </div>
+
+  <!-- Game 45: Temple Run 2 -->
+  <div class="game-card" onclick="playGame('templerun2.html')">
+    <div class="game-thumb">🗿</div>
+    <div class="game-title">Temple Run 2</div>
+  </div>
+
+  <!-- Game 46: Crossy Road -->
+  <div class="game-card" onclick="playGame('crossyroad.html')">
+    <div class="game-thumb">🐔</div>
+    <div class="game-title">Crossy Road</div>
+  </div>
+
+  <!-- Game 47: Uno -->
+  <div class="game-card" onclick="playGame('uno.html')">
+    <div class="game-thumb">🃏</div>
+    <div class="game-title">Uno</div>
+  </div>
+
+  <!-- Placeholder for more games -->
+  <div class="game-card" onclick="alert('More games coming soon!')">
+    <div class="game-thumb">🎮</div>
+    <div class="game-title">More Coming Soon</div>
+  </div>
+</div>
+
+<!-- Challenges Grid -->
+<div class="gallery-grid" id="challengesGrid" style="display: none;">
+  <div class="challenges-header">
+    <h3>Skill Challenges</h3>
+    <p>Cost: 10 💎 to enter. Guaranteed 10 💎 back + 1 💎 per score point!</p>
+    <p>Current Points: <span id="challengePointsDisplay">Loading...</span></p>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('flappywaffle.html', 'Flappy Waffle')">
+    <div class="game-thumb">🐦</div>
+    <div class="game-title">Flappy Waffle Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('waffletower.html', 'Waffle Tower')">
+    <div class="game-thumb">🏗️</div>
+    <div class="game-title">Waffle Tower Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('wafflebreaker.html', 'Waffle Breaker')">
+    <div class="game-thumb">🧱</div>
+    <div class="game-title">Waffle Breaker Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('wafflefall.html', 'Wafflefall')">
+    <div class="game-thumb">💧</div>
+    <div class="game-title">Wafflefall Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('wafflejump.html', 'Waffle Jump')">
+    <div class="game-thumb">🚀</div>
+    <div class="game-title">Waffle Jump Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('2048waffles.html', '2048 Waffles')">
+    <div class="game-thumb">🔢</div>
+    <div class="game-title">2048 Waffles Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('wafflepong.html', 'Waffle Pong')">
+    <div class="game-thumb">🏓</div>
+    <div class="game-title">Waffle Pong Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('wafflememory.html', 'Waffle Memory')">
+    <div class="game-thumb">🃏</div>
+    <div class="game-title">Waffle Memory Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('waffleinvaders.html', 'Waffle Invaders')">
+    <div class="game-thumb">👾</div>
+    <div class="game-title">Waffle Invaders Challenge</div>
+  </div>
+
+  <div class="game-card" onclick="playChallenge('wafflewhack.html', 'Waffle Whack')">
+    <div class="game-thumb">🔨</div>
+    <div class="game-title">Waffle Whack Challenge</div>
+  </div>
+</div>
+
+<!-- Suggest Game Modal -->
+<div id="suggestModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeSuggestModal()">&times;</span>
+    <h3>Suggest a New Game</h3>
+    <form id="suggestForm">
+      <div class="form-group">
+        <label for="gameName" style="display:block; text-align:left;">Game Name</label>
+        <input type="text" id="gameName" required class="form-control" style="background:#40444b; color:white; border:none;">
+      </div>
+      <div class="form-group">
+        <label for="gameLink" style="display:block; text-align:left;">Link (optional)</label>
+        <input type="text" id="gameLink" class="form-control" style="background:#40444b; color:white; border:none;">
+      </div>
+      <div class="form-group">
+        <label for="gameDesc" style="display:block; text-align:left;">Description / Why?</label>
+        <textarea id="gameDesc" class="form-control" rows="3" style="background:#40444b; color:white; border:none; resize:vertical;"></textarea>
+      </div>
+      <button type="submit" class="btn btn-success" style="width:100%;">Send Suggestion (please don't spam so I don't get charged too much)</button>
+    </form>
+  </div>
+</div>
+
+<!-- Game View Container -->
+<div id="game-view">
+  <div class="game-frame-wrapper" id="gameContainer">
+    <iframe id="gameIframe" allowtransparency="yes" allow="autoplay" frameborder="0"
+      width="100%" height="100%"
+      style="position:absolute; top:0; left:0; right:0; bottom:0;"
+      marginheight="0" marginwidth="0" scrolling="no" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+  </div>
+  
+  <div class="game-footer">
+    <button class="back-btn" onclick="closeGame()">Back to Gallery of Games</button>
+    <button class="back-btn" style="background-color:#007bff;" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+    <button class="back-btn" style="background-color:#6c757d;" id="fullscreenBtn">⛶ Fullscreen</button>
+  </div>
+</div>
+
+<script>
+  const firebaseConfig = {
+      apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+      authDomain: "team-waffles.firebaseapp.com",
+      databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+      projectId: "team-waffles",
+      storageBucket: "team-waffles.appspot.com",
+      messagingSenderId: "891460090478",
+      appId: "1:891460090478:web:c01b6db1af21745769047f"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const gameContainer = document.getElementById('gameContainer');
+  const galleryGrid = document.getElementById('galleryGrid');
+  const challengesGrid = document.getElementById('challengesGrid');
+  const gameView = document.getElementById('game-view');
+  const gameIframe = document.getElementById('gameIframe');
+  const mainHeader = document.getElementById('mainHeader');
+
+  function showTab(tab) {
+    if (tab === 'gallery') {
+      galleryGrid.style.display = 'grid';
+      challengesGrid.style.display = 'none';
+      document.getElementById('btn-freeplay').classList.add('active');
+      document.getElementById('btn-challenges').classList.remove('active-challenge');
+    } else {
+      galleryGrid.style.display = 'none';
+      challengesGrid.style.display = 'grid';
+      document.getElementById('btn-freeplay').classList.remove('active');
+      document.getElementById('btn-challenges').classList.add('active-challenge');
+      updatePointsDisplay();
+    }
+  }
+
+  // Tilt Effect for Game Cards
+  document.querySelectorAll('.game-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      card.style.transition = 'none';
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const xPct = (x / rect.width) - 0.5;
+      const yPct = (y / rect.height) - 0.5;
+
+      card.style.setProperty('--pointer-x', `${(x / rect.width) * 100}%`);
+      card.style.setProperty('--pointer-y', `${(y / rect.height) * 100}%`);
+
+      const rotateX = yPct * -20; 
+      const rotateY = xPct * 20;
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.1)`;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transition = 'transform 0.5s ease';
+      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+    });
+  });
+
+  document.getElementById('gameSearch').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('.game-card').forEach(card => {
+      const title = card.querySelector('.game-title').innerText.toLowerCase();
+      card.style.display = title.includes(term) ? 'flex' : 'none';
+    });
+  });
+
+  // --- Favorites System ---
+  const favoritesKey = 'twc_mg_favorites';
+  let favorites = JSON.parse(localStorage.getItem(favoritesKey)) || [];
+
+  function initFavorites() {
+    const cards = document.querySelectorAll('.game-card');
+    cards.forEach(card => {
+      const title = card.querySelector('.game-title').innerText;
+      const isFav = favorites.includes(title);
+
+      // Check if button already exists
+      if (card.querySelector('.fav-btn')) return;
+
+      const btn = document.createElement('button');
+      btn.className = `fav-btn ${isFav ? 'active' : ''}`;
+      btn.innerHTML = '★';
+      btn.title = isFav ? 'Unpin' : 'Pin to top';
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        toggleFavorite(title, btn);
+      };
+
+      card.appendChild(btn);
+    });
+    sortGallery();
+  }
+
+  function toggleFavorite(title, btn) {
+    const index = favorites.indexOf(title);
+    if (index === -1) {
+      favorites.push(title);
+      btn.classList.add('active');
+      btn.title = 'Unpin';
+    } else {
+      favorites.splice(index, 1);
+      btn.classList.remove('active');
+      btn.title = 'Pin to top';
+    }
+    localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+    sortGallery();
+  }
+
+  function sortGallery() {
+    const cards = Array.from(galleryGrid.children);
+
+    cards.sort((a, b) => {
+      const titleA = a.querySelector('.game-title').innerText;
+      const titleB = b.querySelector('.game-title').innerText;
+      const isFavA = favorites.includes(titleA);
+      const isFavB = favorites.includes(titleB);
+
+      if (isFavA && !isFavB) return -1;
+      if (!isFavA && isFavB) return 1;
+      return 0;
+    });
+
+    cards.forEach(card => galleryGrid.appendChild(card));
+  }
+
+  initFavorites();
+
+  function playGame(url) {
+    galleryGrid.style.display = 'none';
+    challengesGrid.style.display = 'none';
+    mainHeader.style.display = 'none';
+    gameView.style.display = 'flex';
+    gameIframe.onload = function() {
+      gameIframe.contentWindow.focus();
+    };
+    gameIframe.src = url;
+  }
+
+  let isChallengeActive = false;
+
+  function playChallenge(url, name) {
+    const user = auth.currentUser;
+    if (!user) return alert("Please log in first.");
+
+    db.ref("users/" + user.uid + "/points").once("value").then(snap => {
+      const points = snap.val() || 0;
+      if (points < 10) {
+        alert("You need at least 10 points to enter a challenge!");
+        return;
+      }
+
+      if (confirm(`Start ${name} Challenge?\nCost: 10 💎\nReward: 10 💎 + Score`)) {
+        // Deduct points
+        db.ref("users/" + user.uid + "/points").set(points - 10).then(() => {
+          isChallengeActive = true;
+          playGame(url + "?challenge=true");
+        });
+      }
+    });
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.data.type === 'GAME_OVER' && isChallengeActive) {
+      const score = Math.floor(Number(event.data.score) || 0);
+      const user = auth.currentUser;
+      if (user) {
+        db.ref("users/" + user.uid + "/points").once("value").then(snap => {
+          const currentPoints = snap.val() || 0;
+          const reward = 10 + score;
+          db.ref("users/" + user.uid + "/points").set(currentPoints + reward).then(() => {
+            alert(`Challenge Complete!\nScore: ${score}\nRefund: 10 💎\nEarnings: ${score} 💎\nTotal Received: ${reward} 💎`);
+            closeGame();
+          });
+        });
+      }
+      isChallengeActive = false;
+    }
+  });
+
+  function updatePointsDisplay() {
+    const user = auth.currentUser;
+    if (user) {
+      db.ref("users/" + user.uid + "/points").on("value", snap => {
+        const p = document.getElementById("challengePointsDisplay");
+        if(p) p.innerText = (snap.val() || 0) + " 💎";
+      });
+    }
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (user) updatePointsDisplay();
+  });
+
+  function closeGame() {
+    gameIframe.src = ''; // Stop the game
+    gameView.style.display = 'none';
+    // Return to the grid that was active? For simplicity, return to gallery or challenge based on context
+    if (isChallengeActive) showTab('challenges'); 
+    else showTab('gallery');
+    mainHeader.style.display = 'flex';
+    
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+  }
+
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      gameContainer.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  // --- Suggestion Modal Logic ---
+  function openSuggestModal() {
+    document.getElementById('suggestModal').style.display = 'flex';
+  }
+
+  function closeSuggestModal() {
+    document.getElementById('suggestModal').style.display = 'none';
+  }
+
+  // Close modal if clicking outside content
+  window.onclick = function(event) {
+    const modal = document.getElementById('suggestModal');
+    if (event.target == modal) {
+      closeSuggestModal();
+    }
+  }
+
+  document.getElementById('suggestForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+    btn.innerText = 'Sending...';
+    btn.disabled = true;
+
+    const templateParams = {
+        game_name: document.getElementById('gameName').value,
+        game_link: document.getElementById('gameLink').value,
+        game_desc: document.getElementById('gameDesc').value,
+        from_name: localStorage.getItem("user_name") || "User" 
+    };
+
+    // Replace 'YOUR_SERVICE_ID' and 'YOUR_TEMPLATE_ID' with actual values from EmailJS
+    emailjs.send('service_86yn1kd', 'template_sl8ypua', templateParams)
+        .then(function() {
+            alert('Suggestion sent successfully!');
+            closeSuggestModal();
+            document.getElementById('suggestForm').reset();
+        }, function(error) {
+            alert('Failed to send suggestion: ' + JSON.stringify(error));
+        })
+        .finally(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+  });
+
+  // --- Background Particles ---
+  function initBackground() {
+    const panel = document.getElementById('bg-particles');
+    const icons = ['🎮', '🕹️', '👾', '🎲', '🧇'];
+    for(let i=0; i<20; i++) {
+      const d = document.createElement('div');
+      d.className = 'bg-particle';
+      d.innerText = icons[Math.floor(Math.random() * icons.length)];
+      d.style.left = Math.random() * 100 + '%';
+      d.style.top = -50 + 'px';
+      d.style.animationDuration = (15 + Math.random() * 20) + 's';
+      d.style.animationDelay = (Math.random() * 15) + 's';
+      panel.appendChild(d);
+    }
+  }
+  initBackground();
+</script>
+
+<!-- Load EmailJS at the end so the page shows up faster -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script type="text/javascript">
+  (function(){
+    emailjs.init("leVlaWevudCP2DxpD"); 
+  })();
+</script>
+</body>
+</html>

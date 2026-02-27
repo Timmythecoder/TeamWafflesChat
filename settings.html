@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings | Team Waffles</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2em;
+      max-width: 600px;
+      margin: auto;
+      transition: background 0.3s, color 0.3s;
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    .light-theme {
+      background: linear-gradient(-45deg, #f4f4f4, #e0e0e0, #ffffff);
+      color: #000;
+    }
+
+    .dark-theme {
+      background: linear-gradient(-45deg, #1f1f1f, #2c2c2c, #121212);
+      color: #fff;
+    }
+
+    h2 { text-align: center; color: #45ffbc; }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      animation: slideInRight 0.5s ease-out backwards;
+    }
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
+    .form-group:nth-child(4) { animation-delay: 0.4s; }
+
+    label { display: block; margin-bottom: 6px; }
+    input[type="text"], select, textarea {
+      width: 100%; padding: 10px; border-radius: 6px; border: none;
+    }
+
+    button {
+      background: #45ffbc; color: #000;
+      padding: 12px 20px; border: none;
+      border-radius: 6px; cursor: pointer;
+    }
+
+    #profilePreview {
+      display: block;
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin: 10px 0;
+      background: #444;
+    }
+
+    #profileChoices img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: border 0.2s;
+    }
+
+    #profileChoices img.selected {
+      border-color: #45ffbc;
+    }
+
+    #loadingOverlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #loadingOverlay video {
+      width: 200px; height: auto;
+    }
+
+    .success { color: lightgreen; }
+    .error { color: pink; }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    body { animation: fadeIn 0.5s ease-out; }
+    
+    input, select { transition: box-shadow 0.2s; }
+    input:focus, select:focus { box-shadow: 0 0 0 2px #45ffbc; outline: none; }
+    
+    button { transition: transform 0.1s; }
+    button:active { transform: scale(0.95); }
+  </style>
+</head>
+<body class="light-theme">
+
+  <div id="loadingOverlay">
+    <video src="Loading.mp4" autoplay muted loop></video>
+  </div>
+
+  <h2>Settings</h2>
+
+  <div class="form-group">
+    <label for="permanentUsername">Permanent Username (set once)</label>
+    <input type="text" id="permanentUsername" />
+  </div>
+
+  <div class="form-group">
+    <label for="displayName">Display Name</label>
+    <input type="text" id="displayName" />
+  </div>
+
+  <div class="form-group">
+    <label>Choose a Profile Picture</label>
+    <div id="profileChoices" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+    <img id="profilePreview" src="" alt="Preview" />
+  </div>
+
+  <div class="form-group">
+    <label for="themePref">Theme Preference</label>
+    <select id="themePref">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+  </div>
+
+  <button onclick="saveSettings()">Save Settings</button>
+  <button onclick="window.location.href='dashboard.html'">Back</button>
+  <button onclick="window.location.href='personal.html'">Personal Settings</button>
+  <p id="statusMsg"></p>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+    authDomain: "team-waffles.firebaseapp.com",
+    databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+    projectId: "team-waffles",
+    storageBucket: "team-waffles.appspot.com",
+    messagingSenderId: "891460090478",
+    appId: "1:891460090478:web:c01b6db1af21745769047f"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  const profilePreview = document.getElementById("profilePreview");
+  const profileChoices = document.getElementById("profileChoices");
+  const themePrefSelect = document.getElementById("themePref");
+  const permanentUsernameInput = document.getElementById("permanentUsername");
+  const statusMsg = document.getElementById("statusMsg");
+  const oldPassInput = document.getElementById("oldPassword");
+  const newPassInput = document.getElementById("newPassword");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+
+  let currentUser = null;
+  let selectedPic = null;
+
+  function applyTheme(theme) {
+    document.body.classList.remove("light-theme", "dark-theme");
+    document.body.classList.add(`${theme}-theme`);
+  }
+
+  async function loadProfilePicList() {
+    const fallbackPics = [
+      "pfps/1.png", "pfps/2.png", "pfps/3.png", "pfps/4.png", "pfps/5.png"
+    ];
+    try {
+      const snap = await db.ref("config/allowedProfilePictures").once("value");
+      if (!snap.exists()) return fallbackPics;
+      return Object.values(snap.val());
+    } catch (e) {
+      console.warn("Failed to load profile pic list, using fallback.");
+      return fallbackPics;
+    }
+  }
+
+  function renderProfileChoices(list, currentSelection) {
+    profileChoices.innerHTML = "";
+    list.forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      if (url === currentSelection) img.classList.add("selected");
+      img.onclick = () => {
+        selectedPic = url;
+        profilePreview.src = url;
+        renderProfileChoices(list, url);
+      };
+      profileChoices.appendChild(img);
+    });
+  }
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) return (window.location.href = "index.html");
+    currentUser = user;
+    const uid = user.uid;
+
+    try {
+      const snap = await db.ref("users/" + uid).once("value");
+      const data = snap.val() || {};
+
+      if (data.permanentUsername) {
+        permanentUsernameInput.value = data.permanentUsername;
+        permanentUsernameInput.disabled = true;
+      }
+
+      document.getElementById("displayName").value = data.displayName || "";
+
+      const darkMode = data.settings?.darkMode ?? false;
+      themePrefSelect.value = darkMode ? "dark" : "light";
+      applyTheme(themePrefSelect.value);
+
+      const pics = await loadProfilePicList();
+      selectedPic = data.profilePicURL || pics[0];
+      profilePreview.src = selectedPic;
+      renderProfileChoices(pics, selectedPic);
+    } catch (err) {
+      console.error("Failed to load user data", err);
+      statusMsg.textContent = "Error loading settings.";
+      statusMsg.className = "error";
+    } finally {
+      loadingOverlay.style.display = "none";
+    }
+  });
+
+  themePrefSelect.addEventListener("change", e => {
+    applyTheme(e.target.value);
+  });
+
+  async function saveSettings() {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    const perm = permanentUsernameInput.value.trim();
+    const display = document.getElementById("displayName").value.trim();
+    const theme = themePrefSelect.value;
+
+    statusMsg.textContent = "Saving...";
+    statusMsg.className = "";
+
+    try {
+      if (!permanentUsernameInput.disabled) {
+        if (!perm) throw new Error("Permanent username cannot be empty.");
+        const userRef = db.ref("users/" + uid);
+        const snap = await userRef.once("value");
+        if (snap.val()?.permanentUsername) {
+          throw new Error("Permanent username already set.");
+        }
+        await userRef.update({ permanentUsername: perm });
+        permanentUsernameInput.disabled = true;
+      }
+
+      if (!display) throw new Error("Display name cannot be empty.");
+      const updates = {
+        displayName: display,
+        profilePicURL: selectedPic
+      };
+      const settings = { darkMode: theme === "dark" };
+await db.ref("users/" + uid).update(updates);
+await db.ref("users/" + uid + "/settings").update(settings);
+
+
+      statusMsg.textContent = "Settings updated!";
+      statusMsg.className = "success";
+    } catch (e) {
+      statusMsg.textContent = e.message || "Failed to save settings.";
+      statusMsg.className = "error";
+    }
+  }
+
+</script>
+</body>
+</html>
