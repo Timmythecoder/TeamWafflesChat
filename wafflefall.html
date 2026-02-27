@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Wafflefall</title>
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700&display=swap");
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #202225;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: "Be Vietnam Pro", sans-serif;
+        overflow: hidden;
+    }
+    canvas {
+        background: linear-gradient(#87CEEB, #E0F7FA);
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        cursor: none;
+    }
+    #ui-layer {
+        position: absolute;
+        color: white;
+        text-align: center;
+        pointer-events: none;
+    }
+    #score {
+        font-size: 3em;
+        font-weight: 700;
+        text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    }
+    #game-over {
+        display: none;
+        background: rgba(0,0,0,0.8);
+        padding: 20px 40px;
+        border-radius: 15px;
+        pointer-events: auto;
+    }
+    #game-over h1 { color: #faa61a; }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="ui-layer">
+    <div id="score">0</div>
+    <div id="game-over">
+        <h1>Game Over</h1>
+        <p>Score: <span id="final-score">0</span></p>
+        <p>Best: <span id="best-score">0</span></p>
+        <p style="margin-top:20px;">Click to restart</p>
+        <button onclick="finishChallenge()" id="finish-challenge-btn" style="display:none; background:#43b581; border:none; padding:10px; border-radius:5px; color:white; font-weight:bold; margin-top:10px; pointer-events:auto;">Collect Points & Exit</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = Math.min(window.innerWidth - 20, 400);
+    canvas.height = Math.min(window.innerHeight - 20, 600);
+
+    let score, highScore, player, obstacles, gameSpeed, isGameOver;
+    highScore = localStorage.getItem('wafflefallHigh') || 0;
+    const urlParams = new URLSearchParams(window.location.search);
+    const isChallenge = urlParams.get('challenge') === 'true';
+
+    const playerChar = '🧇';
+    const obstacleChar = '💧';
+
+    function init() {
+        score = 0;
+        gameSpeed = 3;
+        isGameOver = false;
+        player = { x: canvas.width / 2 - 15, y: canvas.height - 50, w: 30, h: 30 };
+        obstacles = [];
+        
+        document.getElementById('score').innerText = score;
+        document.getElementById('game-over').style.display = 'none';
+        loop();
+    }
+
+    function spawnObstacle() {
+        const size = 20;
+        const x = Math.random() * (canvas.width - size);
+        obstacles.push({ x: x, y: -size, w: size, h: size });
+    }
+
+    function loop() {
+        if (isGameOver) return;
+
+        // Update
+        score++;
+        gameSpeed += 0.002;
+
+        if (Math.random() < 0.05) {
+            spawnObstacle();
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let o = obstacles[i];
+            o.y += gameSpeed;
+
+            // Collision check
+            if (player.x < o.x + o.w &&
+                player.x + player.w > o.x &&
+                player.y < o.y + o.h &&
+                player.y + player.h > o.y) {
+                gameOver();
+            }
+
+            if (o.y > canvas.height) {
+                obstacles.splice(i, 1);
+            }
+        }
+
+        // Draw
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById('score').innerText = Math.floor(score / 10);
+
+        // Draw obstacles
+        ctx.font = "24px Arial";
+        obstacles.forEach(o => ctx.fillText(obstacleChar, o.x, o.y));
+
+        // Draw player
+        ctx.font = "30px Arial";
+        ctx.fillText(playerChar, player.x, player.y + player.h);
+
+        requestAnimationFrame(loop);
+    }
+
+    function gameOver() {
+        isGameOver = true;
+        const finalScore = Math.floor(score / 10);
+        if (finalScore > highScore) {
+            highScore = finalScore;
+            localStorage.setItem('wafflefallHigh', highScore);
+        }
+        document.getElementById('final-score').innerText = finalScore;
+        document.getElementById('best-score').innerText = highScore;
+        document.getElementById('game-over').style.display = 'block';
+        
+        if (isChallenge) {
+            document.querySelector('#game-over p:last-of-type').style.display = 'none';
+            document.getElementById('finish-challenge-btn').style.display = 'block';
+        }
+    }
+
+    // Controls
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        player.x = e.clientX - rect.left - player.w / 2;
+    });
+    canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        player.x = e.touches[0].clientX - rect.left - player.w / 2;
+    }, { passive: false });
+    
+    window.addEventListener('click', () => {
+        if (isChallenge && isGameOver) return;
+        if (isGameOver) init();
+    });
+    
+    function finishChallenge() {
+        window.parent.postMessage({ type: 'GAME_OVER', score: Math.floor(score / 10) }, '*');
+    }
+
+    init();
+</script>
+</body>
+</html>
