@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waffle Whack</title>
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700&display=swap");
+    body { background: #202225; color: white; font-family: "Be Vietnam Pro", sans-serif; text-align: center; user-select: none; }
+    h1 { color: #faa61a; }
+    .grid { display: grid; grid-template-columns: repeat(3, 100px); gap: 20px; justify-content: center; margin-top: 20px; }
+    .hole { width: 100px; height: 100px; background: #36393f; border-radius: 50%; border: 4px solid #2f3136; position: relative; overflow: hidden; }
+    .waffle { width: 100%; height: 100%; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23e6a15c"/><text x="50" y="65" font-size="50" text-anchor="middle">🧇</text></svg>') no-repeat center; background-size: 80%; position: absolute; top: 100%; transition: top 0.1s; cursor: pointer; }
+    .hole.up .waffle { top: 0; }
+    .score-board { font-size: 24px; margin: 20px; }
+    button { padding: 10px 20px; background: #faa61a; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 18px; }
+</style>
+</head>
+<body>
+    <h1>Waffle Whack</h1>
+    <div class="score-board">Score: <span id="score">0</span> | Best: <span id="best">0</span> | Time: <span id="time">30</span></div>
+    <button onclick="startGame()">Start Game</button>
+    <button onclick="finishChallenge()" id="finish-challenge-btn" style="display:none; background:#43b581; margin-left:10px;">Collect Points & Exit</button>
+    
+    <div class="grid">
+        <div class="hole" id="hole1"><div class="waffle" onclick="whack(this)"></div></div>
+        <div class="hole" id="hole2"><div class="waffle" onclick="whack(this)"></div></div>
+        <div class="hole" id="hole3"><div class="waffle" onclick="whack(this)"></div></div>
+        <div class="hole" id="hole4"><div class="waffle" onclick="whack(this)"></div></div>
+        <div class="hole" id="hole5"><div class="waffle" onclick="whack(this)"></div></div>
+        <div class="hole" id="hole6"><div class="waffle" onclick="whack(this)"></div></div>
+        <div class="hole" id="hole7"><div class="waffle" onclick="whack(this)"></div></div>
+        <div class="hole" id="hole8"><div class="waffle" onclick="whack(this)"></div></div>
+        <div class="hole" id="hole9"><div class="waffle" onclick="whack(this)"></div></div>
+    </div>
+
+<script>
+    const holes = document.querySelectorAll('.hole');
+    const scoreBoard = document.getElementById('score');
+    const timeBoard = document.getElementById('time');
+    const bestBoard = document.getElementById('best');
+    let lastHole;
+    let timeUp = false;
+    let score = 0;
+    let timeLeft = 30;
+    let highScore = localStorage.getItem('waffleWhackHigh') || 0;
+    bestBoard.textContent = highScore;
+    const urlParams = new URLSearchParams(window.location.search);
+    const isChallenge = urlParams.get('challenge') === 'true';
+    
+    if (isChallenge) {
+        document.querySelector('button[onclick="startGame()"]').innerText = "Start Challenge";
+    }
+
+    function randomTime(min, max) {
+        return Math.round(Math.random() * (max - min) + min);
+    }
+
+    function randomHole(holes) {
+        const idx = Math.floor(Math.random() * holes.length);
+        const hole = holes[idx];
+        if (hole === lastHole) return randomHole(holes);
+        lastHole = hole;
+        return hole;
+    }
+
+    function peep() {
+        const time = randomTime(400, 1000);
+        const hole = randomHole(holes);
+
+        hole.classList.add('up');
+        setTimeout(() => {
+            hole.classList.remove('up');
+            if (!timeUp) peep();
+        }, time);
+    }
+
+    function startGame() {
+        scoreBoard.textContent = 0;
+        timeBoard.textContent = 30;
+        document.querySelector('button[onclick="startGame()"]').disabled = true;
+        timeUp = false;
+        score = 0;
+        timeLeft = 30;
+        peep();
+        
+        let timer = setInterval(() => {
+            timeLeft--;
+            timeBoard.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                timeUp = true;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('waffleWhackHigh', highScore);
+                    bestBoard.textContent = highScore;
+                }
+                alert("Game Over! Score: " + score);
+                document.querySelector('button[onclick="startGame()"]').disabled = false;
+                if (isChallenge) {
+                    document.getElementById('finish-challenge-btn').style.display = 'inline-block';
+                    document.querySelector('button[onclick="startGame()"]').style.display = 'none';
+                }
+            }
+        }, 1000);
+    }
+
+    function whack(waffle) {
+        if(!waffle.parentNode.classList.contains('up')) return;
+        score++;
+        waffle.parentNode.classList.remove('up');
+        scoreBoard.textContent = score;
+    }
+    
+    function finishChallenge() {
+        window.parent.postMessage({ type: 'GAME_OVER', score: score }, '*');
+    }
+</script>
+</body>
+</html>

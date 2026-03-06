@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- mobile layout / zoom control -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link id="favicon" rel="icon" type="image" href="TWL O.png">
+
+  <title>Team Waffles HMW Front End</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="cs.css"/>
+  <style>
+    /* Container for input and buttons in a single row */
+    #inputArea {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: #2f3136;
+      border-top: 1px solid #ddd;
+    }
+
+    /* Textarea grows to fill available space */
+    #message {
+      flex-grow: 1;
+      resize: none;
+      padding: 8px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      min-height: 36px;
+      max-height: 96px;
+      line-height: 1.2;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    /* Buttons container (optional grouping, but here buttons are direct children of inputArea) */
+    /* Style buttons */
+    #inputArea button {
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      user-select: none;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      min-width: 40px;
+      height: 40px;
+      width: auto;
+    }
+
+    #fileBtn { color: #0084ff; }
+    #openGifPicker { color: #E91E63; }
+    #sendBtn { color: #0084ff; }
+
+    #inputArea button:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+      transform: scale(1.1);
+    }
+
+    #inputArea button svg {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+    }
+
+    /* Hidden file input */
+    #fileInput {
+      display: none;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 480px) {
+      #inputArea {
+        padding: 1px;
+        gap: 1px;
+      }
+
+      #inputArea button {
+        padding: 1px;
+        min-width: 24px;
+        height: 24px;
+      }
+
+      #message {
+        font-size: 12px;
+        padding: 4px;
+        min-height: 24px;
+        min-width: 0; /* Allow shrinking */
+      }
+
+      #inputArea button svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chat_container">
+    <!-- Loading overlay -->
+    <div id="loadingVideo" hidden>
+      <video src="loading.mp4" autoplay loop muted></video>
+    </div>
+
+    <!-- Privacy Overlay -->
+    <div id="panicActivationOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 25000; display: flex; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; cursor: pointer; align-items: center; justify-content: center; color: #ccc; font-family: monospace; font-size: 1.2rem;">
+      <div style="text-align: center; cursor: default;">
+        <h2 style="color: #fff; margin-bottom: 20px; font-family: sans-serif;">Session Paused</h2>
+        <button id="panicContinueBtn" style="padding: 10px 24px; font-size: 1rem; background: #0084ff; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold;">Continue</button>
+      </div>
+    </div>
+    <div id="privacyOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 20000; display: flex; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; cursor: none; align-items: center; justify-content: center; color: #333; font-family: monospace; font-size: 12px;">System Halted</div>
+
+<div id="badge-container"></div>
+
+
+    <!-- Logo / heading -->
+    <img id="logo" src="Team Waffles Checkmark.png" alt="Team Waffles logo" />
+    <h1>Team Waffles Chat</h1>
+
+    <!-- Back -->
+    <button id="backButton" type="button">← Go Back</button>
+
+    <!-- Online Users Bar -->
+    <div id="onlineUsersBar"></div>
+
+    <!-- Messages -->
+    <div id="output" class="chat-output"></div>
+
+    <div id="typingIndicator" class="typing-indicator" style="display:none;"></div>
+
+    <!-- Reply Banner -->
+    <div id="replyContainer" class="reply-banner" style="display:none;">
+      <div class="reply-info">
+        <span id="replyingToText">Replying to...</span>
+        <button id="cancelReplyBtn" class="close-reply">✕</button>
+      </div>
+    </div>
+
+    <!-- Input area with text box and buttons inline -->
+    <div id="inputArea" class="input-area">
+      <div class="textarea-wrapper">
+        <textarea id="message" placeholder="Type a message…" rows="1" autocomplete="off" required></textarea>
+        <div id="char-counter"></div>
+      </div>
+      <button id="fileBtn" type="button" title="Attach file" aria-label="Attach file">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      </button>
+      <button id="openGifPicker" type="button" title="Open GIF picker" aria-label="Open GIF picker">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7.5 9h-1.5v2.5h-1.5V12H7v-1.5h1.5V9H7V7.5h3.5V12zm2.5 2.5h-1.5V7.5h1.5v4.5zm4.5-3H17v1.5h-1.5V7.5h3V9h-1.5v1.5h1.5V12z"/></svg>
+      </button>
+      <button id="sendBtn" type="button" title="Send message">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+
+      <input type="file" id="fileInput" />
+    </div>
+
+    <!-- GIF modal lives *outside* the form so it never submits -->
+    <div id="gifModal" class="gif-modal" hidden>
+      <div class="gif-modal-content">
+        <button id="closeGifModal" class="close-btn" type="button">❌ Close</button>
+        <input id="gifSearch" type="text" placeholder="Search GIFs…" />
+        <div id="gifResults"></div>
+      </div>
+    </div>
+
+    <!-- Firebase & main script -->
+    <script type="module" src="ch.js"></script>
+    <script src="sidebar.js"></script>
+
+    <script>
+      // Open file selector when file button clicked
+      document.getElementById("fileBtn").addEventListener("pointerup", () => {
+        document.getElementById("fileInput").click();
+      });
+    </script>
+  </div>
+</body>
+
+</html>

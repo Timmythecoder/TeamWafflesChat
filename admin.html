@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Badge Panel with Profile Pictures</title>
+  <style>
+    :root {
+        --bg-dark: #2f3136;
+        --bg-medium: #36393f;
+        --bg-light: #40444b;
+        --border-color: #202225;
+        --text-primary: #dcddde;
+        --text-secondary: #b9bbbe;
+        --accent: #5865F2;
+        --danger: #f04747;
+    }
+    body { 
+        font-family: 'Segoe UI', 'Roboto', sans-serif; 
+        background: var(--bg-dark); 
+        color: var(--text-primary);
+        padding: 20px; 
+        margin: 0;
+    }
+    h1, h2 { 
+        color: #fff; 
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+        margin-top: 0;
+    }
+    .section {
+      background: var(--bg-medium); 
+      padding: 20px; 
+      margin-bottom: 20px; 
+      border-radius: 8px; 
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .user, .badge-item {
+      background: var(--bg-light); 
+      padding: 15px; 
+      margin-bottom: 10px;
+      border: 1px solid var(--border-color); 
+      border-radius: 6px;
+    }
+    .user-info, .badge-name {
+      font-weight: bold; 
+      margin-bottom: 6px; 
+      color: #fff;
+    }
+    .badges { margin-bottom: 6px; }
+    .badge {
+      display: inline-block; background: var(--accent); color: white;
+      padding: 4px 8px; border-radius: 5px; margin: 2px;
+      user-select: none; cursor: default; position: relative;
+    }
+    input[type="text"], input[type="number"], input[type="password"], textarea, select { margin-top: 5px; padding: 10px; font-size: 14px; width: 100%; box-sizing: border-box; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-dark); color: var(--text-primary); }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    button {
+      margin-top: 10px; cursor: pointer; padding: 10px 15px;
+      border-radius: 5px; border: none; background-color: var(--accent);
+      color: white; font-weight: bold; transition: filter 0.2s;
+    }
+    button:hover { filter: brightness(1.1); }
+    button.remove { background-color: var(--danger); }
+    #pinOverlay { background: var(--bg-medium); }
+    .history-entry { background: var(--bg-dark); padding: 10px; margin-bottom: 5px; border-radius: 4px; border: 1px solid var(--border-color); }
+  </style>
+</head>
+<body>
+  <div id="pinOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#333;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;color:white;">
+    <h2>Admin Access</h2>
+    <p>Please enter the admin PIN to continue.</p>
+    <input type="password" id="adminPinInput" placeholder="Enter PIN" style="padding:10px;font-size:16px;border-radius:5px;border:none;margin-bottom:10px;color:black;width:200px;">
+    <button id="verifyPinBtn" style="padding:10px 20px;font-size:16px;cursor:pointer;">Enter</button>
+  </div>
+
+  <div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:var(--bg-medium); padding:20px; border-radius:8px; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; position:relative; color: var(--text-primary);">
+        <button onclick="document.getElementById('historyModal').style.display='none'" style="position:absolute; top:10px; right:10px; background:transparent; border:none; color:white; font-size:20px; cursor:pointer;">&times;</button>
+        <h2 id="historyModalTitle">Redemption History</h2>
+        <div id="historyModalContent"></div>
+    </div>
+  </div>
+
+  <h1>Admin Panel - Badge & Profile Picture Management</h1>
+
+  <div class="section" id="maintenance-section">
+    <h2>Maintenance Control</h2>
+    <div style="margin-bottom:15px; padding:15px; background:rgba(255,0,0,0.1); border:1px solid rgba(255,0,0,0.3); border-radius:5px;">
+        <label style="display:flex; align-items:center; cursor:pointer; justify-content:space-between;">
+            <span style="font-weight:bold; color:var(--danger);">🔴 Maintenance Mode</span>
+            <input type="checkbox" id="admin-maint-toggle" style="transform:scale(1.5);">
+        </label>
+    </div>
+    <div style="margin-bottom:10px;">
+        <label>Image URL</label>
+        <input type="text" id="admin-maint-img" placeholder="https://...">
+    </div>
+    <div style="margin-bottom:10px;">
+        <label>Message (HTML allowed)</label>
+        <textarea id="admin-maint-msg" rows="4" placeholder="<h1>We'll be back!</h1>"></textarea>
+    </div>
+    <button id="admin-save-btn" style="background:var(--danger);">Save Maintenance Config</button>
+  </div>
+
+  <div class="section" id="scheduled-maintenance-section">
+    <h2>Scheduled Maintenance</h2>
+    <p>Set a future time for maintenance to end. This will automatically enable maintenance mode and start a countdown timer for all users.</p>
+    <div style="margin-bottom:10px;">
+        <label>Maintenance End Time</label>
+        <input type="datetime-local" id="maint-end-time">
+    </div>
+    <button id="schedule-maint-btn">Schedule & Activate</button>
+  </div>
+
+  <div class="section" id="broadcast-section">
+    <h2>Broadcast Message</h2>
+    <p>Send a popup message to all currently active users.</p>
+    <textarea id="broadcast-msg" rows="3" placeholder="Enter broadcast message..."></textarea>
+    <button id="send-broadcast-btn">Send Broadcast</button>
+    <button id="clear-broadcasts-btn" class="remove" style="margin-left: 10px;">Clear All Broadcasts</button>
+  </div>
+
+  <div class="section" id="badge-list-section">
+    <h2>Badge List</h2>
+    <button id="loadBadgesBtn" style="margin-bottom: 10px;">Load Badges</button>
+    <div id="badges" style="transition: all 0.3s ease;"></div>
+    <h3>Add New Badge</h3>
+    <input type="text" id="newBadgeName" placeholder="Badge ID (unique, no spaces)" />
+    <input type="text" id="newBadgeDisplayName" placeholder="Badge Display Name" />
+    <textarea id="newBadgeDescription" rows="2" placeholder="Badge Description"></textarea>
+    <button id="addBadgeBtn">Add Badge</button>
+  </div>
+
+  <div class="section" id="promo-code-section">
+    <h2>Promo Code Management</h2>
+    <button id="loadPromoCodesBtn" style="margin-bottom: 10px;">Load Promo Codes</button>
+    <div id="promoCodesList">Click Load to See codes</div>
+    
+    <h3>Add New Promo Code</h3>
+    <button onclick="window.location.href='promousers.html'" style="margin-bottom: 10px; background-color: #17a2b8;">View Code Usage</button>
+    <input type="text" id="newPromoCode" placeholder="Promo Code (unique)" />
+    <input type="number" id="newPromoPoints" placeholder="Points to Award" />
+    <input type="number" id="newPromoUses" placeholder="Max Uses (0 for unlimited)" value="0" />
+    
+    <div style="margin-bottom:10px;">
+        <label>Expiry Date/Time (Optional)</label>
+        <input type="datetime-local" id="newPromoExpiry">
+    </div>
+
+    <button id="addPromoCodeBtn">Add Promo Code</button>
+  </div>
+
+
+
+
+
+
+
+
+  <div class="section" id="user-list-section">
+    <h2>Users</h2>
+    <button id="loadUsersBtn" style="margin-bottom: 10px;">Load Users</button>
+    <div id="users"></div>
+  </div>
+
+  <div class="section" id="wheel-config-section">
+    <h2>Wheel Configuration</h2>
+    <button id="loadWheelBtn" style="margin-bottom: 10px;">Load Config</button><br>
+    <label>Prizes (comma separated numbers):</label>
+    <input type="text" id="wheelPrizes" placeholder="10, 50, 100, 200, 500">
+    <label>Cooldown (hours):</label>
+    <input type="number" id="wheelCooldown" placeholder="24">
+    <button id="saveWheelConfigBtn">Save Wheel Config</button>
+  </div>
+
+  <div class="section" id="shop-config-section">
+    <h2>Shop Configuration</h2>
+    <button id="loadShopBtn" style="margin-bottom: 10px;">Load Shop</button>
+    
+    <div style="background:#e9ecef; padding:10px; margin-bottom:15px; border-radius:5px;">
+      <h4>Add New Item</h4>
+      <input type="text" id="newShopId" placeholder="ID (e.g. green)" style="width:100px;">
+      <input type="text" id="newShopName" placeholder="Name (e.g. Matrix)" style="width:120px;">
+      <input type="number" id="newShopCost" placeholder="Cost" style="width:80px;">
+      <input type="text" id="newShopStyle" placeholder="CSS Background (e.g. green or linear-gradient...)" style="width:250px;">
+      <button id="addShopItemBtn">Add Item</button>
+    </div>
+
+    <div id="shopItemsList"></div>
+    <button id="saveShopConfigBtn" style="margin-top:10px;">Save Shop Changes</button>
+  </div>
+
+  <div class="section" id="allowed-pics-section">
+    <h2>Allowed Profile Pictures</h2>
+    <button id="loadPicsBtn" style="margin-bottom: 10px;">Load Pictures</button>
+    <div id="allowedPicsList" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+    <input type="text" id="newAllowedPic" placeholder="Paste image URL or Base64 string" />
+    <button id="addAllowedPicBtn">Add Allowed Picture</button>
+  </div>
+
+  <div class="section" id="update-log-section">
+    <h2>Manage Updates</h2>
+    <button id="loadUpdatesBtn" style="margin-bottom: 10px;">Load Updates</button>
+    <div id="updatesList"></div>
+    <h3>Add New Update</h3>
+    <input type="text" id="updateLogHeading" placeholder="Update Heading (e.g. v1.0 Released)" />
+    <textarea id="updateLogDescription" rows="5" placeholder="Update Description"></textarea>
+    <button id="saveUpdateLogBtn">Post Update</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, get, set, update, remove, query, limitToLast, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+      authDomain: "team-waffles.firebaseapp.com",
+      databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+      projectId: "team-waffles",
+      storageBucket: "team-waffles.appspot.com",
+      messagingSenderId: "891460090478",
+      appId: "1:891460090478:web:c01b6db1af21745769047f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    // --- Maintenance & Broadcast ---
+    function setupAdminControls() {
+        const maintToggle = document.getElementById('admin-maint-toggle');
+        const maintImg = document.getElementById('admin-maint-img');
+        const maintMsg = document.getElementById('admin-maint-msg');
+        const maintSaveBtn = document.getElementById('admin-save-btn');
+
+        const scheduleTimeInput = document.getElementById('maint-end-time');
+        const scheduleBtn = document.getElementById('schedule-maint-btn');
+
+        const broadcastMsg = document.getElementById('broadcast-msg');
+        const broadcastSendBtn = document.getElementById('send-broadcast-btn');
+        const clearBroadcastsBtn = document.getElementById('clear-broadcasts-btn');
+
+        // Load current maintenance state
+        get(ref(db, 'config/maintenance')).then(snap => {
+            const data = snap.val() || {};
+            maintToggle.checked = data.enabled || false;
+            maintImg.value = data.imageURL || '';
+            maintMsg.value = data.message || '';
+        });
+
+        // Save maintenance state
+        maintSaveBtn.onclick = () => {
+            update(ref(db, 'config/maintenance'), {
+                enabled: maintToggle.checked,
+                imageURL: maintImg.value.trim(),
+                message: maintMsg.value.trim(),
+                endsAt: null // Manually saving clears any schedule
+            }).then(() => alert("Maintenance config saved!"));
+        };
+
+        // Schedule maintenance
+        scheduleBtn.onclick = () => {
+            const endTimeValue = scheduleTimeInput.value;
+            if (!endTimeValue) {
+                return alert("Please select a date and time for the maintenance to end.");
+            }
+            const endTime = new Date(endTimeValue).getTime();
+            if (isNaN(endTime) || endTime <= Date.now()) {
+                return alert("Please select a time in the future.");
+            }
+            if (!confirm(`This will activate maintenance mode and set a countdown until ${new Date(endTimeValue).toLocaleString()}. Are you sure?`)) return;
+
+            update(ref(db, 'config/maintenance'), {
+                enabled: true,
+                imageURL: maintImg.value.trim(),
+                message: maintMsg.value.trim(),
+                endsAt: endTime
+            }).then(() => alert("Scheduled maintenance has been activated!"));
+        };
+
+        // Send broadcast
+        broadcastSendBtn.onclick = () => {
+            const message = broadcastMsg.value.trim();
+            if (!message) return alert("Broadcast message cannot be empty.");
+            if (!confirm("Are you sure you want to send this broadcast to all users?")) return;
+
+            const newBroadcastRef = push(ref(db, 'config/broadcast'));
+            set(newBroadcastRef, { message, timestamp: serverTimestamp() }).then(() => {
+                alert("Broadcast sent!");
+                broadcastMsg.value = "";
+            });
+        };
+
+        // Clear broadcasts
+        clearBroadcastsBtn.onclick = () => {
+            if (confirm("Are you sure you want to delete all broadcast history? This cannot be undone.")) {
+                remove(ref(db, 'config/broadcast')).then(() => {
+                    alert("All broadcasts have been cleared.");
+                }).catch((error) => alert("Failed to clear broadcasts: " + error.message));
+            }
+        };
+    }
+
+    async function loadBadges() {
+      const container = document.getElementById("badges");
+      container.innerHTML = "Loading...";
+      const snap = await get(ref(db, "badges"));
+      container.innerHTML = "";
+      if (!snap.exists()) return container.innerHTML = "<p>No badges found.</p>";
+      const badges = snap.val();
+      for (const [id, data] of Object.entries(badges)) {
+        const div = document.createElement("div");
+        div.className = "badge-item";
+        div.innerHTML = `<div class='badge-name'>${id} (${data.name})</div><p>${data.description || "No description"}</p>`;
+        const btn = document.createElement("button");
+        btn.textContent = "Remove Badge";
+        btn.className = "remove";
+        btn.onclick = async () => {
+          if (confirm(`Delete badge '${id}'?`)) {
+            await remove(ref(db, `badges/${id}`));
+            loadBadges();
+          }
+        };
+        div.appendChild(btn);
+        container.appendChild(div);
+      }
+    }
+
+    async function loadUsers() {
+      const container = document.getElementById("users");
+      container.innerHTML = "Loading...";
+      const [usersSnap, badgesSnap] = await Promise.all([
+        get(query(ref(db, "users"), limitToLast(50))),
+        get(ref(db, "badges")),
+      ]);
+      container.innerHTML = "";
+      const badges = badgesSnap.exists() ? badgesSnap.val() : {};
+      if (!usersSnap.exists()) return container.innerHTML = "<p>No users found.</p>";
+      const users = usersSnap.val();
+
+      for (const [uid, userData] of Object.entries(users)) {
+        const div = document.createElement("div");
+        div.className = "user";
+        div.innerHTML = `<div class='user-info'>UID: ${uid} — Username: ${userData.permanentUsername || "(none)"}</div>`;
+
+        const badgeContainer = document.createElement("div");
+        badgeContainer.className = "badges";
+        (userData.badges || []).forEach(badgeId => {
+          const span = document.createElement("span");
+          span.className = "badge";
+          span.textContent = badges[badgeId]?.name || badgeId;
+          badgeContainer.appendChild(span);
+        });
+        div.appendChild(badgeContainer);
+
+        // Points Management
+        const pointsDiv = document.createElement("div");
+        pointsDiv.style.marginTop = "5px";
+        pointsDiv.innerHTML = `Points: <strong>${userData.points || 0}</strong> `;
+        
+        const btnAddPoints = document.createElement("button");
+        btnAddPoints.textContent = "+100 Pts";
+        btnAddPoints.onclick = async () => {
+            await update(ref(db, `users/${uid}`), { points: (userData.points || 0) + 100 });
+            loadUsers();
+        };
+        const btnSubPoints = document.createElement("button");
+        btnSubPoints.textContent = "-100 Pts";
+        btnSubPoints.className = "remove";
+        btnSubPoints.onclick = async () => {
+            await update(ref(db, `users/${uid}`), { points: Math.max(0, (userData.points || 0) - 100) });
+            loadUsers();
+        };
+        pointsDiv.appendChild(btnAddPoints);
+        pointsDiv.appendChild(btnSubPoints);
+
+        const btnHistory = document.createElement("button");
+        btnHistory.textContent = "View History";
+        btnHistory.style.marginLeft = "10px";
+        btnHistory.style.backgroundColor = "#17a2b8";
+        btnHistory.onclick = () => {
+            const modal = document.getElementById('historyModal');
+            const content = document.getElementById('historyModalContent');
+            document.getElementById('historyModalTitle').innerText = `History: ${userData.displayName || userData.permanentUsername}`;
+            content.innerHTML = "";
+            
+            if (userData.redeemed_codes) {
+                Object.entries(userData.redeemed_codes).forEach(([code, info]) => {
+                    const date = info.timestamp ? new Date(info.timestamp).toLocaleString() : "Unknown Date";
+                    const pts = info.pointsAwarded ? `(+${info.pointsAwarded} pts)` : "";
+                    content.innerHTML += `<div class="history-entry"><strong>${code}</strong> ${pts}<br><small>${date}</small></div>`;
+                });
+            } else {
+                content.innerHTML = "<p>No redemption history found.</p>";
+            }
+            modal.style.display = "flex";
+        };
+        pointsDiv.appendChild(btnHistory);
+        div.appendChild(pointsDiv);
+
+        const addSelect = document.createElement("select");
+        const addDefault = document.createElement("option");
+        addDefault.text = "Select badge to add";
+        addSelect.appendChild(addDefault);
+        Object.entries(badges).forEach(([id, badge]) => {
+          if ((userData.badges || []).includes(id)) return;
+          const opt = document.createElement("option");
+          opt.value = id;
+          opt.text = badge.name;
+          addSelect.appendChild(opt);
+        });
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "Add Badge";
+        addBtn.onclick = async () => {
+          const val = addSelect.value;
+          if (!val) return alert("Select a badge");
+          const updated = [...(userData.badges || []), val];
+          await update(ref(db, `users/${uid}`), { badges: updated });
+          loadUsers();
+        };
+
+        const removeSelect = document.createElement("select");
+        const removeDefault = document.createElement("option");
+        removeDefault.text = "Select badge to remove";
+        removeSelect.appendChild(removeDefault);
+        (userData.badges || []).forEach(badgeId => {
+          const opt = document.createElement("option");
+          opt.value = badgeId;
+          opt.text = badges[badgeId]?.name || badgeId;
+          removeSelect.appendChild(opt);
+        });
+        const removeBtn = document.createElement("button");
+        removeBtn.textContent = "Remove Badge";
+        removeBtn.className = "remove";
+        removeBtn.onclick = async () => {
+          const val = removeSelect.value;
+          const updated = (userData.badges || []).filter(b => b !== val);
+          await update(ref(db, `users/${uid}`), { badges: updated });
+          loadUsers();
+        };
+
+        div.appendChild(addSelect);
+        div.appendChild(addBtn);
+        div.appendChild(removeSelect);
+        div.appendChild(removeBtn);
+        container.appendChild(div);
+      }
+    }
+
+    async function loadPromoCodes() {
+        const container = document.getElementById("promoCodesList");
+        container.innerHTML = "Loading...";
+        const snap = await get(ref(db, "promo_codes"));
+        container.innerHTML = "";
+        if (!snap.exists()) {
+            container.innerHTML = "<p>No promo codes found.</p>";
+            return;
+        }
+        const codes = snap.val();
+        for (const [code, data] of Object.entries(codes)) {
+            const div = document.createElement("div");
+            div.className = "badge-item"; // Re-use style
+            const expiryDate = data.expiry ? new Date(data.expiry).toLocaleString() : "Never";
+            const usesText = data.maxUses === 0 ? "Unlimited" : `${data.uses} / ${data.maxUses}`;
+            div.innerHTML = `
+                <div class='badge-name'>Code: <strong>${code}</strong></div>
+                <p>Points: ${data.points} | Uses Left: ${usesText} | Expires: ${expiryDate}</p>
+            `;
+            const btn = document.createElement("button");
+            btn.textContent = "Delete Code";
+            btn.className = "remove";
+            btn.onclick = async () => {
+                if (confirm(`Delete promo code '${code}'? This cannot be undone.`)) {
+                    await remove(ref(db, `promo_codes/${code}`));
+                    loadPromoCodes();
+                }
+            };
+            div.appendChild(btn);
+            container.appendChild(div);
+        }
+    }
+
+    async function loadAllowedPics() {
+      const listDiv = document.getElementById("allowedPicsList");
+      listDiv.innerHTML = "Loading...";
+      const snap = await get(ref(db, "config/allowedProfilePictures"));
+      listDiv.innerHTML = "";
+      if (!snap.exists()) return listDiv.innerHTML = "<p>No profile pictures allowed yet.</p>";
+      const pics = snap.val();
+      for (const [id, url] of Object.entries(pics)) {
+        const box = document.createElement("div");
+        box.style.position = "relative";
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.width = "80px";
+        img.style.height = "80px";
+        img.style.borderRadius = "50%";
+        img.style.objectFit = "cover";
+        box.appendChild(img);
+
+        const btn = document.createElement("button");
+        btn.textContent = "X";
+        btn.className = "remove";
+        btn.style.position = "absolute";
+        btn.style.top = "-10px";
+        btn.style.right = "-10px";
+        btn.onclick = async () => {
+          await remove(ref(db, `config/allowedProfilePictures/${id}`));
+          loadAllowedPics();
+        };
+        box.appendChild(btn);
+        listDiv.appendChild(box);
+      }
+    }
+
+    async function loadUpdateLog() {
+      const container = document.getElementById("updatesList");
+      container.innerHTML = "Loading updates...";
+      const snap = await get(ref(db, "config/updates"));
+      container.innerHTML = "";
+      
+      if (!snap.exists()) {
+        container.innerHTML = "<p>No updates found.</p>";
+        return;
+      }
+      
+      const updates = [];
+      snap.forEach(child => {
+        updates.unshift({ key: child.key, ...child.val() }); // Newest first
+      });
+      
+      updates.forEach(u => {
+        const div = document.createElement("div");
+        div.className = "badge-item";
+        div.innerHTML = `<div class='badge-name'>${u.heading}</div><p>${u.description}</p>`;
+        
+        const btn = document.createElement("button");
+        btn.textContent = "Delete";
+        btn.className = "remove";
+        btn.onclick = async () => {
+            if(confirm("Delete this update?")) {
+                await remove(ref(db, `config/updates/${u.key}`));
+                loadUpdateLog();
+            }
+        };
+        div.appendChild(btn);
+        container.appendChild(div);
+      });
+    }
+
+    async function loadWheelConfig() {
+      const snap = await get(ref(db, "config/wheel"));
+      if (snap.exists()) {
+        const data = snap.val();
+        document.getElementById("wheelPrizes").value = (data.prizes || []).join(", ");
+        document.getElementById("wheelCooldown").value = data.cooldown || 24;
+      }
+    }
+
+    async function loadShopConfig() {
+      const container = document.getElementById("shopItemsList");
+      container.innerHTML = "Loading...";
+      
+      let snap = await get(ref(db, "config/shopItems"));
+      let items = snap.exists() ? snap.val() : {
+        "default": { name: "Default", cost: 0, class: "bubble-default" },
+        "blue": { name: "Ocean", cost: 100, class: "bubble-blue" },
+        "red": { name: "Sunset", cost: 100, class: "bubble-red" },
+        "gold": { name: "Gold", cost: 500, class: "bubble-gold" },
+        "rainbow": { name: "Rainbow", cost: 1000, class: "bubble-rainbow" }
+      };
+
+      container.innerHTML = "";
+      
+      for (const [key, item] of Object.entries(items)) {
+        const div = document.createElement("div");
+        div.style.marginBottom = "10px";
+        div.style.padding = "10px";
+        div.style.background = "#eee";
+        div.style.borderRadius = "5px";
+        
+        div.innerHTML = `
+          <strong>ID: ${key}</strong><br>
+          Name: <input type="text" id="shop_name_${key}" value="${item.name}" style="width:150px;">
+          Cost: <input type="number" id="shop_cost_${key}" value="${item.cost}" style="width:80px;">
+          Class: <input type="text" id="shop_class_${key}" value="${item.class || ''}" placeholder="CSS Class" style="width:100px;">
+          Style: <input type="text" id="shop_style_${key}" value="${item.style || ''}" placeholder="CSS Background" style="width:200px;">
+        `;
+        container.appendChild(div);
+      }
+    }
+
+
+    document.getElementById("addBadgeBtn").onclick = async () => {
+      const id = document.getElementById("newBadgeName").value.trim();
+      const name = document.getElementById("newBadgeDisplayName").value.trim();
+      const desc = document.getElementById("newBadgeDescription").value.trim();
+      if (!id || !name || /\s/.test(id)) return alert("Invalid badge ID or name");
+      await set(ref(db, `badges/${id}`), { name, description: desc });
+      loadBadges();
+    };
+    
+
+    document.getElementById("addAllowedPicBtn").onclick = async () => {
+      const url = document.getElementById("newAllowedPic").value.trim();
+      if (!url) return alert("Enter a valid image or base64 URL");
+      const id = Date.now();
+      await set(ref(db, `config/allowedProfilePictures/${id}`), url);
+      document.getElementById("newAllowedPic").value = "";
+      loadAllowedPics();
+    };
+
+    document.getElementById("saveUpdateLogBtn").onclick = async () => {
+      const heading = document.getElementById("updateLogHeading").value;
+      const description = document.getElementById("updateLogDescription").value;
+      if(!heading || !description) return alert("Please fill in both fields");
+      
+      const newRef = ref(db, "config/updates/" + Date.now());
+      await set(newRef, { heading, description });
+      
+      document.getElementById("updateLogHeading").value = "";
+      document.getElementById("updateLogDescription").value = "";
+      loadUpdateLog();
+      alert("Update posted!");
+    };
+
+    document.getElementById("saveWheelConfigBtn").onclick = async () => {
+      const prizesStr = document.getElementById("wheelPrizes").value;
+      let cooldownVal = document.getElementById("wheelCooldown").value;
+
+      let cooldown = parseInt(cooldownVal);
+      if (isNaN(cooldown)) cooldown = 24;
+      const prizes = prizesStr.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      
+      await set(ref(db, "config/wheel"), { prizes, cooldown });
+      alert("Wheel config saved!");
+      loadWheelConfig();
+    };
+
+    document.getElementById("addShopItemBtn").onclick = async () => {
+      const id = document.getElementById("newShopId").value.trim();
+      const name = document.getElementById("newShopName").value.trim();
+      const cost = parseInt(document.getElementById("newShopCost").value) || 0;
+      const style = document.getElementById("newShopStyle").value.trim();
+      
+      if (!id || !name) return alert("ID and Name are required");
+      
+      await update(ref(db, `config/shopItems/${id}`), { name, cost, style });
+      alert("Item added!");
+      loadShopConfig();
+    };
+
+    document.getElementById("saveShopConfigBtn").onclick = async () => {
+      // We iterate over the known keys to gather values
+      // Note: This simple editor modifies existing keys. To add new ones, you'd need an "Add Item" button.
+      const container = document.getElementById("shopItemsList");
+      const inputs = container.querySelectorAll("input");
+      const newConfig = {};
+      
+      inputs.forEach(input => {
+        const parts = input.id.split("_"); // e.g. ["shop", "cost", "blue"]
+        const field = parts[1];
+        const key = parts.slice(2).join("_");
+        
+        if (!newConfig[key]) newConfig[key] = {};
+        newConfig[key][field] = field === "cost" ? parseInt(input.value) : input.value;
+      });
+
+      await set(ref(db, "config/shopItems"), newConfig);
+      alert("Shop config saved!");
+    };
+
+    document.getElementById("addPromoCodeBtn").onclick = async () => {
+        const code = document.getElementById("newPromoCode").value.trim().toUpperCase();
+        const points = parseInt(document.getElementById("newPromoPoints").value);
+        const uses = parseInt(document.getElementById("newPromoUses").value);
+        let expiryValue = document.getElementById('newPromoExpiry').value;
+        
+        if (!code || isNaN(points)) return alert("Invalid promo code or points value.");
+        if (uses < 0) return alert("Max Uses must be 0 or more");
+
+        let expiry = null;
+        if (expiryValue) {
+            expiry = new Date(expiryValue).getTime();
+            if (isNaN(expiry)) return alert("Invalid expiry date/time");
+        }
+
+        const promoRef = ref(db, `promo_codes/${code}`);
+
+        try {
+            await set(promoRef, {
+                points: points,
+                uses: uses,
+                maxUses: uses,
+                expiry: expiry
+            });
+            alert("Promo code added successfully!");
+            document.getElementById("newPromoCode").value = "";
+            document.getElementById("newPromoPoints").value = "";
+            document.getElementById("newPromoUses").value = "0";
+            document.getElementById('newPromoExpiry').value = null;
+        } catch (error) {
+            alert("Failed to add promo code: " + error.message);
+        }
+    };
+
+
+
+
+
+
+
+    document.getElementById("verifyPinBtn").onclick = async () => {
+      const input = document.getElementById("adminPinInput").value.trim();
+      // Fetch PIN from DB or default to 1234
+      const snap = await get(ref(db, "config/adminPin"));
+      const realPin = snap.exists() ? String(snap.val()) : "1234";
+      
+      if (input === realPin) {
+        document.getElementById("pinOverlay").style.display = "none";
+        // Setup controls now that user is verified
+        setupAdminControls();
+      } else {
+        alert("Incorrect PIN!");
+      }
+    };
+
+    document.getElementById("loadBadgesBtn").onclick = loadBadges;
+    document.getElementById("loadUsersBtn").onclick = loadUsers;
+    document.getElementById("loadWheelBtn").onclick = loadWheelConfig;
+    document.getElementById("loadShopBtn").onclick = loadShopConfig;
+    document.getElementById("loadPicsBtn").onclick = loadAllowedPics;
+    document.getElementById("loadUpdatesBtn").onclick = loadUpdateLog;
+    document.getElementById("loadPromoCodesBtn").onclick = loadPromoCodes;
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("pinOverlay").style.display = "flex";
+      } else {
+        alert("No user detected. Please log in.");
+        window.location.href = "index.html";
+      }
+    });
+  </script>
+</body>
+</html>
