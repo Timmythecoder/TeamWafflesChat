@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redeem Code</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap");
+
+        :root {
+            --bg-dark: #121212;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #eee;
+            --accent: #45ffbc;
+            --font: 'Be Vietnam Pro', sans-serif;
+        }
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000 100%);
+        }
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        h3 {
+            margin-top: 0;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-size: 1.1rem;
+            box-sizing: border-box;
+            font-family: var(--font);
+            text-align: center;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(69, 255, 188, 0.2);
+        }
+        button {
+            width: 100%;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background-color: var(--accent);
+            color: #000;
+            font-weight: 800;
+            font-size: 1rem;
+            transition: transform 0.2s, filter 0.2s;
+            font-family: var(--font);
+            text-transform: uppercase;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        a {
+            color: rgba(255,255,255,0.5);
+            text-decoration: none;
+            margin-top: 25px;
+            display: inline-block;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        a:hover {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div id="auth-container" class="container">
+        <p>Authenticating...</p>
+    </div>
+
+    <div id="redeem-container" class="container" style="display:none;">
+        <h3>Redeem Code</h3>
+        <input type="text" id="code_box" placeholder="Enter a code">
+        <button id="redeemBtn">Redeem Code</button>
+        <br>
+        <a href="dashboard.html">← Back to Dashboard</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+            authDomain: "team-waffles.firebaseapp.com",
+            databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+            projectId: "team-waffles",
+            storageBucket: "team-waffles.appspot.com",
+            messagingSenderId: "891460090478",
+            appId: "1:891460090478:web:c01b6db1af21745769047f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        let currentUserUID = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.emailVerified) {
+                currentUserUID = user.uid;
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('redeem-container').style.display = 'block';
+            } else {
+                alert("You must be logged in to redeem a code.");
+                window.location.href = "index.html";
+            }
+        });
+
+        async function applyCode() {
+            if (!currentUserUID) return alert("User not authenticated. Please wait or reload.");
+            
+            const code = document.getElementById("code_box").value.trim().toUpperCase();
+            if (!code) return alert("Please enter a code.");
+
+            const promoRef = ref(db, `promo_codes/${code}`);
+            const redeemedRef = ref(db, `users/${currentUserUID}/redeemed_codes/${code}`);
+
+            try {
+                const [promoSnap, redeemedSnap] = await Promise.all([get(promoRef), get(redeemedRef)]);
+                
+                if (!promoSnap.exists()) return alert("Invalid promo code.");
+                if (redeemedSnap.exists()) return alert("You have already redeemed this code.");
+
+                const codeData = promoSnap.val();
+                if (codeData.expiry && codeData.expiry < Date.now()) return alert("This code has expired.");
+                if (codeData.maxUses !== 0 && codeData.uses <= 0) return alert("This code has no uses left.");
+
+                const points = codeData.points;
+                const userPointsRef = ref(db, `users/${currentUserUID}/points`);
+                const userPointsSnap = await get(userPointsRef);
+                const currentPoints = userPointsSnap.val() || 0;
+                
+                // Log redemption before awarding points
+                await set(redeemedRef, {
+                    timestamp: Date.now(),
+                    code: code,
+                    pointsAwarded: points
+                });
+
+                await set(userPointsRef, currentPoints + points);
+                if (codeData.maxUses !== 0) await update(promoRef, { uses: codeData.uses - 1 });
+
+                alert(`Success! You received ${points} points.`);
+                document.getElementById("code_box").value = "";
+
+            } catch (e) {
+                console.error("Code redeem error:", e);
+                alert("Failed to redeem code: " + e.message);
+            }
+        }
+
+        document.getElementById('redeemBtn').onclick = applyCode;
+    </script>
+</body>
+</html>
