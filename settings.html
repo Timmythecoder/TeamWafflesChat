@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings | Team Waffles</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2em;
+      max-width: 600px;
+      margin: auto;
+      transition: background 0.3s, color 0.3s;
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    .light-theme {
+      background: linear-gradient(-45deg, #f4f4f4, #e0e0e0, #ffffff);
+      color: #000;
+    }
+
+    .dark-theme {
+      background: linear-gradient(-45deg, #1f1f1f, #2c2c2c, #121212);
+      color: #fff;
+    }
+
+    h2 { text-align: center; color: #45ffbc; }
+
+    .form-group { 
+      margin-bottom: 20px; 
+      animation: slideInRight 0.5s ease-out backwards;
+    }
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
+    .form-group:nth-child(4) { animation-delay: 0.4s; }
+
+    label { display: block; margin-bottom: 6px; }
+    input[type="text"], select, textarea {
+      width: 100%; padding: 10px; border-radius: 6px; border: none;
+    }
+
+    button {
+      background: #45ffbc; color: #000;
+      padding: 12px 20px; border: none;
+      border-radius: 6px; cursor: pointer;
+    }
+
+    #profilePreview {
+      display: block;
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin: 10px 0;
+      background: #444;
+    }
+
+    #profileChoices img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: border 0.2s;
+    }
+
+    #profileChoices img.selected {
+      border-color: #45ffbc;
+    }
+
+    #loadingOverlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #privacyOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 20000; display: flex; cursor: none;
+      align-items: center; justify-content: center; color: #333;
+      font-family: monospace; font-size: 12px;
+      opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+    }
+
+    #panicActivationOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 25000; display: flex; cursor: pointer;
+      align-items: center; justify-content: center; color: #ccc;
+      font-family: monospace; font-size: 1.2rem;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+
+    #loadingOverlay video {
+      width: 200px; height: auto;
+    }
+
+    .success { color: lightgreen; }
+    .error { color: pink; }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    body { animation: fadeIn 0.5s ease-out; }
+    
+    input, select { transition: box-shadow 0.2s; }
+    input:focus, select:focus { box-shadow: 0 0 0 2px #45ffbc; outline: none; }
+    
+    button { transition: transform 0.1s; }
+    button:active { transform: scale(0.95); }
+  </style>
+</head>
+<body class="light-theme">
+
+  <div id="loadingOverlay">
+    <video src="Loading.mp4" autoplay muted loop></video>
+  </div>
+
+  <!-- Privacy Overlay -->
+  <div id="panicActivationOverlay">
+    <div style="text-align: center; cursor: default;">
+      <h2 style="color: #fff; margin-bottom: 20px; font-family: sans-serif;">Session Paused</h2>
+      <button id="panicContinueBtn" style="padding: 10px 24px; font-size: 1rem; background: #0084ff; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold;">Continue</button>
+    </div>
+  </div>
+  <div id="privacyOverlay">System Halted</div>
+
+  <h2>Settings</h2>
+
+  <div class="form-group">
+    <label for="permanentUsername">Permanent Username (set once)</label>
+    <input type="text" id="permanentUsername" />
+  </div>
+
+  <div class="form-group">
+    <label for="displayName">Display Name</label>
+    <input type="text" id="displayName" />
+  </div>
+
+  <div class="form-group">
+    <label>Choose a Profile Picture</label>
+    <div id="profileChoices" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+    <img id="profilePreview" src="" alt="Preview" />
+  </div>
+
+  <div class="form-group">
+    <label for="themePref">Theme Preference</label>
+    <select id="themePref">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+  </div>
+
+  <button onclick="saveSettings()">Save Settings</button>
+  <button onclick="window.location.href='dashboard.html'">Back</button>
+  <button onclick="window.location.href='personal.html'">Personal Settings</button>
+  <p id="statusMsg"></p>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+    authDomain: "team-waffles.firebaseapp.com",
+    databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+    projectId: "team-waffles",
+    storageBucket: "team-waffles.appspot.com",
+    messagingSenderId: "891460090478",
+    appId: "1:891460090478:web:c01b6db1af21745769047f"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  const profilePreview = document.getElementById("profilePreview");
+  const profileChoices = document.getElementById("profileChoices");
+  const themePrefSelect = document.getElementById("themePref");
+  const permanentUsernameInput = document.getElementById("permanentUsername");
+  const statusMsg = document.getElementById("statusMsg");
+  const oldPassInput = document.getElementById("oldPassword");
+  const newPassInput = document.getElementById("newPassword");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const panicActivationOverlay = document.getElementById("panicActivationOverlay");
+  const panicContinueBtn = document.getElementById("panicContinueBtn");
+  const privacyOverlay = document.getElementById("privacyOverlay");
+
+  let currentUser = null;
+  let selectedPic = null;
+
+  function applyTheme(theme) {
+    document.body.classList.remove("light-theme", "dark-theme");
+    document.body.classList.add(`${theme}-theme`);
+  }
+
+  async function loadProfilePicList() {
+    const fallbackPics = [
+      "pfps/1.png", "pfps/2.png", "pfps/3.png", "pfps/4.png", "pfps/5.png"
+    ];
+    try {
+      const snap = await db.ref("config/allowedProfilePictures").once("value");
+      if (!snap.exists()) return fallbackPics;
+      return Object.values(snap.val());
+    } catch (e) {
+      console.warn("Failed to load profile pic list, using fallback.");
+      return fallbackPics;
+    }
+  }
+
+  function renderProfileChoices(list, currentSelection) {
+    profileChoices.innerHTML = "";
+    list.forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      if (url === currentSelection) img.classList.add("selected");
+      img.onclick = () => {
+        selectedPic = url;
+        profilePreview.src = url;
+        renderProfileChoices(list, url);
+      };
+      profileChoices.appendChild(img);
+    });
+  }
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) return (window.location.href = "index.html");
+    currentUser = user;
+    const uid = user.uid;
+
+    try {
+      const snap = await db.ref("users/" + uid).once("value");
+      const data = snap.val() || {};
+
+      if (data.permanentUsername) {
+        permanentUsernameInput.value = data.permanentUsername;
+        permanentUsernameInput.disabled = true;
+      }
+
+      document.getElementById("displayName").value = data.displayName || "";
+
+      const darkMode = data.settings?.darkMode ?? false;
+      themePrefSelect.value = darkMode ? "dark" : "light";
+      applyTheme(themePrefSelect.value);
+
+      const pics = await loadProfilePicList();
+      selectedPic = data.profilePicURL || pics[0];
+      profilePreview.src = selectedPic;
+      renderProfileChoices(pics, selectedPic);
+
+    } catch (err) {
+      console.error("Failed to load user data", err);
+      statusMsg.textContent = "Error loading settings.";
+      statusMsg.className = "error";
+    } finally {
+      loadingOverlay.style.display = "none";
+    }
+  });
+
+  themePrefSelect.addEventListener("change", e => {
+    applyTheme(e.target.value);
+  });
+
+  async function saveSettings() {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    const perm = permanentUsernameInput.value.trim();
+    const display = document.getElementById("displayName").value.trim();
+    const theme = themePrefSelect.value;
+
+    statusMsg.textContent = "Saving...";
+    statusMsg.className = "";
+
+    try {
+      if (!permanentUsernameInput.disabled) {
+        if (!perm) throw new Error("Permanent username cannot be empty.");
+        const userRef = db.ref("users/" + uid);
+        const snap = await userRef.once("value");
+        if (snap.val()?.permanentUsername) {
+          throw new Error("Permanent username already set.");
+        }
+        await userRef.update({ permanentUsername: perm });
+        permanentUsernameInput.disabled = true;
+      }
+
+      if (!display) throw new Error("Display name cannot be empty.");
+      const updates = {
+        displayName: display,
+        profilePicURL: selectedPic
+      };
+      const settings = { 
+          darkMode: theme === "dark"
+      };
+      
+      await db.ref("users/" + uid).update(updates);
+      await db.ref("users/" + uid + "/settings").update(settings);
+
+      statusMsg.textContent = "Settings updated!";
+      statusMsg.className = "success";
+    } catch (e) {
+      statusMsg.textContent = e.message || "Failed to save settings.";
+      statusMsg.className = "error";
+    }
+  }
+
+  // --- Global Hotkey Logic ---
+  let currentHotkeys = {};
+  
+  function loadAndApplyHotkeys() {
+    try {
+      const hotkeysJSON = localStorage.getItem('twc_hotkeys');
+      if (hotkeysJSON) {
+        currentHotkeys = JSON.parse(hotkeysJSON);
+      }
+    } catch (e) {
+      console.error("Could not load hotkeys from localStorage", e);
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (!currentHotkeys || !privacyOverlay || !panicActivationOverlay) return;
+
+    // Handle events when panic overlay is active
+    if (panicActivationOverlay.style.opacity === '1') {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        panicActivationOverlay.style.opacity = '0';
+        panicActivationOverlay.style.pointerEvents = 'none';
+        sessionStorage.removeItem("panic_triggered");
+      }
+      return; // Don't process other hotkeys
+    }
+    
+    // Panic Button
+    if (currentHotkeys.panicKey && e.key === currentHotkeys.panicKey) {
+      e.preventDefault();
+      sessionStorage.setItem("panic_triggered", "true");
+      const url = currentHotkeys.panicUrl || "https://www.google.com";
+      window.location.href = url;
+    }
+    // Privacy Hide
+    if (currentHotkeys.privacyHideKey && e.key === currentHotkeys.privacyHideKey) {
+      const style = currentHotkeys.privacyStyle || 'halted';
+      const bgColor = currentHotkeys.privacyBgColor || '#0067b8';
+      
+      document.documentElement.requestFullscreen().catch(() => {});
+      // Reset styles
+      privacyOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; display: flex; opacity: 1; pointer-events: all; cursor: none; align-items: center; justify-content: center; flex-direction: column;';
+      
+      if (style === 'win_update') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = bgColor === '#000000' ? '#fff' : '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.innerHTML = `
+              <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+              <div style="text-align: center;">Working on updates <span id="win-progress">1</span>% complete.<br>Don't turn off your computer.</div>
+              <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          `;
+          let progress = 1;
+          const interval = setInterval(() => {
+              if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+              if(progress < 100) {
+                  progress += Math.floor(Math.random() * 3);
+                  if(progress > 100) progress = 100;
+                  const el = document.getElementById('win-progress');
+                  if(el) el.innerText = progress;
+              }
+          }, 2000);
+      } else if (style === 'restarting') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = bgColor === '#000000' ? '#fff' : '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.innerHTML = `
+              <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+              <div>Restarting...</div>
+              <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          `;
+      } else if (style === 'bsod') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.style.alignItems = 'flex-start';
+          privacyOverlay.style.padding = '10%';
+          privacyOverlay.innerHTML = `
+              <div style="font-size: 100px; margin-bottom: 20px;">:(</div>
+              <div style="font-size: 24px; margin-bottom: 20px;">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div>
+              <div style="font-size: 24px; margin-bottom: 40px;"><span id="bsod-progress">0</span>% complete</div>
+              <div style="display: flex; align-items: center;">
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://bit.ly/twmainc1" style="width: 120px; height: 120px; margin-right: 20px;">
+                  <div style="font-size: 14px;">
+                      For more information about this issue and possible fixes, visit https://www.windows.com/stopcode<br><br>
+                      If you call a support person, give them this info:<br>
+                      Stop code: CRITICAL_PROCESS_DIED
+                  </div>
+              </div>
+          `;
+          let progress = 0;
+          const interval = setInterval(() => {
+              if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+              if(progress < 100) {
+                  progress += Math.floor(Math.random() * 5);
+                  if(progress > 100) progress = 100;
+                  const el = document.getElementById('bsod-progress');
+                  if(el) el.innerText = progress;
+              }
+          }, 1000);
+      } else if (style === 'matrix') {
+          privacyOverlay.style.background = 'black';
+          privacyOverlay.innerHTML = '';
+          const canvas = document.createElement('canvas');
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          privacyOverlay.appendChild(canvas);
+          const ctx = canvas.getContext('2d');
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+          const fontSize = 16;
+          const columns = canvas.width / fontSize;
+          const drops = Array(Math.floor(columns)).fill(1);
+          const drawMatrix = () => {
+              if(privacyOverlay.style.opacity === '0') return;
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.fillStyle = '#0F0';
+              ctx.font = fontSize + 'px monospace';
+              for(let i = 0; i < drops.length; i++) {
+                  const text = chars[Math.floor(Math.random() * chars.length)];
+                  ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                  if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                  drops[i]++;
+              }
+              requestAnimationFrame(drawMatrix);
+          };
+          drawMatrix();
+      } else if (style === 'terminal') {
+          privacyOverlay.style.background = 'black';
+          privacyOverlay.style.color = '#0f0';
+          privacyOverlay.style.fontFamily = 'monospace';
+          privacyOverlay.style.fontSize = '16px';
+          privacyOverlay.style.padding = '20px';
+          privacyOverlay.style.justifyContent = 'flex-start';
+          privacyOverlay.style.alignItems = 'flex-start';
+          privacyOverlay.style.overflow = 'hidden';
+          privacyOverlay.innerHTML = '<div id="term-content"></div>';
+          
+          const termContent = document.getElementById('term-content');
+          const lines = [
+              "Initializing connection...", "Connecting to server 192.168.0.1...", "Bypassing firewall...", "Access granted.",
+              "Downloading sensitive data...", "Encrypting files...", "Uploading to remote host...", "Cleaning logs...",
+              "System compromise imminent...", "Root access obtained.", "Executing payload...", "Decrypting user passwords...",
+              "Fetching database tables...", "Injecting SQL query...", "Packet sniffing started...", "Intercepting traffic...",
+              "Compiling assets...", "Bypassing mainframe...", "Accessing kernel...", "Overriding security protocols..."
+          ];
+          
+          const interval = setInterval(() => {
+              if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+              const line = lines[Math.floor(Math.random() * lines.length)];
+              const p = document.createElement('div');
+              p.textContent = `> ${line}`;
+              termContent.appendChild(p);
+              window.scrollTo(0, document.body.scrollHeight);
+              if (termContent.childElementCount > 25) termContent.removeChild(termContent.firstChild);
+          }, 150);
+      } else {
+          privacyOverlay.style.background = currentHotkeys.privacyBgColor || '#000';
+          privacyOverlay.style.color = currentHotkeys.privacyBgColor === '#0067b8' ? '#fff' : '#333';
+          privacyOverlay.style.fontFamily = 'monospace';
+          privacyOverlay.style.fontSize = '12px';
+          privacyOverlay.innerHTML = 'System Halted';
+      }
+
+      const sb = document.getElementById('fs-sidebar');
+      const sbt = document.getElementById('fs-sidebar-toggle');
+      if (sb) sb.style.visibility = 'hidden';
+      if (sbt) sbt.style.visibility = 'hidden';
+    }
+    // Privacy Show
+    if (currentHotkeys.privacyShowKey && e.key === currentHotkeys.privacyShowKey) {
+      privacyOverlay.style.opacity = "0";
+      privacyOverlay.style.pointerEvents = "none";
+      const sb = document.getElementById('fs-sidebar');
+      const sbt = document.getElementById('fs-sidebar-toggle');
+      if (sb) sb.style.visibility = 'visible';
+      if (sbt) sbt.style.visibility = 'visible';
+    }
+  });
+
+  if (panicContinueBtn) {
+    panicContinueBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panicActivationOverlay.style.opacity = '0';
+      panicActivationOverlay.style.pointerEvents = 'none';
+      sessionStorage.removeItem("panic_triggered");
+    });
+  }
+
+  window.addEventListener('pageshow', () => {
+    const navEntries = performance.getEntriesByType("navigation");
+    const navType = navEntries.length > 0 ? navEntries[0].type : '';
+
+    if (navType === 'reload') {
+      // On a refresh, always clear the panic state.
+      sessionStorage.removeItem("panic_triggered");
+    }
+
+    const panicTriggered = sessionStorage.getItem("panic_triggered");
+    if (panicTriggered === "true" && panicActivationOverlay) {
+        panicActivationOverlay.style.opacity = '1';
+        panicActivationOverlay.style.pointerEvents = 'all';
+    } else if (panicActivationOverlay) {
+        panicActivationOverlay.style.opacity = '0';
+        panicActivationOverlay.style.pointerEvents = 'none';
+    }
+  });
+
+  auth.onAuthStateChanged(user => {
+    if (user) loadAndApplyHotkeys();
+  });
+
+  function triggerBan(code, reason) {
+      const banInfo = { code: code || 'ERROR', reason: reason || 'Access Denied.' };
+      localStorage.setItem('idheubhduicueiuhdiheis', JSON.stringify(banInfo));
+      const user = auth.currentUser;
+      if (user) {
+          db.ref(`users/${user.uid}/ban`).set(banInfo);
+          db.ref('cheat_logs').push({ uid: user.uid, email: user.email || "Unknown", timestamp: firebase.database.ServerValue.TIMESTAMP, details: `Ban triggered: ${code} - ${reason}` });
+      }
+      window.location.reload();
+  }
+
+  // Anti-Console
+  setInterval(() => {
+      const start = performance.now();
+      debugger; 
+      if (performance.now() - start > 100) {
+          triggerBan('CODE_5_CONSOLE', 'Console usage detected.');
+      }
+  }, 1000);
+</script>
+</body>
+</html>

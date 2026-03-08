@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TWC MG</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+  <script>
+    const banInfoRaw = localStorage.getItem("idheubhduicueiuhdiheis");
+    if (banInfoRaw) {
+      let banInfo = { code: 'ERROR', reason: 'Security Violation Detected.' };
+      try {
+          const parsed = JSON.parse(banInfoRaw);
+          if(parsed && parsed.code && parsed.reason) banInfo = parsed;
+      } catch(e) {}
+      document.write(`
+<div id="ban-overlay">
+    <style>
+        #ban-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9999999; background: #000; color: #ff0000;
+            font-family: 'Courier New', monospace;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; overflow: hidden;
+        }
+        .glitch-wrapper { position: relative; margin-bottom: 20px; }
+        .glitch {
+            font-size: 8rem; font-weight: bold; text-transform: uppercase; position: relative;
+            text-shadow: 0.05em 0 0 #00ff00, -0.025em -0.05em 0 #ff00ff, 0.025em 0.05em 0 #00ffff;
+            animation: glitch-anim 1s infinite linear alternate-reverse;
+        }
+        .glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; }
+        .glitch::before { left: 2px; text-shadow: -2px 0 #00ff00; clip: rect(44px, 450px, 56px, 0); animation: glitch-anim-2 5s infinite linear alternate-reverse; }
+        .glitch::after { left: -2px; text-shadow: -2px 0 #ff00ff, 2px 2px #00ffff; clip: rect(85px, 450px, 90px, 0); animation: glitch-anim-1 3s infinite linear alternate-reverse; }
+        @keyframes glitch-anim { 0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); } 80% { transform: translate(2px, -2px); } 100% { transform: translate(0); } }
+        @keyframes glitch-anim-1 { 0% { clip: rect(20px, 9999px, 80px, 0); } 20% { clip: rect(60px, 9999px, 10px, 0); } 40% { clip: rect(90px, 9999px, 50px, 0); } 60% { clip: rect(10px, 9999px, 90px, 0); } 80% { clip: rect(50px, 9999px, 20px, 0); } 100% { clip: rect(30px, 9999px, 70px, 0); } }
+        @keyframes glitch-anim-2 { 0% { clip: rect(90px, 9999px, 10px, 0); } 20% { clip: rect(10px, 9999px, 60px, 0); } 40% { clip: rect(50px, 9999px, 90px, 0); } 60% { clip: rect(80px, 9999px, 20px, 0); } 80% { clip: rect(20px, 9999px, 50px, 0); } 100% { clip: rect(70px, 9999px, 30px, 0); } }
+        .reason { font-size: 2.5rem; margin: 20px 0; text-shadow: 0 0 10px #ff0000; }
+        .subtext { font-size: 1.5rem; color: #ccc; }
+        .contact { font-size: 1.2rem; color: #aaa; margin-top: 30px; }
+    </style>
+    <div class="glitch-wrapper"><div class="glitch" data-text="BANNED">BANNED</div></div>
+    <div class="reason">CODE: ${banInfo.code}<br>${banInfo.reason}</div>
+    <p class="subtext">Security Violation Detected. Access Terminated.</p>
+    <p class="contact">ID: ${localStorage.getItem("idheubhduicueiuhdiheis") ? JSON.parse(localStorage.getItem("idheubhduicueiuhdiheis")).code : 'UNKNOWN'}</p>
+</div>
+`);
+      // Hide other content
+      document.write(`<style>body > *:not(#ban-overlay) { display: none !important; }</style>`);
+    }
+    if (!localStorage.getItem("isLoggedIn")) {
+      alert("You must be logged in to access TWC MG.");
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #2f3136 0%, #000000 100%);
+      color: white;
+      font-family: sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      padding: 10px 20px;
+      background-color: #2f3136;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      animation: slideDown 0.8s ease-out;
+      z-index: 100;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .back-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .back-btn:hover {
+      background-color: #c82333;
+      text-decoration: none;
+      color: white;
+    }
+
+    /* Gallery Styles */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .game-card {
+      background: #2f3136;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 1px solid #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+    }
+
+    .game-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .game-card:hover::after {
+      opacity: 1;
+    }
+
+    .game-card:hover {
+      transform: scale(1.1) translateY(-10px);
+      border-color: #7289da;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+      z-index: 10;
+    }
+
+    .game-thumb {
+      font-size: 50px;
+      margin-bottom: 10px;
+    }
+
+    .game-title {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .fav-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 10;
+      line-height: 1;
+      padding: 0;
+      transition: transform 0.2s, color 0.2s;
+    }
+
+    .fav-btn.active {
+      color: #ffd700;
+    }
+
+    .fav-btn:hover {
+      transform: scale(1.2);
+      color: #aaa;
+    }
+
+    .fav-btn.active:hover {
+      color: #ffed4a;
+    }
+
+    /* Game View Styles */
+    #game-view {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .game-frame-wrapper {
+      flex-grow: 1;
+      position: relative;
+      background-color: #000;
+    }
+
+    .game-footer {
+      height: 60px;
+      background-color: #202225;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      border-top: 1px solid #444;
+    }
+
+    .game-footer button {
+      margin: 0;
+      width: auto;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background-color: #2f3136;
+      padding: 20px;
+      border: 1px solid #444;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      color: white;
+      text-align: center;
+      position: relative;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      color: #aaa;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-modal:hover {
+      color: white;
+    }
+
+    /* Animations */
+    @keyframes cardEnter {
+      from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.8) rotate(-5deg);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0deg);
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+      }
+
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    .game-card {
+      animation: cardEnter 1.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+
+    /* Stagger first few */
+    .game-card:nth-child(1) {
+      animation-delay: 0.05s;
+    }
+
+    .game-card:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .game-card:nth-child(3) {
+      animation-delay: 0.15s;
+    }
+
+    .game-card:nth-child(4) {
+      animation-delay: 0.2s;
+    }
+
+    .game-card:nth-child(5) {
+      animation-delay: 0.25s;
+    }
+
+    #gameSearch {
+      transition: width 0.3s ease, background-color 0.3s;
+    }
+
+    #gameSearch:focus {
+      width: 40%;
+      background-color: #50545c;
+      outline: none;
+    }
+
+    /* Background Particles */
+    #bg-particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .bg-particle {
+      position: absolute;
+      font-size: 24px;
+      opacity: 0.1;
+      pointer-events: none;
+      animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(-10vh) rotate(0deg);
+      }
+
+      100% {
+        transform: translateY(110vh) rotate(360deg);
+      }
+    }
+
+    .tab-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ccc;
+      padding: 12px 24px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+      color: white;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #5865F2, #4752c4);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
+    }
+
+    .tab-btn.active-challenge {
+      background: linear-gradient(135deg, #faa61a, #f04747);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 15px rgba(250, 166, 26, 0.4);
+    }
+
+    .challenges-header {
+      grid-column: 1 / -1;
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 30px;
+      background: linear-gradient(135deg, rgba(250, 166, 26, 0.1), rgba(240, 71, 71, 0.1));
+      border-radius: 20px;
+      border: 1px solid rgba(250, 166, 26, 0.3);
+      animation: fadeIn 0.5s ease-out;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .challenges-header h3 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      background: linear-gradient(to right, #faa61a, #f04747, #faa61a);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 0;
+      animation: shine 3s linear infinite;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .challenges-header p {
+      color: #ddd;
+      font-size: 1.2rem;
+      margin: 8px 0;
+      font-weight: 500;
+    }
+
+    #challengePointsDisplay {
+      color: #45ffbc;
+      font-weight: 800;
+      font-size: 1.4rem;
+      text-shadow: 0 0 10px rgba(69, 255, 188, 0.4);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes shine {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    /* Chat Room List Styles */
+    .chat-room-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #3a3d42;
+      border-radius: 6px;
+      border: 1px solid #202225;
+    }
+
+    .chat-room-name {
+      font-weight: bold;
+    }
+
+    .chat-room-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-room-password {
+      width: 100px;
+      background: #2f3136;
+      border: 1px solid #202225;
+      color: white;
+      padding: 6px;
+      border-radius: 4px;
+      transition: border-color 0.2s;
+    }
+
+    .chat-room-join {
+      background: #7289da;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Overlay Chat System Styles */
+    #overlay-room-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .overlay-room-item {
+      background: #3a3d42;
+      padding: 8px 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.2s;
+    }
+    .overlay-room-item:hover {
+      background: #40444b;
+      border-color: #7289da;
+    }
+    .overlay-room-name { font-weight: bold; color: #fff; }
+    .overlay-room-count { font-size: 0.75rem; color: #aaa; }
+
+    #overlay-chat-view {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #overlay-chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #overlay-chat-input-area {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #202225;
+      flex-shrink: 0;
+      background: #202225;
+      gap: 6px;
+    }
+
+    #overlay-chat-input {
+      flex-grow: 1;
+      resize: none;
+      border: none;
+      background-color: #40444b;
+      color: white;
+      border-radius: 4px;
+      padding: 6px;
+      height: 32px;
+      font-size: 0.85rem;
+    }
+
+    #overlay-send-btn {
+      background-color: #5865F2;
+      border: none;
+      color: white;
+      padding: 0 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      height: 32px;
+    }
+
+    .overlay-msg {
+      padding: 5px 8px;
+      border-radius: 6px;
+      max-width: 90%;
+      word-wrap: break-word;
+      line-height: 1.3;
+      font-size: 0.8rem;
+    }
+    .overlay-msg.self { background-color: #5865F2; align-self: flex-end; color: white; }
+    .overlay-msg.other { background-color: #3a3d42; align-self: flex-start; color: #dcddde; }
+    .overlay-msg-sender {
+      font-size: 0.7rem;
+      font-weight: bold;
+      margin-bottom: 2px;
+      color: #aaa;
+    }
+    .overlay-msg.self .overlay-msg-sender { display: none; }
+    .overlay-msg p { margin: 0; }
+
+    /* Typing & Reply & GIF Styles */
+    .typing-indicator { font-size: 0.7rem; color: #aaa; padding: 2px 8px; font-style: italic; min-height: 15px; }
+    .reply-banner { background: #2a2a2a; padding: 4px 8px; font-size: 0.75rem; display: flex; justify-content: space-between; border-left: 3px solid #7289da; margin-bottom: 4px; align-items: center; }
+    .reply-context { font-size: 0.7rem; opacity: 0.7; border-left: 2px solid #aaa; padding-left: 4px; margin-bottom: 2px; cursor: pointer; }
+    .gif-btn { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 0 8px; color: #ccc; }
+    .gif-btn:hover { color: #fff; }
+    
+    #gif-modal { display: none; position: absolute; bottom: 50px; left: 0; width: 100%; height: 300px; background: #2f3136; border-top: 1px solid #444; z-index: 20; flex-direction: column; }
+    #gif-search { width: 100%; padding: 8px; background: #202225; border: none; color: white; outline: none; }
+    #gif-results { flex: 1; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; }
+    #gif-results img { width: 48%; height: auto; object-fit: cover; cursor: pointer; border-radius: 4px; }
+    .overlay-msg-content img.gif-img { max-width: 150px; border-radius: 4px; margin-top: 4px; }
+    
+    .overlay-msg-sender { cursor: pointer; }
+    .overlay-msg-sender:hover { text-decoration: underline; }
+    
+    .reply-btn-small {
+        font-size: 0.7rem; margin-left: 5px; cursor: pointer; opacity: 0.5;
+    }
+    .reply-btn-small:hover { opacity: 1; }
+
+    /* Enhanced Overlay Chat Styles */
+    .bubble-default { background-color: #5865F2 !important; color: white !important; }
+    .bubble-blue { background: linear-gradient(135deg, #2196f3, #21cbf3) !important; color: white !important; }
+    .bubble-red { background: linear-gradient(135deg, #ff5252, #ff1744) !important; color: white !important; }
+    .bubble-gold { background: linear-gradient(135deg, #ffd700, #ffecb3) !important; color: black !important; }
+    .bubble-rainbow { background: linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3) !important; color: white !important; }
+
+    .overlay-pfp {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .overlay-msg-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .overlay-msg.self .overlay-msg-top {
+      flex-direction: row-reverse;
+    }
+    .overlay-msg-meta {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .overlay-badge {
+      background-color: gold;
+      color: black;
+      padding: 1px 3px;
+      border-radius: 3px;
+      font-size: 0.65rem;
+      line-height: 1;
+    }
+    .overlay-date {
+      font-size: 0.65rem;
+      opacity: 0.7;
+      margin-left: 4px;
+    }
+    .overlay-msg-content a {
+        color: inherit;
+        text-decoration: underline;
+    }
+
+    /* Chat Overlay Styles */
+    #chat-toggle-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #7289da;
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 10001;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s;
+    }
+
+    #chat-toggle-btn:hover {
+      transform: scale(1.1);
+    }
+
+    #chat-overlay {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 350px;
+      height: 500px;
+      max-height: 80vh;
+      background-color: #2f3136;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      z-index: 10000;
+      transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+      transform: translateY(20px) scale(0.95);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #chat-overlay.visible {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background-color: #202225;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      cursor: grab;
+    }
+
+    #chat-header:active {
+      cursor: grabbing;
+    }
+
+    #chat-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: #fff;
+    }
+
+    #chat-close-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    #chat-back-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1.2rem;
+      cursor: pointer;
+      margin-right: 10px;
+      padding: 0 5px;
+    }
+    #chat-back-btn:hover { color: white; }
+  </style>
+</head>
+
+<body>
+
+  <!-- Privacy Overlay -->
+  <div id="panicActivationOverlay"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 25000; display: flex; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; cursor: pointer; align-items: center; justify-content: center; color: #ccc; font-family: monospace; font-size: 1.2rem;">
+    <div style="text-align: center; cursor: default;">
+      <h2 style="color: #fff; margin-bottom: 20px; font-family: sans-serif;">Session Paused</h2>
+      <button id="panicContinueBtn"
+        style="padding: 10px 24px; font-size: 1rem; background: #0084ff; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold;">Continue</button>
+    </div>
+  </div>
+  <div id="privacyOverlay"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 20000; display: flex; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; cursor: none; align-items: center; justify-content: center; color: #333; font-family: monospace; font-size: 12px;">
+    System Halted
+  </div>
+
+  <div id="bg-particles"></div>
+
+  <div class="header" id="mainHeader">
+    <h2>Minigames Gallery</h2>
+    <input type="text" id="gameSearch" placeholder="Search games..." style="padding: 8px; border-radius: 5px; border: none; background: #40444b; color: white; width: 30%; min-width: 150px;" autocomplete="off">
+    <div>
+      <button onclick="openSuggestModal()" class="back-btn"
+        style="background-color: #17a2b8; margin-right: 10px;">Suggest Game</button>
+      <a href="dashboard.html" class="back-btn" id="backToDash">Back to Dashboard</a>
+    </div>
+  </div>
+
+  <div class="tab-container">
+    <button id="btn-freeplay" class="tab-btn active" onclick="showTab('gallery')">Free Play</button>
+    <button id="btn-challenges" class="tab-btn" onclick="showTab('challenges')">Challenges (Earn Points)</button>
+  </div>
+
+  <!-- Gallery Grid -->
+  <div class="gallery-grid" id="galleryGrid">
+    <!-- Game 1: Snow Rider 3D -->
+    <div class="game-card" onclick="playGame('snowrider.html')">
+      <div class="game-thumb">🏂</div>
+      <div class="game-title">Snow Rider 3D</div>
+    </div>
+
+    <!-- Game 2: Waffle Clicker -->
+    <div class="game-card" onclick="playGame('waffleclicker.html')">
+      <div class="game-thumb">🧇</div>
+      <div class="game-title">Waffle Clicker</div>
+    </div>
+
+    <!-- Game 3: Flappy Waffle -->
+    <div class="game-card" onclick="playGame('flappywaffle.html')">
+      <div class="game-thumb">🐦</div>
+      <div class="game-title">Flappy Waffle</div>
+    </div>
+
+    <!-- Game 4: Waffle Tower -->
+    <div class="game-card" onclick="playGame('waffletower.html')">
+      <div class="game-thumb">🏗️</div>
+      <div class="game-title">Waffle Tower</div>
+    </div>
+
+    <!-- Game 5: Waffle Breaker -->
+    <div class="game-card" onclick="playGame('wafflebreaker.html')">
+      <div class="game-thumb">🧱</div>
+      <div class="game-title">Waffle Breaker</div>
+    </div>
+
+    <!-- Game 5.5: Waffle Breaker Infinite -->
+    <div class="game-card" onclick="playGame('wafflebreaker.html?mode=infinite')">
+      <div class="game-thumb">🧱∞</div>
+      <div class="game-title">Waffle Breaker Infinite</div>
+    </div>
+
+    <!-- Game 6: Wafflefall -->
+    <div class="game-card" onclick="playGame('wafflefall.html')">
+      <div class="game-thumb">💧</div>
+      <div class="game-title">Wafflefall</div>
+    </div>
+
+    <!-- Game 7: Waffle Jump -->
+    <div class="game-card" onclick="playGame('wafflejump.html')">
+      <div class="game-thumb">🚀</div>
+      <div class="game-title">Waffle Jump</div>
+    </div>
+
+    <!-- Game 8: 2048 Waffles -->
+    <div class="game-card" onclick="playGame('2048waffles.html')">
+      <div class="game-thumb">🔢</div>
+      <div class="game-title">2048 Waffles</div>
+    </div>
+
+    <!-- Game 9: Waffle Pong -->
+    <div class="game-card" onclick="playGame('wafflepong.html')">
+      <div class="game-thumb">🏓</div>
+      <div class="game-title">Waffle Pong</div>
+    </div>
+
+    <!-- Game 10: Waffle Memory -->
+    <div class="game-card" onclick="playGame('wafflememory.html')">
+      <div class="game-thumb">🃏</div>
+      <div class="game-title">Waffle Memory</div>
+    </div>
+
+    <!-- Game 11: Waffle Invaders -->
+    <div class="game-card" onclick="playGame('waffleinvaders.html')">
+      <div class="game-thumb">👾</div>
+      <div class="game-title">Waffle Invaders</div>
+    </div>
+
+    <!-- Game 12: Waffle Whack -->
+    <div class="game-card" onclick="playGame('wafflewhack.html')">
+      <div class="game-thumb">🔨</div>
+      <div class="game-title">Waffle Whack</div>
+    </div>
+
+    <!-- Game 14: Slope -->
+    <div class="game-card" onclick="playGame('slope.html')">
+      <div class="game-thumb">⛷️</div>
+      <div class="game-title">Slope</div>
+    </div>
+
+    <!-- Game 15: Geometry Dash -->
+    <div class="game-card" onclick="playGame('geometrydash.html')">
+      <div class="game-thumb">🔺</div>
+      <div class="game-title">Geometry Dash</div>
+    </div>
+
+    <!-- Game 16: Paper.io 2 -->
+    <div class="game-card" onclick="playGame('paperio2.html')">
+      <div class="game-thumb">🗺️</div>
+      <div class="game-title">Paper.io 2</div>
+    </div>
+
+    <!-- Game 17: Escape Road -->
+    <div class="game-card" onclick="playGame('escaperoad.html')">
+      <div class="game-thumb">🚓</div>
+      <div class="game-title">Escape Road</div>
+    </div>
+
+    <!-- Game 18: WorldGuessr 
+  <div class="game-card" onclick="playGame('worldguessr.html')">
+    <div class="game-thumb">🌍</div>
+    <div class="game-title">WorldGuessr</div>
+  </div> -->
+
+    <!-- Game 20: Stacker -->
+    <div class="game-card" onclick="playGame('stacker.html')">
+      <div class="game-thumb">🧩</div>
+      <div class="game-title">Stacker</div>
+    </div>
+
+    <!-- Game 21: Run 3 
+  <div class="game-card" onclick="playGame('run3.html')">
+    <div class="game-thumb">🏃</div>
+    <div class="game-title">Run 3</div>
+  </div> -->
+
+    <!-- Game 22: Snake -->
+    <div class="game-card" onclick="playGame('snake.html')">
+      <div class="game-thumb">🐍</div>
+      <div class="game-title">Snake</div>
+    </div>
+
+    <!-- Game 23: Pac-Man -->
+    <div class="game-card" onclick="playGame('pacman.html')">
+      <div class="game-thumb">👻</div>
+      <div class="game-title">Pac-Man</div>
+    </div>
+
+    <!-- Game 24: Halloween 2016 -->
+    <div class="game-card" onclick="playGame('halloween.html')">
+      <div class="game-thumb">🎃</div>
+      <div class="game-title">Halloween 2016</div>
+    </div>
+
+    <!-- Game 25: Lotería -->
+    <div class="game-card" onclick="playGame('loteria.html')">
+      <div class="game-thumb">🎴</div>
+      <div class="game-title">Lotería (MULTIPLAYER)</div>
+    </div>
+
+    <!-- Game 26: Cricket -->
+    <div class="game-card" onclick="playGame('cricket.html')">
+      <div class="game-thumb">🏏</div>
+      <div class="game-title">Cricket</div>
+    </div>
+
+    <!-- Game 27: Cricket 
+  <div class="game-card" onclick="playGame('cricket.html')">
+    <div class="game-thumb">🏏</div>
+    <div class="game-title">Cricket</div>
+  </div> -->
+
+    <!-- Game 28: Champion Island -->
+    <div class="game-card" onclick="playGame('championisland.html')">
+      <div class="game-thumb">🏝️</div>
+      <div class="game-title">Champion Island</div>
+    </div>
+
+    <!-- Game 29: Moto X3M 1 -->
+    <div class="game-card" onclick="playGame('motox3m.html')">
+      <div class="game-thumb">🏍️</div>
+      <div class="game-title">Moto X3M 1</div>
+    </div>
+
+    <!-- Game 30: Moto X3M 2 -->
+    <div class="game-card" onclick="playGame('motox3m2.html')">
+      <div class="game-thumb">🏍️</div>
+      <div class="game-title">Moto X3M 2</div>
+    </div>
+
+    <!-- Game 31: Moto X3M 3 -->
+    <div class="game-card" onclick="playGame('motox3m3.html')">
+      <div class="game-thumb">🏍️</div>
+      <div class="game-title">Moto X3M 3</div>
+    </div>
+
+    <!-- Game 32: Drift Hunters -->
+    <div class="game-card" onclick="playGame('drifthunters.html')">
+      <div class="game-thumb">🚗</div>
+      <div class="game-title">Drift Hunters</div>
+    </div>
+
+    <!-- Game 33: Rooftop Snipers -->
+    <div class="game-card" onclick="playGame('rooftopsnipers.html')">
+      <div class="game-thumb">🔫</div>
+      <div class="game-title">Rooftop Snipers</div>
+    </div>
+
+    <!-- Game 34: Rooftop Snipers 2 -->
+    <div class="game-card" onclick="playGame('rooftopsnipers2.html')">
+      <div class="game-thumb">🔫</div>
+      <div class="game-title">Rooftop Snipers 2</div>
+    </div>
+
+    <!-- Game 35: Getaway Shootout -->
+    <div class="game-card" onclick="playGame('getawayshootout.html')">
+      <div class="game-thumb">🏃</div>
+      <div class="game-title">Getaway Shootout</div>
+    </div>
+
+    <!-- Game 36: Basketball Legends -->
+    <div class="game-card" onclick="playGame('basketballlegends.html')">
+      <div class="game-thumb">🏀</div>
+      <div class="game-title">Basketball Legends</div>
+    </div>
+
+    <!-- Game 38: Idle Breakout -->
+    <div class="game-card" onclick="playGame('idlebreakout.html')">
+      <div class="game-thumb">🧱</div>
+      <div class="game-title">Idle Breakout</div>
+    </div>
+
+    <!-- Game 39: BitLife -->
+    <div class="game-card" onclick="playGame('bitlife.html')">
+      <div class="game-thumb">🧬</div>
+      <div class="game-title">BitLife</div>
+    </div>
+
+    <!-- Game 40: Little Alchemy 2 -->
+    <div class="game-card" onclick="playGame('littlealchemy2.html')">
+      <div class="game-thumb">⚗️</div>
+      <div class="game-title">Little Alchemy 2</div>
+    </div>
+
+    <!-- Game 41: Helix Jump -->
+    <div class="game-card" onclick="playGame('helixjump.html')">
+      <div class="game-thumb">🌀</div>
+      <div class="game-title">Helix Jump</div>
+    </div>
+
+    <!-- Game 42: Knife Hit -->
+    <div class="game-card" onclick="playGame('knifehit.html')">
+      <div class="game-thumb">🔪</div>
+      <div class="game-title">Knife Hit</div>
+    </div>
+
+    <!-- Game 43: Toy Defense -->
+    <div class="game-card" onclick="playGame('toydefense.html')">
+      <div class="game-thumb">💂</div>
+      <div class="game-title">Toy Defense</div>
+    </div>
+
+    <!-- Game 44: Subway Surfers 
+  <div class="game-card" onclick="playGame('subwaysurfers.html')">
+    <div class="game-thumb">🏄</div>
+    <div class="game-title">Subway Surfers</div>
+  </div> -->
+
+    <!-- Game 45: Temple Run 2 -->
+    <div class="game-card" onclick="playGame('templerun2.html')">
+      <div class="game-thumb">🗿</div>
+      <div class="game-title">Temple Run 2</div>
+    </div>
+
+    <!-- Game 46: Crossy Road -->
+    <div class="game-card" onclick="playGame('crossyroad.html')">
+      <div class="game-thumb">🐔</div>
+      <div class="game-title">Crossy Road</div>
+    </div>
+
+    <!-- Game 47: Uno -->
+    <div class="game-card" onclick="playGame('uno.html')">
+      <div class="game-thumb">🃏</div>
+      <div class="game-title">Uno</div>
+    </div>
+
+    <!-- Game 48: Blackjack -->
+    <div class="game-card" onclick="playGame('blackjack.html')">
+      <div class="game-thumb">♠️</div>
+      <div class="game-title">Blackjack</div>
+    </div>
+
+    <!-- Placeholder for more games -->
+    <div class="game-card" onclick="alert('More games coming soon!')">
+      <div class="game-thumb">🎮</div>
+      <div class="game-title">More Coming Soon</div>
+    </div>
+  </div>
+
+  <!-- Challenges Grid -->
+  <div class="gallery-grid" id="challengesGrid" style="display: none;">
+    <div class="challenges-header">
+      <h3>Skill Challenges</h3>
+      <p>Cost: 10 💎 to enter. Guaranteed 10 💎 back + 1 💎 per score point!</p>
+      <p>Current Points: <span id="challengePointsDisplay">Loading...</span></p>
+    </div>
+
+    <div class="game-card" onclick="playChallenge('flappywaffle.html', 'Flappy Waffle')">
+      <div class="game-thumb">🐦</div>
+      <div class="game-title">Flappy Waffle Challenge</div>
+    </div>
+
+    <div class="game-card" onclick="playChallenge('waffletower.html', 'Waffle Tower')">
+      <div class="game-thumb">🏗️</div>
+      <div class="game-title">Waffle Tower Challenge</div>
+    </div>
+
+    <div class="game-card" onclick="playChallenge('wafflebreaker.html', 'Waffle Breaker')">
+      <div class="game-thumb">🧱</div>
+      <div class="game-title">Waffle Breaker Challenge</div>
+    </div>
+
+    <!--<div class="game-card" onclick="playChallenge('wafflefall.html', 'Wafflefall')">
+    <div class="game-thumb">💧</div>
+    <div class="game-title">Wafflefall Challenge</div>
+  </div> -->
+
+    <div class="game-card" onclick="playChallenge('wafflejump.html', 'Waffle Jump')">
+      <div class="game-thumb">🚀</div>
+      <div class="game-title">Waffle Jump Challenge</div>
+    </div>
+    <!--
+  <div class="game-card" onclick="playChallenge('2048waffles.html', '2048 Waffles')">
+    <div class="game-thumb">🔢</div>
+    <div class="game-title">2048 Waffles Challenge</div>
+  </div> -->
+
+    <div class="game-card" onclick="playChallenge('wafflepong.html', 'Waffle Pong')">
+      <div class="game-thumb">🏓</div>
+      <div class="game-title">Waffle Pong Challenge</div>
+    </div>
+
+    <div class="game-card" onclick="playChallenge('wafflememory.html', 'Waffle Memory')">
+      <div class="game-thumb">🃏</div>
+      <div class="game-title">Waffle Memory Challenge</div>
+    </div>
+
+    <div class="game-card" onclick="playChallenge('waffleinvaders.html', 'Waffle Invaders')">
+      <div class="game-thumb">👾</div>
+      <div class="game-title">Waffle Invaders Challenge</div>
+    </div>
+
+    <div class="game-card" onclick="playChallenge('wafflewhack.html', 'Waffle Whack')">
+      <div class="game-thumb">🔨</div>
+      <div class="game-title">Waffle Whack Challenge</div>
+    </div>
+  </div>
+
+  <!-- Suggest Game Modal -->
+  <div id="suggestModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeSuggestModal()">&times;</span>
+      <h3>Suggest a New Game</h3>
+      <form id="suggestForm">
+        <div class="form-group">
+          <label for="gameName" style="display:block; text-align:left;">Game Name</label>
+          <input type="text" id="gameName" required class="form-control"
+            style="background:#40444b; color:white; border:none;">
+        </div>
+        <div class="form-group">
+          <label for="gameLink" style="display:block; text-align:left;">Link (optional)</label>
+          <input type="text" id="gameLink" class="form-control" style="background:#40444b; color:white; border:none;">
+        </div>
+        <div class="form-group">
+          <label for="gameDesc" style="display:block; text-align:left;">Description / Why?</label>
+          <textarea id="gameDesc" class="form-control" rows="3"
+            style="background:#40444b; color:white; border:none; resize:vertical;"></textarea>
+        </div>
+        <button type="submit" class="btn btn-success" style="width:100%;">Send Suggestion (please don't spam so I don't
+          get charged too much)</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Game View Container -->
+  <div id="game-view">
+    <div class="game-frame-wrapper" id="gameContainer">
+      <iframe id="gameIframe" allowtransparency="yes" allow="autoplay" frameborder="0" width="100%" height="100%"
+        style="position:absolute; top:0; left:0; right:0; bottom:0;" marginheight="0" marginwidth="0" scrolling="no"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+    </div>
+
+    <div class="game-footer">
+      <button class="back-btn" onclick="closeGame()">Back to Gallery of Games</button>
+      <button class="back-btn" style="background-color:#007bff;" onclick="window.location.href='dashboard.html'">Back to
+        Dashboard</button>
+      <button class="back-btn" style="background-color:#6c757d;" id="fullscreenBtn">⛶ Fullscreen</button>
+    </div>
+  </div>
+
+  <!-- Chat Overlay -->
+  <button id="chat-toggle-btn" title="Toggle Chat" style="display: none;">💬</button>
+  <div id="chat-overlay" style="display: none;">
+    <div id="chat-header">
+      <div style="display:flex; align-items:center;">
+        <button id="chat-back-btn" style="display:none;">&lt;</button>
+        <h3 id="chat-header-title">Rooms</h3>
+      </div>
+      <button id="chat-close-btn" title="Close Chat">✕</button>
+    </div>
+    <div id="overlay-room-list"></div>
+    <div id="overlay-chat-view">
+      <div id="overlay-chat-messages"></div>
+      <div id="typing-indicator" class="typing-indicator" style="display:none;"></div>
+      <div id="reply-banner" class="reply-banner" style="display:none;">
+          <span id="reply-text">Replying...</span>
+          <button id="cancel-reply-btn" style="background:none;border:none;color:#fff;">✕</button>
+      </div>
+      <div id="gif-modal">
+          <div style="display:flex; padding:5px; background:#202225;"><input id="gif-search" placeholder="Search GIFs..."><button id="close-gif-btn" style="background:none;border:none;color:#fff;margin-left:5px;">✕</button></div>
+          <div id="gif-results"></div>
+      </div>
+      <div id="overlay-chat-input-area">
+        <button id="gif-btn" class="gif-btn" title="GIFs">GIF</button>
+        <textarea id="overlay-chat-input" placeholder="Message..."></textarea>
+        <button id="overlay-send-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+      authDomain: "team-waffles.firebaseapp.com",
+      databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+      projectId: "team-waffles",
+      storageBucket: "team-waffles.appspot.com",
+      messagingSenderId: "891460090478",
+      appId: "1:891460090478:web:c01b6db1af21745769047f"
+    };
+
+    function triggerBan(code, reason) {
+        const banInfo = { code: code || 'ERROR', reason: reason || 'Access Denied.' };
+        localStorage.setItem('idheubhduicueiuhdiheis', JSON.stringify(banInfo));
+        
+        // Only try firebase if initialized
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                firebase.database().ref(`users/${user.uid}/ban`).set(banInfo);
+                firebase.database().ref('cheat_logs').push({
+                    uid: user.uid,
+                    email: user.email || "Unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    details: `Ban triggered: ${code} - ${reason}`
+                });
+            }
+        }
+
+        if (!document.getElementById('ban-overlay')) {
+             window.location.reload();
+        }
+    }
+
+    if (!localStorage.getItem("idheubhduicueiuhdiheis")) {
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const gameContainer = document.getElementById('gameContainer');
+    const galleryGrid = document.getElementById('galleryGrid');
+    const challengesGrid = document.getElementById('challengesGrid');
+    const gameView = document.getElementById('game-view');
+    const gameIframe = document.getElementById('gameIframe');
+    const mainHeader = document.getElementById('mainHeader');
+    const panicActivationOverlay = document.getElementById('panicActivationOverlay');
+    const panicContinueBtn = document.getElementById("panicContinueBtn");
+    const privacyOverlay = document.getElementById('privacyOverlay');
+
+    // --- Chat Overlay Elements ---
+    const chatToggleBtn = document.getElementById('chat-toggle-btn');
+    const chatOverlay = document.getElementById('chat-overlay');
+    const chatCloseBtn = document.getElementById('chat-close-btn');
+    const chatHeader = document.getElementById('chat-header');
+    const chatBackBtn = document.getElementById('chat-back-btn');
+    const chatHeaderTitle = document.getElementById('chat-header-title');
+    const overlayRoomList = document.getElementById('overlay-room-list');
+    const overlayChatView = document.getElementById('overlay-chat-view');
+    const overlayChatMessages = document.getElementById('overlay-chat-messages');
+    const overlayChatInput = document.getElementById('overlay-chat-input');
+    const overlaySendBtn = document.getElementById('overlay-send-btn');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const replyBanner = document.getElementById('reply-banner');
+    const replyText = document.getElementById('reply-text');
+    const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+    const gifBtn = document.getElementById('gif-btn');
+    const gifModal = document.getElementById('gif-modal');
+    const gifSearch = document.getElementById('gif-search');
+    const gifResults = document.getElementById('gif-results');
+    const closeGifBtn = document.getElementById('close-gif-btn');
+    
+    let currentUserData = null;
+    let currentOverlayRoom = null;
+    let overlayMsgListener = null;
+    let gameLimits = {};
+    let shopConfig = {};
+    let badgeInfoMap = {};
+    let currentReply = null;
+    let typingTimeout = null;
+
+    const formatDate = d => {
+      const pad = n => n.toString().padStart(2, "0");
+      const day = pad(d.getDate());
+      const month = pad(d.getMonth() + 1);
+      const year = d.getFullYear();
+      let hrs = d.getHours();
+      const ampm = hrs < 12 ? "am" : "pm";
+      hrs = hrs % 12 || 12;
+      const mins = pad(d.getMinutes());
+      return `${day}/${month}/${year}, ${hrs}:${mins}${ampm}`;
+    };
+
+    function loadShopConfig() {
+        db.ref("config/shopItems").once("value").then(snap => {
+            if (snap.exists()) shopConfig = snap.val();
+        });
+    }
+
+    function loadGameLimits() {
+        const CACHE_KEY = "twc_game_limits";
+        const TIME_KEY = "twc_game_limits_time";
+        const now = Date.now();
+        const lastFetch = parseInt(localStorage.getItem(TIME_KEY) || "0");
+
+        if (now - lastFetch < 3600000) { // Cache for 1 hour
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) { try { gameLimits = JSON.parse(cached); return; } catch(e) {} }
+        }
+
+        db.ref("config/gameLimits").once("value").then(snap => {
+            if (snap.exists()) {
+                gameLimits = snap.val();
+                localStorage.setItem(CACHE_KEY, JSON.stringify(gameLimits));
+                localStorage.setItem(TIME_KEY, now.toString());
+            }
+        });
+    }
+
+    function loadAllBadges() {
+        db.ref("badges").once("value").then(snap => {
+            if (snap.exists()) {
+                const badges = snap.val();
+                for (const id in badges) {
+                    badgeInfoMap[id] = {
+                        displayName: badges[id].displayName || badges[id].name || id,
+                        description: badges[id].description || ""
+                    };
+                }
+            }
+        });
+    }
+
+    function showTab(tab) {
+      if (tab === 'gallery') {
+        galleryGrid.style.display = 'grid';
+        challengesGrid.style.display = 'none';
+        document.getElementById('btn-freeplay').classList.add('active');
+        document.getElementById('btn-challenges').classList.remove('active-challenge');
+      } else {
+        galleryGrid.style.display = 'none';
+        challengesGrid.style.display = 'grid';
+        document.getElementById('btn-freeplay').classList.remove('active');
+        document.getElementById('btn-challenges').classList.add('active-challenge');
+        updatePointsDisplay();
+      }
+    }
+
+    // Tilt Effect for Game Cards
+    document.querySelectorAll('.game-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        card.style.transition = 'none';
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const xPct = (x / rect.width) - 0.5;
+        const yPct = (y / rect.height) - 0.5;
+
+        card.style.setProperty('--pointer-x', `${(x / rect.width) * 100}%`);
+        card.style.setProperty('--pointer-y', `${(y / rect.height) * 100}%`);
+
+        const rotateX = yPct * -20;
+        const rotateY = xPct * 20;
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.1)`;
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transition = 'transform 0.5s ease';
+        card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+      });
+    });
+
+    document.getElementById('gameSearch').addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      document.querySelectorAll('.game-card').forEach(card => {
+        const title = card.querySelector('.game-title').innerText.toLowerCase();
+        card.style.display = title.includes(term) ? 'flex' : 'none';
+      });
+    });
+
+    // --- Favorites System ---
+    const favoritesKey = 'twc_mg_favorites';
+    let favorites = JSON.parse(localStorage.getItem(favoritesKey)) || [];
+
+    function initFavorites() {
+      const cards = document.querySelectorAll('.game-card');
+      cards.forEach(card => {
+        const title = card.querySelector('.game-title').innerText;
+        const isFav = favorites.includes(title);
+
+        // Check if button already exists
+        if (card.querySelector('.fav-btn')) return;
+
+        const btn = document.createElement('button');
+        btn.className = `fav-btn ${isFav ? 'active' : ''}`;
+        btn.innerHTML = '★';
+        btn.title = isFav ? 'Unpin' : 'Pin to top';
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          toggleFavorite(title, btn);
+        };
+
+        card.appendChild(btn);
+      });
+      sortGallery();
+    }
+
+    function toggleFavorite(title, btn) {
+      const index = favorites.indexOf(title);
+      if (index === -1) {
+        favorites.push(title);
+        btn.classList.add('active');
+        btn.title = 'Unpin';
+      } else {
+        favorites.splice(index, 1);
+        btn.classList.remove('active');
+        btn.title = 'Pin to top';
+      }
+      localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+      sortGallery();
+    }
+
+    function sortGallery() {
+      const cards = Array.from(galleryGrid.children);
+
+      cards.sort((a, b) => {
+        const titleA = a.querySelector('.game-title').innerText;
+        const titleB = b.querySelector('.game-title').innerText;
+        const isFavA = favorites.includes(titleA);
+        const isFavB = favorites.includes(titleB);
+
+        if (isFavA && !isFavB) return -1;
+        if (!isFavA && isFavB) return 1;
+        return 0;
+      });
+
+      cards.forEach(card => galleryGrid.appendChild(card));
+    }
+
+    initFavorites();
+
+    function playGame(url) {
+      galleryGrid.style.display = 'none';
+      challengesGrid.style.display = 'none';
+      mainHeader.style.display = 'none';
+      gameView.style.display = 'flex';
+      gameIframe.onload = function () {
+        gameIframe.contentWindow.focus();
+      };
+      gameIframe.src = url;
+    }
+
+    let isChallengeActive = false;
+    let activeChallengeName = null;
+    let isProcessingGameOver = false;
+
+    function playChallenge(url, name) {
+      const user = auth.currentUser;
+      if (!user) return alert("Please log in first.");
+
+      db.ref("users/" + user.uid + "/points").once("value").then(snap => {
+        const points = snap.val() || 0;
+        if (points < 10) {
+          alert("You need at least 10 points to enter a challenge!");
+          return;
+        }
+
+        if (confirm(`Start ${name} Challenge?\nCost: 10 💎\nReward: 10 💎 + Score`)) {
+          // Deduct points
+          db.ref("users/" + user.uid + "/points").set(points - 10).then(() => {
+            isChallengeActive = true;
+            activeChallengeName = name;
+            playGame(url + "?challenge=true");
+          });
+        }
+      });
+    }
+
+    window.addEventListener('message', (event) => {
+      // Security check: Ensure message comes from the game iframe
+      if (event.source !== gameIframe.contentWindow) {
+        const user = auth.currentUser;
+        const allegedScore = event.data && event.data.score ? event.data.score : "N/A";
+        if (user) {
+          db.ref('cheat_logs').push({
+            uid: user.uid,
+            email: user.email || "Unknown",
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            details: `Invalid source. Alleged Score: ${allegedScore}`
+          });
+        }
+        triggerBan('CODE_2_SUSPICIOUS', `Invalid score submission source detected.`);
+        return;
+      }
+
+      if (event.data.type === 'GAME_OVER' && isChallengeActive && !isProcessingGameOver) {
+        isProcessingGameOver = true;
+        const score = Math.floor(Number(event.data.score) || 0);
+        const user = auth.currentUser;
+
+        // Anti-Cheat: Check for impossible scores
+        const DEFAULT_MAX_SCORES = {
+            'Flappy Waffle': 500,
+            'Waffle Tower': 200,
+            'Waffle Breaker': 66,
+            'Waffle Jump': 50000,
+            'Waffle Pong': 100,
+            'Waffle Memory': 100,
+            'Waffle Invaders': 5000,
+            'Waffle Whack': 500
+        };
+        const maxScore = (gameLimits && gameLimits[activeChallengeName]) 
+                         ? gameLimits[activeChallengeName] 
+                         : (DEFAULT_MAX_SCORES[activeChallengeName] || 10000);
+
+        if (score > maxScore) {
+            if (user) {
+                db.ref('cheat_logs').push({
+                    uid: user.uid,
+                    email: user.email || "Unknown",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    details: `Impossible score: ${score} in ${activeChallengeName}.`
+                });
+            }
+            triggerBan('CODE_3_IMPOSSIBLE_SCORE', `Impossible score detected: ${score} in ${activeChallengeName}.`);
+            return;
+        }
+
+        let earnings = score;
+        if (activeChallengeName === 'Waffle Jump') {
+          earnings = Math.floor(score / 10);
+        } else if (activeChallengeName === 'Waffle Pong') {
+          earnings = Math.floor(score / 3);
+        }
+
+        if (user) {
+          db.ref("users/" + user.uid + "/points").once("value").then(snap => {
+            const currentPoints = snap.val() || 0;
+            const reward = 10 + earnings;
+            db.ref("users/" + user.uid + "/points").set(currentPoints + reward).then(() => {
+              alert(`Challenge Complete!\nScore: ${score}\nRefund: 10 💎\nEarnings: ${earnings} 💎\nTotal Received: ${reward} 💎`);
+              closeGame();
+            });
+          });
+        } else {
+          // If for some reason user is not available, still close the game
+          closeGame();
+        }
+      }
+    });
+
+    let pointsRefHandle = null;
+    let pointsListenerCallback = null;
+
+    function updatePointsDisplay() {
+      const user = auth.currentUser;
+      if (user) {
+        if (pointsRefHandle && pointsListenerCallback) {
+            pointsRefHandle.off('value', pointsListenerCallback);
+        }
+        pointsRefHandle = db.ref("users/" + user.uid + "/points");
+        let lastPoints = null;
+        pointsListenerCallback = pointsRefHandle.on("value", snap => {
+          const currentPoints = snap.val() || 0;
+          const p = document.getElementById("challengePointsDisplay");
+          if (p) p.innerText = currentPoints + " 💎";
+
+          if (lastPoints !== null && (currentPoints - lastPoints) > 5000) {
+             const diff = currentPoints - lastPoints;
+             const page = window.location.pathname.split('/').pop() || 'mg.html';
+             triggerBan('CODE_4_SUSPICIOUS_ACTIVITY', `Abnormal increase: +${diff} points on ${page}`);
+          }
+          lastPoints = currentPoints;
+        });
+      }
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        loadShopConfig();
+        loadAllBadges();
+        loadGameLimits();
+        db.ref("users/" + user.uid).once("value").then(snap => {
+          currentUserData = snap.val();
+          if (currentUserData) {
+            initOverlaySystem(user.uid, currentUserData);
+            // Remote ban listener
+            db.ref("users/" + user.uid + "/ban").on("value", (snapshot) => {
+                const banData = snapshot.val();
+                if (banData && banData.code && banData.reason) {
+                    triggerBan(banData.code, banData.reason);
+                } else {
+                    if (localStorage.getItem('idheubhduicueiuhdiheis')) {
+                        localStorage.removeItem('idheubhduicueiuhdiheis');
+                        window.location.reload();
+                    }
+                }
+            });
+          }
+        });
+        updatePointsDisplay();
+        loadAndApplyHotkeys();
+      }
+    });
+    } // End of if(!banned) check
+
+    function closeGame() {
+      gameIframe.src = ''; // Stop the game
+      gameView.style.display = 'none';
+
+      const wasInChallenge = isChallengeActive;
+      // Reset challenge state
+      isChallengeActive = false;
+      activeChallengeName = null;
+      isProcessingGameOver = false;
+
+      if (wasInChallenge) {
+        showTab('challenges');
+      } else {
+        
+        showTab('gallery');
+      }
+      mainHeader.style.display = 'flex';
+
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    }
+
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        gameContainer.requestFullscreen().catch(err => {
+          console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // --- Suggestion Modal Logic ---
+    function openSuggestModal() {
+      document.getElementById('suggestModal').style.display = 'flex';
+    }
+
+    function closeSuggestModal() {
+      document.getElementById('suggestModal').style.display = 'none';
+    }
+
+    // Close modal if clicking outside content
+    window.onclick = function (event) {
+      const modal = document.getElementById('suggestModal');
+      if (event.target == modal) {
+        closeSuggestModal();
+      }
+    }
+
+    document.getElementById('suggestForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+      const btn = event.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerText;
+      btn.innerText = 'Sending...';
+      btn.disabled = true;
+
+      const templateParams = {
+        game_name: document.getElementById('gameName').value,
+        game_link: document.getElementById('gameLink').value,
+        game_desc: document.getElementById('gameDesc').value,
+        from_name: localStorage.getItem("user_name") || "User"
+      };
+
+      // Replace 'YOUR_SERVICE_ID' and 'YOUR_TEMPLATE_ID' with actual values from EmailJS
+      emailjs.send('service_86yn1kd', 'template_sl8ypua', templateParams)
+        .then(function () {
+          alert('Suggestion sent successfully!');
+          closeSuggestModal();
+          document.getElementById('suggestForm').reset();
+        }, function (error) {
+          alert('Failed to send suggestion: ' + JSON.stringify(error));
+        })
+        .finally(() => {
+          btn.innerText = originalText;
+          btn.disabled = false;
+        });
+    });
+
+    // --- Background Particles ---
+    function initBackground() {
+      const panel = document.getElementById('bg-particles');
+      const icons = ['🎮', '🕹️', '👾', '🎲', '🧇'];
+      for (let i = 0; i < 20; i++) {
+        const d = document.createElement('div');
+        d.className = 'bg-particle';
+        d.innerText = icons[Math.floor(Math.random() * icons.length)];
+        d.style.left = Math.random() * 100 + '%';
+        d.style.top = -50 + 'px';
+        d.style.animationDuration = (15 + Math.random() * 20) + 's';
+        d.style.animationDelay = (Math.random() * 15) + 's';
+        panel.appendChild(d);
+      }
+    }
+    initBackground();
+
+    // --- Global Hotkey Logic ---
+    let currentHotkeys = {};
+
+    function loadAndApplyHotkeys() {
+      try {
+        const hotkeysJSON = localStorage.getItem('twc_hotkeys');
+        if (hotkeysJSON) {
+          currentHotkeys = JSON.parse(hotkeysJSON);
+        }
+      } catch (e) {
+        console.error("Could not load hotkeys from localStorage", e);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!currentHotkeys || !privacyOverlay || !panicActivationOverlay) return;
+
+      // Handle events when panic overlay is active
+      if (panicActivationOverlay.style.opacity === '1') {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          panicActivationOverlay.style.opacity = '0';
+          panicActivationOverlay.style.pointerEvents = 'none';
+          sessionStorage.removeItem("panic_triggered");
+        }
+        return; // Don't process other hotkeys
+      }
+
+      // Panic Button
+      if (currentHotkeys.panicKey && e.key === currentHotkeys.panicKey) {
+        e.preventDefault();
+        sessionStorage.setItem("panic_triggered", "true");
+        const url = currentHotkeys.panicUrl || "https://www.google.com";
+        window.location.href = url;
+      }
+      // Privacy Hide
+      if (currentHotkeys.privacyHideKey && e.key === currentHotkeys.privacyHideKey) {
+        const style = currentHotkeys.privacyStyle || 'halted';
+        const bgColor = currentHotkeys.privacyBgColor || '#0067b8';
+        
+        document.documentElement.requestFullscreen().catch(() => {});
+        // Reset styles
+        privacyOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; display: flex; opacity: 1; pointer-events: all; cursor: none; align-items: center; justify-content: center; flex-direction: column;';
+        
+        if (style === 'win_update') {
+            privacyOverlay.style.background = bgColor;
+            privacyOverlay.style.color = bgColor === '#000000' ? '#fff' : '#fff';
+            privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+            privacyOverlay.style.fontSize = '24px';
+            privacyOverlay.innerHTML = `
+                <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+                <div style="text-align: center;">Working on updates <span id="win-progress">1</span>% complete.<br>Don't turn off your computer.</div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+            `;
+            let progress = 1;
+            const interval = setInterval(() => {
+                if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+                if(progress < 100) {
+                    progress += Math.floor(Math.random() * 3);
+                    if(progress > 100) progress = 100;
+                    const el = document.getElementById('win-progress');
+                    if(el) el.innerText = progress;
+                }
+            }, 2000);
+        } else if (style === 'restarting') {
+            privacyOverlay.style.background = bgColor;
+            privacyOverlay.style.color = bgColor === '#000000' ? '#fff' : '#fff';
+            privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+            privacyOverlay.style.fontSize = '24px';
+            privacyOverlay.innerHTML = `
+                <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+                <div>Restarting...</div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+            `;
+        } else if (style === 'bsod') {
+            privacyOverlay.style.background = bgColor;
+            privacyOverlay.style.color = '#fff';
+            privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+            privacyOverlay.style.fontSize = '24px';
+            privacyOverlay.style.alignItems = 'flex-start';
+            privacyOverlay.style.padding = '10%';
+            privacyOverlay.innerHTML = `
+                <div style="font-size: 100px; margin-bottom: 20px;">:(</div>
+                <div style="font-size: 24px; margin-bottom: 20px;">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div>
+                <div style="font-size: 24px; margin-bottom: 40px;"><span id="bsod-progress">0</span>% complete</div>
+                <div style="display: flex; align-items: center;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://bit.ly/twmainc1" style="width: 120px; height: 120px; margin-right: 20px;">
+                    <div style="font-size: 14px;">
+                        For more information about this issue and possible fixes, visit https://www.windows.com/stopcode<br><br>
+                        If you call a support person, give them this info:<br>
+                        Stop code: CRITICAL_PROCESS_DIED
+                    </div>
+                </div>
+            `;
+            let progress = 0;
+            const interval = setInterval(() => {
+                if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+                if(progress < 100) {
+                    progress += Math.floor(Math.random() * 5);
+                    if(progress > 100) progress = 100;
+                    const el = document.getElementById('bsod-progress');
+                    if(el) el.innerText = progress;
+                }
+            }, 1000);
+        } else if (style === 'matrix') {
+            privacyOverlay.style.background = 'black';
+            privacyOverlay.innerHTML = '';
+            const canvas = document.createElement('canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            privacyOverlay.appendChild(canvas);
+            const ctx = canvas.getContext('2d');
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+            const fontSize = 16;
+            const columns = canvas.width / fontSize;
+            const drops = Array(Math.floor(columns)).fill(1);
+            const drawMatrix = () => {
+                if(privacyOverlay.style.opacity === '0') return;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#0F0';
+                ctx.font = fontSize + 'px monospace';
+                for(let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+                requestAnimationFrame(drawMatrix);
+            };
+            drawMatrix();
+        } else if (style === 'terminal') {
+            privacyOverlay.style.background = 'black';
+            privacyOverlay.style.color = '#0f0';
+            privacyOverlay.style.fontFamily = 'monospace';
+            privacyOverlay.style.fontSize = '16px';
+            privacyOverlay.style.padding = '20px';
+            privacyOverlay.style.justifyContent = 'flex-start';
+            privacyOverlay.style.alignItems = 'flex-start';
+            privacyOverlay.style.overflow = 'hidden';
+            privacyOverlay.innerHTML = '<div id="term-content"></div>';
+            
+            const termContent = document.getElementById('term-content');
+            const lines = [
+                "Initializing connection...", "Connecting to server 192.168.0.1...", "Bypassing firewall...", "Access granted.",
+                "Downloading sensitive data...", "Encrypting files...", "Uploading to remote host...", "Cleaning logs...",
+                "System compromise imminent...", "Root access obtained.", "Executing payload...", "Decrypting user passwords...",
+                "Fetching database tables...", "Injecting SQL query...", "Packet sniffing started...", "Intercepting traffic...",
+                "Compiling assets...", "Bypassing mainframe...", "Accessing kernel...", "Overriding security protocols..."
+            ];
+            
+            const interval = setInterval(() => {
+                if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+                const line = lines[Math.floor(Math.random() * lines.length)];
+                const p = document.createElement('div');
+                p.textContent = `> ${line}`;
+                termContent.appendChild(p);
+                window.scrollTo(0, document.body.scrollHeight);
+                if (termContent.childElementCount > 25) termContent.removeChild(termContent.firstChild);
+            }, 150);
+        } else {
+            privacyOverlay.style.background = currentHotkeys.privacyBgColor || '#000';
+            privacyOverlay.style.color = currentHotkeys.privacyBgColor === '#0067b8' ? '#fff' : '#333';
+            privacyOverlay.style.fontFamily = 'monospace';
+            privacyOverlay.style.fontSize = '12px';
+            privacyOverlay.innerHTML = 'System Halted';
+        }
+
+        const sb = document.getElementById('fs-sidebar');
+        const sbt = document.getElementById('fs-sidebar-toggle');
+        if (sb) sb.style.visibility = 'hidden';
+        if (sbt) sbt.style.visibility = 'hidden';
+      }
+      // Privacy Show
+      if (currentHotkeys.privacyShowKey && e.key === currentHotkeys.privacyShowKey) {
+        privacyOverlay.style.opacity = "0";
+        privacyOverlay.style.pointerEvents = "none";
+        const sb = document.getElementById('fs-sidebar');
+        const sbt = document.getElementById('fs-sidebar-toggle');
+        if (sb) sb.style.visibility = 'visible';
+        if (sbt) sbt.style.visibility = 'visible';
+      }
+    });
+
+    if (panicContinueBtn) {
+      panicContinueBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        panicActivationOverlay.style.opacity = '0';
+        panicActivationOverlay.style.pointerEvents = 'none';
+        sessionStorage.removeItem("panic_triggered");
+      });
+    }
+
+    window.addEventListener('pageshow', () => {
+      const navEntries = performance.getEntriesByType("navigation");
+      const navType = navEntries.length > 0 ? navEntries[0].type : '';
+
+      if (navType === 'reload') {
+        // On a refresh, always clear the panic state.
+        sessionStorage.removeItem("panic_triggered");
+      }
+
+      const panicTriggered = sessionStorage.getItem("panic_triggered");
+      if (panicTriggered === "true" && panicActivationOverlay) {
+        panicActivationOverlay.style.opacity = '1';
+        panicActivationOverlay.style.pointerEvents = 'all';
+      } else if (panicActivationOverlay) {
+        panicActivationOverlay.style.opacity = '0';
+        panicActivationOverlay.style.pointerEvents = 'none';
+      }
+    });
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+    // --- Chat System Logic ---
+    function initOverlaySystem(uid, profile) {
+      chatToggleBtn.addEventListener('click', () => {
+        chatOverlay.classList.toggle('visible');
+        if (chatOverlay.classList.contains('visible') && !currentOverlayRoom) {
+            loadOverlayRooms();
+        }
+      });
+      chatCloseBtn.addEventListener('click', () => chatOverlay.classList.remove('visible'));
+      chatBackBtn.addEventListener('click', leaveOverlayRoom);
+
+      overlaySendBtn.addEventListener('click', () => sendOverlayMessage(uid, profile));
+      overlayChatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendOverlayMessage(uid, profile);
+        }
+      });
+      
+      // Typing
+      overlayChatInput.addEventListener('input', () => {
+          if(currentOverlayRoom) {
+              db.ref(`room-typing/${currentOverlayRoom}/${uid}`).set(profile.displayName || "User");
+              clearTimeout(typingTimeout);
+              typingTimeout = setTimeout(() => db.ref(`room-typing/${currentOverlayRoom}/${uid}`).remove(), 2000);
+          }
+      });
+
+      // Reply & GIF UI
+      cancelReplyBtn.addEventListener('click', cancelReply);
+      gifBtn.addEventListener('click', () => gifModal.style.display = 'flex');
+      closeGifBtn.addEventListener('click', () => gifModal.style.display = 'none');
+      gifSearch.addEventListener('input', debounce(searchGifs, 500));
+
+      // Make chat draggable
+      makeDraggable(chatOverlay, chatHeader);
+    }
+    
+    function cancelReply() {
+        currentReply = null;
+        replyBanner.style.display = 'none';
+    }
+    
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+    
+    function searchGifs() {
+        const q = gifSearch.value.trim();
+        if(!q) return;
+        gifResults.innerHTML = 'Loading...';
+        fetch(`https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(q)}&key=AIzaSyBRfNHcJYTENDZ7Df_8Gh1C5PNjtZE2bU8&limit=10`)
+            .then(r => r.json())
+            .then(data => {
+                gifResults.innerHTML = '';
+                data.results.forEach(g => {
+                    const url = g.media_formats.tinygif.url;
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.onclick = () => sendGif(url);
+                    gifResults.appendChild(img);
+                });
+            });
+    }
+    
+    function sendGif(url) {
+        if (!currentOverlayRoom || !currentUserData) return;
+        const uid = auth.currentUser.uid;
+        const msgData = createMessageData(uid, currentUserData, "", url);
+        db.ref(`room-messages/${currentOverlayRoom}`).push(msgData);
+        gifModal.style.display = 'none';
+        gifSearch.value = '';
+        gifResults.innerHTML = '';
+    }
+
+    function loadOverlayRooms() {
+        const CACHE_KEY = "twc_mg_rooms_data";
+        const TIME_KEY = "twc_mg_rooms_time";
+        const now = Date.now();
+        const lastFetch = parseInt(localStorage.getItem(TIME_KEY) || "0");
+
+        if (now - lastFetch < 60000) {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                try { renderOverlayRooms(JSON.parse(cached)); return; } catch(e) {}
+            }
+        }
+
+        overlayRoomList.innerHTML = '<div style="text-align:center; padding:10px; color:#aaa;">Loading rooms...</div>';
+        db.ref("rooms").limitToLast(50).once("value").then(snap => {
+            overlayRoomList.innerHTML = '';
+            if (!snap.exists()) {
+                overlayRoomList.innerHTML = '<div style="text-align:center; padding:10px;">No rooms found.</div>';
+                return;
+            }
+            
+            const rooms = [];
+            snap.forEach(child => {
+                if (child.val().type !== 'dm') {
+                    rooms.push({ key: child.key, val: child.val() });
+                }
+            });
+            
+
+            // Sort by user count (desc) then name
+            rooms.sort((a, b) => {
+                const countA = a.val.onlineUsers ? Object.keys(a.val.onlineUsers).length : 0;
+                const countB = b.val.onlineUsers ? Object.keys(b.val.onlineUsers).length : 0;
+                return countB - countA || a.key.localeCompare(b.key);
+            });
+
+            localStorage.setItem(CACHE_KEY, JSON.stringify(rooms));
+            localStorage.setItem(TIME_KEY, now.toString());
+            renderOverlayRooms(rooms);
+        });
+    }
+
+    function renderOverlayRooms(rooms) {
+        overlayRoomList.innerHTML = '';
+        if (rooms.length === 0) {
+            overlayRoomList.innerHTML = '<div style="text-align:center; padding:10px;">No rooms found.</div>';
+            return;
+        }
+        rooms.forEach(room => {
+            const count = room.val.onlineUsers ? Object.keys(room.val.onlineUsers).length : 0;
+            let userNames = "";
+            if(count > 0) {
+                userNames = Object.values(room.val.onlineUsers).map(u => u.name).join(", ");
+                if(userNames.length > 30) userNames = userNames.substring(0, 30) + "...";
+            }
+            
+            const div = document.createElement('div');
+            div.className = 'overlay-room-item';
+            div.innerHTML = `
+                <div>
+                    <div class="overlay-room-name">#${room.key}</div>
+                    <div style="font-size:0.7rem; color:#888;">${userNames}</div>
+                </div>
+                <span class="overlay-room-count">👤 ${count}</span>
+            `;
+            div.onclick = () => joinOverlayRoom(room.key, room.val);
+            overlayRoomList.appendChild(div);
+        });
+    }
+
+    function joinOverlayRoom(roomName, roomData) {
+        if (roomData.type === 'private') {
+            const pass = prompt(`Enter password for #${roomName}:`);
+            if (pass !== roomData.password) {
+                alert("Incorrect password.");
+                return;
+            }
+        }
+        
+        currentOverlayRoom = roomName;
+        chatHeaderTitle.innerText = `#${roomName}`;
+        chatBackBtn.style.display = 'block';
+        overlayRoomList.style.display = 'none';
+        overlayChatView.style.display = 'flex';
+        overlayChatMessages.innerHTML = '';
+        
+        // Subscribe to messages
+        const roomRef = db.ref(`room-messages/${roomName}`).limitToLast(50);
+        overlayMsgListener = roomRef.on('child_added', snapshot => {
+            renderOverlayMessage(snapshot.val(), auth.currentUser.uid);
+        });
+        
+        // Subscribe to typing
+        db.ref(`room-typing/${roomName}`).on('value', snap => {
+            const typing = snap.val() || {};
+            const names = Object.keys(typing).filter(k => k !== auth.currentUser.uid).map(k => typing[k]);
+            if(names.length > 0) {
+                typingIndicator.style.display = 'block';
+                typingIndicator.innerText = names.join(", ") + (names.length === 1 ? " is typing..." : " are typing...");
+            } else {
+                typingIndicator.style.display = 'none';
+            }
+        });
+    }
+
+    function leaveOverlayRoom() {
+        if (currentOverlayRoom && overlayMsgListener) {
+            db.ref(`room-messages/${currentOverlayRoom}`).off('child_added', overlayMsgListener);
+            db.ref(`room-typing/${currentOverlayRoom}`).off();
+        }
+        currentOverlayRoom = null;
+        chatHeaderTitle.innerText = 'Rooms';
+        chatBackBtn.style.display = 'none';
+        overlayChatView.style.display = 'none';
+        overlayRoomList.style.display = 'flex';
+        loadOverlayRooms(); // Refresh list
+    }
+    
+    function createMessageData(uid, profile, text, gifUrl = null) {
+        return {
+            senderUID: uid,
+            displayName: profile.displayName || profile.permanentUsername || "User",
+            permanentUsername: profile.permanentUsername || profile.displayName || "User",
+            profilePicURL: profile.profilePicURL || null,
+            badges: profile.badges || [],
+            background: profile.equipped || "default",
+            message: text,
+            gifURL: gifUrl,
+            replyTo: currentReply,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            dateSent: formatDate(new Date())
+        };
+    }
+
+    function sendOverlayMessage(uid, profile) {
+      if (!currentOverlayRoom) return;
+      const messageText = overlayChatInput.value.trim();
+      if (!messageText) return;
+
+      const messageData = createMessageData(uid, profile, messageText);
+
+      db.ref(`room-messages/${currentOverlayRoom}`).push(messageData);
+      overlayChatInput.value = '';
+      overlayChatInput.focus();
+      cancelReply();
+    }
+    
+    function initiateReply(data) {
+        currentReply = {
+            sender: data.displayName,
+            text: data.message || (data.gifURL ? "[GIF]" : "...")
+        };
+        replyText.innerText = `Replying to ${currentReply.sender}: ${currentReply.text}`;
+        replyBanner.style.display = 'flex';
+        overlayChatInput.focus();
+    }
+    
+    function initiateDM(targetUid, targetName) {
+        if(targetUid === auth.currentUser.uid) return;
+        if(confirm(`Send private message request to ${targetName}?`)) {
+            const myName = currentUserData.displayName || currentUserData.permanentUsername || "User";
+            db.ref(`pm_requests/${targetUid}/${auth.currentUser.uid}`).set({
+                fromUID: auth.currentUser.uid,
+                fromName: myName,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => alert("Request sent!"));
+        }
+    }
+
+    function renderOverlayMessage(data, myUid) {
+      const isMe = data.senderUID === myUid;
+      const msgDiv = document.createElement('div');
+      
+      let bgClass = ""; 
+      let bgStyle = "";
+      if (data.background && data.background !== "default") {
+        bgClass = `bubble-${data.background}`;
+        if (shopConfig[data.background] && shopConfig[data.background].style) {
+           bgStyle = `background: ${shopConfig[data.background].style} !important;`;
+        }
+      }
+
+      msgDiv.className = `overlay-msg ${isMe ? 'self' : 'other'} ${bgClass}`;
+      if (bgStyle) msgDiv.style.cssText = bgStyle;
+
+      const profilePicUrl = data.profilePicURL || "TWL O.png";
+      const profileHtml = `<img src="${profilePicUrl}" class="overlay-pfp">`;
+
+      let badgesHtml = "";
+      if (data.badges && Array.isArray(data.badges)) {
+          data.badges.forEach(bid => {
+              const info = badgeInfoMap[bid] || { displayName: bid };
+              badgesHtml += `<span class="overlay-badge" title="${info.displayName}">${info.displayName}</span>`;
+          });
+      }
+
+      const dateStr = data.dateSent || "Just now";
+      const senderName = data.displayName || "User";
+      
+      let replyHtml = "";
+      if(data.replyTo) {
+          replyHtml = `<div class="reply-context">Replying to ${data.replyTo.sender}: ${data.replyTo.text}</div>`;
+      }
+
+      const topHtml = `
+        <div class="overlay-msg-top">
+            ${profileHtml}
+            <div class="overlay-msg-meta">
+                ${!isMe ? `<span class="overlay-msg-sender" onclick="initiateDM('${data.senderUID}', '${senderName}')">${senderName}</span>` : ''}
+                ${badgesHtml}
+                <span class="overlay-date">${dateStr}</span>
+                <span class="reply-btn-small" onclick='initiateReply(${JSON.stringify(data).replace(/'/g, "&#39;")})'>↩</span>
+            </div>
+        </div>`;
+
+      const linkedText = (data.message || '').replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+      const gifHtml = data.gifURL ? `<br><img src="${data.gifURL}" class="gif-img">` : "";
+
+      msgDiv.innerHTML = `${topHtml}<div class="overlay-msg-content">${replyHtml}${linkedText}${gifHtml}</div>`;
+      overlayChatMessages.appendChild(msgDiv);
+      overlayChatMessages.scrollTop = overlayChatMessages.scrollHeight;
+    }
+
+
+
+
+
+      function makeDraggable(element, handle) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        handle.onmousedown = dragMouseDown;
+
+
+        function dragMouseDown(e) {
+          e.preventDefault();
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+          document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+          document.onmousemove = (e) => {
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            element.style.top = (element.offsetTop - pos2) + "px";
+            element.style.left = (element.offsetLeft - pos1) + "px";
+            element.style.bottom = 'auto';
+            element.style.right = 'auto';
+          };
+        }
+      }
+
+      // Anti-Console: Detects DevTools open via debugger timing
+      setInterval(() => {
+          const start = performance.now();
+          debugger; 
+          if (performance.now() - start > 100) {
+              triggerBan('CODE_5_CONSOLE', 'Console usage detected.');
+          }
+      }, 1000);
+  </script>
+
+  <!-- Load EmailJS at the end so the page shows up faster -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script type="text/javascript">
+      (function () {
+        emailjs.init("leVlaWevudCP2DxpD");
+      })();
+  </script>
+  <script src="sidebar.js"></script>
+</body>
+
+</html> 
