@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hotkeys | Team Waffles</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+
+  <style>
+    /* Copy styles from settings.html */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2em;
+      max-width: 600px;
+      margin: auto;
+      transition: background 0.3s, color 0.3s;
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+    .light-theme {
+      background: linear-gradient(-45deg, #f4f4f4, #e0e0e0, #ffffff);
+      color: #000;
+    }
+    .dark-theme {
+      background: linear-gradient(-45deg, #1f1f1f, #2c2c2c, #121212);
+      color: #fff;
+    }
+    h2 { text-align: center; color: #45ffbc; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 6px; }
+    input[type="text"] {
+      width: 100%; padding: 10px; border-radius: 6px; border: none;
+    }
+    button {
+      background: #45ffbc; color: #000;
+      padding: 12px 20px; border: none;
+      border-radius: 6px; cursor: pointer;
+    }
+    #loadingOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 9999; display: flex;
+      align-items: center; justify-content: center;
+    }
+    #privacyOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 20000; display: flex; cursor: none;
+      align-items: center; justify-content: center; color: #333;
+      font-family: monospace; font-size: 12px;
+      opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+    }
+    #loadingOverlay video { width: 300px; height: auto; }
+    #panicActivationOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 25000; display: flex; cursor: pointer;
+      align-items: center; justify-content: center; color: #ccc;
+      font-family: monospace; font-size: 1.2rem;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .success { color: lightgreen; }
+    .error { color: pink; }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body class="dark-theme">
+
+  <div id="loadingOverlay">
+    <video src="Loading.mp4" autoplay muted loop onplay="this.playbackRate=2.0"></video>
+  </div>
+
+  <div id="panicActivationOverlay">
+    <div style="text-align: center; cursor: default;">
+      <h2 style="color: #fff; margin-bottom: 20px; font-family: sans-serif;">Session Paused</h2>
+      <button id="panicContinueBtn" style="padding: 10px 24px; font-size: 1rem; background: #0084ff; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold;">Continue</button>
+    </div>
+  </div>
+  <div id="privacyOverlay">System Halted</div>
+
+  <h2>Panic & Hotkeys</h2>
+
+  <div class="form-group">
+    <label>Panic Button (Hotkey 1)</label>
+    <div style="display:flex; gap:10px;">
+      <input type="text" id="panicKey" placeholder="Click to set key" readonly style="width: 120px; cursor: pointer; background: #444; color: #fff;">
+      <input type="text" id="panicUrl" placeholder="Redirect URL or App Protocol (e.g. onenote:)" style="flex:1;">
+    </div>
+    <div style="font-size: 0.85rem; color: #aaa; margin-top: 5px;">
+      <span style="cursor:pointer; text-decoration:underline;" onclick="toggleProtocolTips()">Need help with App Protocols? (Click here)</span>
+      <div id="protocolTips" style="display:none; background: #333; padding: 10px; border-radius: 5px; margin-top: 5px; border: 1px solid #555;">
+        <p style="margin:0 0 5px 0;"><strong>App Protocols & Web Links:</strong></p>
+        <ul style="margin:0; padding-left: 20px; line-height: 1.5; font-size: 0.9em;">
+          <li style="margin-bottom: 10px;">
+            <strong>Desktop Apps (e.g., <code>onenote:</code>):</strong>
+            These can be blocked by your browser for security. If they don't work, there is often no fix.
+            <ul>
+              <li><strong>OneNote Specific Page:</strong> In the OneNote desktop app, right-click a page > "Copy Link to Page". Paste the link here.</li>
+              <li><strong>Other apps:</strong> <code>spotify:</code>, <code>ms-calculator:</code></li>
+            </ul>
+          </li>
+          <li style="margin-bottom: 5px;">
+            <strong>Web App Fallbacks (More Reliable):</strong>
+            If desktop app links fail, use a web link instead. These open the web version of the app.
+            <br>Word: <code style="background:#222; padding:2px 4px; border-radius:3px;">https://www.office.com/launch/word</code>
+            <br>Excel: <code style="background:#222; padding:2px 4px; border-radius:3px;">https://www.office.com/launch/excel</code>
+            <br>PowerPoint: <code style="background:#222; padding:2px 4px; border-radius:3px;">https://www.office.com/launch/powerpoint</code>
+          </li>
+        </ul>
+        <p style="margin:5px 0 0 0; font-size: 0.9em; color: #ff6b6b;"><strong>Important:</strong> Launching desktop apps from a website is often disabled by browsers or school network policies. Using a standard web URL (like `https://google.com` or the Office links above) is the most reliable option.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Privacy Screen (Hotkeys 2 & 3)</label>
+    <div style="display:flex; gap:10px;">
+      <input type="text" id="privacyHideKey" placeholder="Lock Key" readonly style="width: 50%; cursor: pointer; background: #444; color: #fff;">
+      <input type="text" id="privacyShowKey" placeholder="Unlock Key" readonly style="width: 50%; cursor: pointer; background: #444; color: #fff;">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Privacy Screen Style</label>
+    <select id="privacyStyle" style="width: 100%; padding: 10px; border-radius: 6px; border: none; background: #444; color: #fff;">
+        <option value="halted">System Halted (Default)</option>
+        <option value="win_update">Windows Update</option>
+        <option value="restarting">Restarting</option>
+        <option value="bsod">Fake Crash (BSOD)</option>
+        <option value="matrix">Matrix Rain</option>
+        <option value="terminal">Fake Terminal</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Background Color</label>
+    <select id="privacyBgColor" style="width: 100%; padding: 10px; border-radius: 6px; border: none; background: #444; color: #fff;">
+        <option value="#0067b8">Blue (Windows Default)</option>
+        <option value="#000000">Black</option>
+    </select>
+  </div>
+
+  <button onclick="saveHotkeys()">Save Hotkeys</button>
+  <button onclick="resetHotkeys()" style="background-color: #dc3545; color: white;">Reset All Hotkeys</button>
+  <button onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+  <p id="statusMsg"></p>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+    authDomain: "team-waffles.firebaseapp.com",
+    databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+    projectId: "team-waffles",
+    storageBucket: "team-waffles.appspot.com",
+    messagingSenderId: "891460090478",
+    appId: "1:891460090478:web:c01b6db1af21745769047f"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  const statusMsg = document.getElementById("statusMsg");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const panicKeyInput = document.getElementById("panicKey");
+  const panicUrlInput = document.getElementById("panicUrl");
+  const privacyHideKeyInput = document.getElementById("privacyHideKey");
+  const privacyShowKeyInput = document.getElementById("privacyShowKey");
+  const privacyStyleInput = document.getElementById("privacyStyle");
+  const privacyBgColorInput = document.getElementById("privacyBgColor");
+  const privacyOverlay = document.getElementById("privacyOverlay");
+  const panicActivationOverlay = document.getElementById("panicActivationOverlay");
+  const panicContinueBtn = document.getElementById("panicContinueBtn");
+
+  let currentUser = null;
+  let currentHotkeys = {};
+
+  function applyTheme(theme) {
+    document.body.classList.remove("light-theme", "dark-theme");
+    document.body.classList.add(`${theme}-theme`);
+  }
+  
+  function setupKeyRecorder(inputElement) {
+    inputElement.addEventListener('focus', () => { inputElement.value = "Press any key..."; });
+    inputElement.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      inputElement.value = e.key;
+      inputElement.blur();
+    });
+  }
+  [panicKeyInput, privacyHideKeyInput, privacyShowKeyInput].forEach(setupKeyRecorder);
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) return (window.location.href = "index.html");
+    currentUser = user;
+    const uid = user.uid;
+
+    try { // Load theme from Firebase
+      const snap = await db.ref("users/" + uid + "/settings").once("value");
+      const settings = snap.val() || {};
+
+      const darkMode = settings.darkMode ?? false;
+      applyTheme(darkMode ? "dark" : "light");
+
+      // Load hotkeys from localStorage
+      const hotkeysJSON = localStorage.getItem('twc_hotkeys');
+      const hotkeys = hotkeysJSON ? JSON.parse(hotkeysJSON) : {};
+      currentHotkeys = hotkeys;
+      panicKeyInput.value = hotkeys.panicKey || "";
+      panicUrlInput.value = hotkeys.panicUrl || "";
+      privacyHideKeyInput.value = hotkeys.privacyHideKey || "";
+      privacyShowKeyInput.value = hotkeys.privacyShowKey || "";
+      privacyStyleInput.value = hotkeys.privacyStyle || "halted";
+      privacyBgColorInput.value = hotkeys.privacyBgColor || "#0067b8";
+    } catch (err) {
+      console.error("Failed to load user data", err);
+      statusMsg.textContent = "Error loading settings.";
+      statusMsg.className = "error";
+    } finally {
+      loadingOverlay.style.display = "none";
+    }
+  });
+
+  // Global Hotkey Listener
+  document.addEventListener('keydown', (e) => {
+    if (!currentHotkeys || !privacyOverlay || !panicActivationOverlay) return;
+
+    // Handle events when panic overlay is active
+    if (panicActivationOverlay.style.opacity === '1') {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        panicActivationOverlay.style.opacity = '0';
+        panicActivationOverlay.style.pointerEvents = 'none';
+        sessionStorage.removeItem("panic_triggered");
+      }
+      return; // Don't process other hotkeys
+    }
+    
+    // Panic Button
+    if (currentHotkeys.panicKey && e.key === currentHotkeys.panicKey) {
+      e.preventDefault();
+      sessionStorage.setItem("panic_triggered", "true");
+      const url = currentHotkeys.panicUrl || "https://www.google.com";
+      window.location.href = url;
+    }
+    if (currentHotkeys.privacyHideKey && e.key === currentHotkeys.privacyHideKey) {
+      const style = currentHotkeys.privacyStyle || 'halted';
+      const bgColor = currentHotkeys.privacyBgColor || '#0067b8';
+      
+      document.documentElement.requestFullscreen().catch(() => {});
+      // Reset styles
+      privacyOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; display: flex; opacity: 1; pointer-events: all; cursor: none; align-items: center; justify-content: center; flex-direction: column;';
+      
+      if (style === 'win_update') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = bgColor === '#000000' ? '#fff' : '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.innerHTML = `
+              <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+              <div style="text-align: center;">Working on updates <span id="win-progress">1</span>% complete.<br>Don't turn off your computer.</div>
+              <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          `;
+          let progress = 1;
+          const interval = setInterval(() => {
+              if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+              if(progress < 100) {
+                  progress += Math.floor(Math.random() * 3);
+                  if(progress > 100) progress = 100;
+                  const el = document.getElementById('win-progress');
+                  if(el) el.innerText = progress;
+              }
+          }, 2000);
+      } else if (style === 'restarting') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = bgColor === '#000000' ? '#fff' : '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.innerHTML = `
+              <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+              <div>Restarting...</div>
+              <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          `;
+      } else if (style === 'bsod') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.style.alignItems = 'flex-start';
+          privacyOverlay.style.padding = '10%';
+          privacyOverlay.innerHTML = `
+              <div style="font-size: 100px; margin-bottom: 20px;">:(</div>
+              <div style="font-size: 24px; margin-bottom: 20px;">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div>
+              <div style="font-size: 24px; margin-bottom: 40px;"><span id="bsod-progress">0</span>% complete</div>
+              <div style="display: flex; align-items: center;">
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://bit.ly/twmainc1" style="width: 120px; height: 120px; margin-right: 20px;">
+                  <div style="font-size: 14px;">
+                      For more information about this issue and possible fixes, visit https://www.windows.com/stopcode<br><br>
+                      If you call a support person, give them this info:<br>
+                      Stop code: CRITICAL_PROCESS_DIED
+                  </div>
+              </div>
+          `;
+          let progress = 0;
+          const interval = setInterval(() => {
+              if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+              if(progress < 100) {
+                  progress += Math.floor(Math.random() * 5);
+                  if(progress > 100) progress = 100;
+                  const el = document.getElementById('bsod-progress');
+                  if(el) el.innerText = progress;
+              }
+          }, 1000);
+      } else if (style === 'matrix') {
+          privacyOverlay.style.background = 'black';
+          privacyOverlay.innerHTML = '';
+          const canvas = document.createElement('canvas');
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          privacyOverlay.appendChild(canvas);
+          const ctx = canvas.getContext('2d');
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+          const fontSize = 16;
+          const columns = canvas.width / fontSize;
+          const drops = Array(Math.floor(columns)).fill(1);
+          const drawMatrix = () => {
+              if(privacyOverlay.style.opacity === '0') return;
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.fillStyle = '#0F0';
+              ctx.font = fontSize + 'px monospace';
+              for(let i = 0; i < drops.length; i++) {
+                  const text = chars[Math.floor(Math.random() * chars.length)];
+                  ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                  if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                  drops[i]++;
+              }
+              requestAnimationFrame(drawMatrix);
+          };
+          drawMatrix();
+      } else if (style === 'terminal') {
+          privacyOverlay.style.background = 'black';
+          privacyOverlay.style.color = '#0f0';
+          privacyOverlay.style.fontFamily = 'monospace';
+          privacyOverlay.style.fontSize = '16px';
+          privacyOverlay.style.padding = '20px';
+          privacyOverlay.style.justifyContent = 'flex-start';
+          privacyOverlay.style.alignItems = 'flex-start';
+          privacyOverlay.style.overflow = 'hidden';
+          privacyOverlay.innerHTML = '<div id="term-content"></div>';
+          
+          const termContent = document.getElementById('term-content');
+          const lines = [
+              "Initializing connection...", "Connecting to server 192.168.0.1...", "Bypassing firewall...", "Access granted.",
+              "Downloading sensitive data...", "Encrypting files...", "Uploading to remote host...", "Cleaning logs...",
+              "System compromise imminent...", "Root access obtained.", "Executing payload...", "Decrypting user passwords...",
+              "Fetching database tables...", "Injecting SQL query...", "Packet sniffing started...", "Intercepting traffic...",
+              "Compiling assets...", "Bypassing mainframe...", "Accessing kernel...", "Overriding security protocols..."
+          ];
+          
+          const interval = setInterval(() => {
+              if(privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+              const line = lines[Math.floor(Math.random() * lines.length)];
+              const p = document.createElement('div');
+              p.textContent = `> ${line}`;
+              termContent.appendChild(p);
+              window.scrollTo(0, document.body.scrollHeight);
+              if (termContent.childElementCount > 25) termContent.removeChild(termContent.firstChild);
+          }, 150);
+      } else {
+          privacyOverlay.style.background = currentHotkeys.privacyBgColor || '#000';
+          privacyOverlay.style.color = currentHotkeys.privacyBgColor === '#0067b8' ? '#fff' : '#333';
+          privacyOverlay.style.fontFamily = 'monospace';
+          privacyOverlay.style.fontSize = '12px';
+          privacyOverlay.innerHTML = 'System Halted';
+      }
+
+      const sb = document.getElementById('fs-sidebar');
+      const sbt = document.getElementById('fs-sidebar-toggle');
+      if (sb) sb.style.visibility = 'hidden';
+      if (sbt) sbt.style.visibility = 'hidden';
+    }
+    if (currentHotkeys.privacyShowKey && e.key === currentHotkeys.privacyShowKey) {
+      privacyOverlay.style.opacity = "0";
+      privacyOverlay.style.pointerEvents = "none";
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      const sb = document.getElementById('fs-sidebar');
+      const sbt = document.getElementById('fs-sidebar-toggle');
+      if (sb) sb.style.visibility = 'visible';
+      if (sbt) sbt.style.visibility = 'visible';
+    }
+  });
+
+  if (panicContinueBtn) {
+    panicContinueBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panicActivationOverlay.style.opacity = '0';
+      panicActivationOverlay.style.pointerEvents = 'none';
+      sessionStorage.removeItem("panic_triggered");
+    });
+  }
+
+  window.addEventListener('pageshow', () => {
+    const navEntries = performance.getEntriesByType("navigation");
+    const navType = navEntries.length > 0 ? navEntries[0].type : '';
+
+    if (navType === 'reload') {
+      // On a refresh, always clear the panic state.
+      sessionStorage.removeItem("panic_triggered");
+    }
+
+    const panicTriggered = sessionStorage.getItem("panic_triggered");
+    if (panicTriggered === "true" && panicActivationOverlay) {
+        panicActivationOverlay.style.opacity = '1';
+        panicActivationOverlay.style.pointerEvents = 'all';
+    } else if (panicActivationOverlay) {
+        panicActivationOverlay.style.opacity = '0';
+        panicActivationOverlay.style.pointerEvents = 'none';
+    }
+  });
+
+  function saveHotkeys() {
+    if (!currentUser) return;
+
+    statusMsg.textContent = "Saving to this device...";
+    statusMsg.className = "";
+
+    try {
+      const hotkeys = {
+        panicKey: panicKeyInput.value,
+        panicUrl: panicUrlInput.value,
+        privacyHideKey: privacyHideKeyInput.value,
+        privacyShowKey: privacyShowKeyInput.value,
+        privacyStyle: privacyStyleInput.value,
+        privacyBgColor: privacyBgColorInput.value
+      };
+      currentHotkeys = hotkeys;
+
+      localStorage.setItem('twc_hotkeys', JSON.stringify(hotkeys));
+
+      statusMsg.textContent = "Hotkeys updated!";
+      statusMsg.className = "success";
+    } catch (e) {
+      statusMsg.textContent = e.message || "Failed to save hotkeys.";
+      statusMsg.className = "error";
+    }
+  }
+
+  function resetHotkeys() {
+    if (confirm("Are you sure you want to clear all hotkeys?")) {
+      panicKeyInput.value = "";
+      panicUrlInput.value = "";
+      privacyHideKeyInput.value = "";
+      privacyShowKeyInput.value = "";
+      saveHotkeys();
+    }
+  }
+
+  function toggleProtocolTips() {
+    const tips = document.getElementById('protocolTips');
+    tips.style.display = tips.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function triggerBan(code, reason) {
+      const banInfo = { code: code || 'ERROR', reason: reason || 'Access Denied.' };
+      localStorage.setItem('idheubhduicueiuhdiheis', JSON.stringify(banInfo));
+      const user = auth.currentUser;
+      if (user) {
+          db.ref(`users/${user.uid}/ban`).set(banInfo);
+          db.ref('cheat_logs').push({ uid: user.uid, email: user.email || "Unknown", timestamp: firebase.database.ServerValue.TIMESTAMP, details: `Ban triggered: ${code} - ${reason}` });
+      }
+      window.location.reload();
+  }
+
+  // Anti-Console
+  setInterval(() => {
+      const start = performance.now();
+      debugger; 
+      if (performance.now() - start > 100) {
+          triggerBan('CODE_5_CONSOLE', 'Console usage detected.');
+      }
+  }, 1000);
+</script>
+</body>
+</html>

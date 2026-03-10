@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Waffle Tower</title>
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700&display=swap");
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #202225;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: "Be Vietnam Pro", sans-serif;
+        overflow: hidden;
+        touch-action: manipulation;
+    }
+    canvas {
+        background-color: #36393f;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    #ui-layer {
+        position: absolute;
+        color: white;
+        text-align: center;
+        pointer-events: none;
+    }
+    #score {
+        font-size: 4em;
+        font-weight: 700;
+        text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    }
+    #high-score {
+        font-size: 1.5em;
+        color: #ffd700;
+        margin-top: 5px;
+    }
+    #instructions {
+        font-size: 1.2em;
+    }
+    #game-over {
+        display: none;
+        background: rgba(0,0,0,0.7);
+        padding: 20px 40px;
+        border-radius: 15px;
+        pointer-events: auto;
+    }
+    #game-over h1 { color: #faa61a; }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="ui-layer">
+    <div id="score">0</div>
+    <div id="high-score">Best: 0</div>
+    <div id="instructions">Click to place the waffle</div>
+    <div id="game-over">
+        <h1>Game Over</h1>
+        <p>Score: <span id="final-score">0</span></p>
+        <p>Best: <span id="best-score">0</span></p>
+        <p>Click to restart</p>
+        <button onclick="finishChallenge()" id="finish-challenge-btn" style="display:none; background:#43b581; border:none; padding:10px; border-radius:5px; color:white; font-weight:bold; margin-top:10px; pointer-events:auto;">Collect Points & Exit</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let tower, currentBlock, score, phase, speed;
+    const blockHeight = 20;
+    const blockColor = '#e6a15c';
+    const blockStroke = '#c27835';
+    let highScore = localStorage.getItem('waffleTowerHigh') || 0;
+    const urlParams = new URLSearchParams(window.location.search);
+    const isChallenge = urlParams.get('challenge') === 'true';
+
+    function resizeCanvas() {
+        canvas.width = Math.min(window.innerWidth - 20, 400);
+        canvas.height = Math.min(window.innerHeight - 20, 600);
+    }
+
+    function init() {
+        tower = [{ x: canvas.width / 2 - 50, w: 100 }];
+        score = 0;
+        phase = 'playing';
+        speed = 2;
+        
+        document.getElementById('score').innerText = score;
+        document.getElementById('high-score').innerText = 'Best: ' + highScore;
+        document.getElementById('instructions').style.display = 'block';
+        document.getElementById('game-over').style.display = 'none';
+
+        addBlock();
+    }
+
+    function addBlock() {
+        const lastBlock = tower[tower.length - 1];
+        currentBlock = {
+            x: 0,
+            w: lastBlock.w,
+            dir: Math.random() > 0.5 ? 1 : -1
+        };
+    }
+
+    function placeBlock() {
+        const lastBlock = tower[tower.length - 1];
+        const newBlock = { ...currentBlock };
+
+        const overlap = Math.max(0, Math.min(lastBlock.x + lastBlock.w, newBlock.x + newBlock.w) - Math.max(lastBlock.x, newBlock.x));
+
+        if (overlap <= 0) {
+            phase = 'gameover';
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('waffleTowerHigh', highScore);
+            }
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('best-score').innerText = highScore;
+            document.getElementById('instructions').style.display = 'none';
+            document.getElementById('game-over').style.display = 'block';
+            
+            if (isChallenge) {
+                // Hide the "Click to restart" text or disable the click handler
+                document.querySelector('#game-over p:last-of-type').style.display = 'none';
+                document.getElementById('finish-challenge-btn').style.display = 'block';
+            }
+            return;
+        }
+
+        newBlock.w = overlap;
+        newBlock.x = Math.max(lastBlock.x, newBlock.x);
+        tower.push(newBlock);
+
+        score++;
+        document.getElementById('score').innerText = score;
+        if (speed < 6) speed += 0.1;
+
+        // Camera movement
+        if (tower.length * blockHeight > canvas.height / 2) {
+            ctx.translate(0, -blockHeight);
+        }
+
+        addBlock();
+    }
+
+    function loop() {
+        if (phase === 'playing') {
+            currentBlock.x += speed * currentBlock.dir;
+            if (currentBlock.x + currentBlock.w > canvas.width || currentBlock.x < 0) {
+                currentBlock.dir *= -1;
+            }
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height * 2); // Clear a larger area due to translation
+
+        // Draw tower
+        ctx.fillStyle = blockColor;
+        ctx.strokeStyle = blockStroke;
+        ctx.lineWidth = 2;
+        for (let i = 0; i < tower.length; i++) {
+            const block = tower[i];
+            const y = canvas.height - (i + 1) * blockHeight;
+            ctx.fillRect(block.x, y, block.w, blockHeight);
+            ctx.strokeRect(block.x, y, block.w, blockHeight);
+        }
+
+        // Draw current block
+        if (phase === 'playing') {
+            const y = canvas.height - (tower.length + 1) * blockHeight;
+            ctx.fillRect(currentBlock.x, y, currentBlock.w, blockHeight);
+            ctx.strokeRect(currentBlock.x, y, currentBlock.w, blockHeight);
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('mousedown', () => {
+        if (isChallenge && phase === 'gameover') return; // Prevent restart click in challenge
+        if (phase === 'playing') placeBlock();
+        else if (phase === 'gameover') init();
+    });
+    
+    window.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent scrolling/zooming
+        if (isChallenge && phase === 'gameover') return;
+        if (phase === 'playing') placeBlock();
+        else if (phase === 'gameover') init();
+    }, {passive: false});
+
+    function finishChallenge() {
+        window.parent.postMessage({ type: 'GAME_OVER', score: score }, '*');
+    }
+
+    resizeCanvas();
+    init();
+    loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Recovery</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #0f0;
+            background: #000;
+            color: #0f0;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            outline: none;
+        }
+        button {
+            padding: 10px 30px;
+            background: #0f0;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        button:hover { background: #0a0; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+</head>
+<body>
+    <h1>SECURE RECOVERY</h1>
+    <p>Enter Rescue PIN to clear security flags.</p>
+    <input type="password" id="pin" placeholder="PIN">
+    <button onclick="unlock()">EXECUTE</button>
+    <p id="msg"></p>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+            authDomain: "team-waffles.firebaseapp.com",
+            databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+            projectId: "team-waffles",
+            storageBucket: "team-waffles.appspot.com",
+            messagingSenderId: "891460090478",
+            appId: "1:891460090478:web:c01b6db1af21745769047f"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        function unlock() {
+            const pin = document.getElementById('pin').value;
+            const msg = document.getElementById('msg');
+            msg.innerText = "Authenticating...";
+            
+            firebase.database().ref('config/rescuePin').once('value').then(snap => {
+                const realPin = snap.exists() ? String(snap.val()) : "9999";
+                if (pin === realPin) {
+                    localStorage.removeItem('idheubhduicueiuhdiheis');
+                    msg.style.color = "#0f0";
+                    msg.innerText = "ACCESS RESTORED. REDIRECTING...";
+                    setTimeout(() => window.location.href = "dashboard.html", 1500);
+                } else {
+                    msg.style.color = "red";
+                    msg.innerText = "ACCESS DENIED.";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

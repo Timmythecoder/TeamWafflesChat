@@ -1,0 +1,3754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Waffles Dashboard</title>
+  <link id="favicon" rel="icon" type="image/png" href="TWL O.png">
+  <script>
+    const banInfoRaw = localStorage.getItem("idheubhduicueiuhdiheis");
+    if (banInfoRaw) {
+      let banInfo = { code: 'ERROR', reason: 'Security Violation Detected.' };
+      try {
+        const parsed = JSON.parse(banInfoRaw);
+        if (parsed && parsed.code && parsed.reason) banInfo = parsed;
+      } catch (e) { }
+      document.write(`
+<div id="ban-overlay">
+    <style>
+        #ban-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9999999; background: #000; color: #ff0000;
+            font-family: 'Courier New', monospace;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; overflow: hidden;
+        }
+        .glitch-wrapper { position: relative; margin-bottom: 20px; }
+        .glitch {
+            font-size: 8rem; font-weight: bold; text-transform: uppercase; position: relative;
+            text-shadow: 0.05em 0 0 #00ff00, -0.025em -0.05em 0 #ff00ff, 0.025em 0.05em 0 #00ffff;
+            animation: glitch-anim 1s infinite linear alternate-reverse;
+        }
+        .glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; }
+        .glitch::before { left: 2px; text-shadow: -2px 0 #00ff00; clip: rect(44px, 450px, 56px, 0); animation: glitch-anim-2 5s infinite linear alternate-reverse; }
+        .glitch::after { left: -2px; text-shadow: -2px 0 #ff00ff, 2px 2px #00ffff; clip: rect(85px, 450px, 90px, 0); animation: glitch-anim-1 3s infinite linear alternate-reverse; }
+        @keyframes glitch-anim { 0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); } 80% { transform: translate(2px, -2px); } 100% { transform: translate(0); } }
+        @keyframes glitch-anim-1 { 0% { clip: rect(20px, 9999px, 80px, 0); } 20% { clip: rect(60px, 9999px, 10px, 0); } 40% { clip: rect(90px, 9999px, 50px, 0); } 60% { clip: rect(10px, 9999px, 90px, 0); } 80% { clip: rect(50px, 9999px, 20px, 0); } 100% { clip: rect(30px, 9999px, 70px, 0); } }
+        @keyframes glitch-anim-2 { 0% { clip: rect(90px, 9999px, 10px, 0); } 20% { clip: rect(10px, 9999px, 60px, 0); } 40% { clip: rect(50px, 9999px, 90px, 0); } 60% { clip: rect(80px, 9999px, 20px, 0); } 80% { clip: rect(20px, 9999px, 50px, 0); } 100% { clip: rect(70px, 9999px, 30px, 0); } }
+        .reason { font-size: 2.5rem; margin: 20px 0; text-shadow: 0 0 10px #ff0000; }
+        .subtext { font-size: 1.5rem; color: #ccc; }
+        .contact { font-size: 1.2rem; color: #aaa; margin-top: 30px; }
+    </style>
+    <div class="glitch-wrapper"><div class="glitch" data-text="BANNED">${banInfo.code} BANNED</div></div>
+    <div class="reason">CODE: ${banInfo.code}<br>${banInfo.reason}</div>
+    <p class="subtext">Security Violation Detected. Access Terminated.</p>
+    <p class="contact">teamwafflesinquiries@gmail.com</p>
+</div>
+`);
+      //     <p class="contact">ID: ${localStorage.getItem("idheubhduicueiuhdiheis") ? JSON.parse(localStorage.getItem("idheubhduicueiuhdiheis")).code : 'UNKNOWN'}</p>
+      // Hide other content
+      document.write(`<style>body > *:not(#ban-overlay) { display: none !important; }</style>`);
+    }
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="cs.css" /> <!-- Import cs.css for modal/shop styles -->
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap");
+
+    :root {
+      --bg-main: linear-gradient(-45deg, #8dcaf6, #ffa07a, #9c27b0, #45ffbc);
+      --bg-card: #1f1f1f;
+      --text-light: #ffffff;
+      --text-muted: #bbbbbb;
+      --accent: #45ffbc;
+      --accent-hover: #34e3a5;
+      --danger: #dc3545;
+      --danger-hover: #c82333;
+      --border-color: #3c3c3c;
+      --font: "Be Vietnam Pro", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--font);
+      background: var(--bg-main);
+      color: var(--text-light);
+      background-size: cover;
+      transition: background-position 0.1s ease-out;
+
+      /* Flexbox Centering */
+      display: flex;
+      flex-direction: column;
+      /* Stack items vertically */
+      justify-content: center;
+      align-items: center;
+      /* Flexbox Centering */
+      display: flex;
+      justify-content: center;
+      /* Horizontal centering */
+      align-items: flex-start;
+      /* Keeps it at the top, change to 'center' for middle of screen */
+      padding: 3vw;
+      margin: 0;
+    }
+
+
+    .container {
+      width: 95% !important;
+      /* Occupy most of the width on small screens */
+      max-width: 1000px !important;
+      margin-left: auto !important;
+      /* Force equal margin on left */
+      margin-right: auto !important;
+      /* Force equal margin on right */
+      float: none !important;
+      /* Prevents Bootstrap from 'floating' it left */
+
+      /* Your existing styling */
+      height: auto;
+      min-height: 80vh;
+      max-height: 90vh;
+      margin-top: 20px;
+      overflow-y: auto;
+      background-color: var(--bg-card);
+      padding: 3rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .container::-webkit-scrollbar-track {
+      background: var(--bg-card);
+    }
+
+    .container::-webkit-scrollbar-thumb {
+      background-color: var(--accent);
+      border-radius: 4px;
+    }
+
+    h2 {
+      font-weight: 600;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+    }
+
+    h3 {
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    button {
+      font-family: var(--font);
+      font-weight: 600;
+      transition: 0.3s ease;
+    }
+
+    .btn-custom {
+      background: var(--accent);
+      color: #000;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+    }
+
+    .btn-custom:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-updates {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .btn-updates:hover {
+      background: #138496;
+    }
+
+    .logout-btn {
+      background: var(--danger);
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+    }
+
+    .logout-btn:hover {
+      background: var(--danger-hover);
+    }
+
+    .logout-btn:active {
+      transform: scale(0.98);
+    }
+
+    .room-item {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .room-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      border-color: var(--accent);
+    }
+
+    .room-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .room-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+
+    .room-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .room-password-input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #555;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      width: 120px;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+
+    .room-password-input:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .form-group input,
+    .form-group select {
+      background-color: #1f1f1f;
+      color: white;
+      border: 1px solid #555;
+      line-height: 1.6;
+      padding-top: 12px;
+      padding-bottom: 12px;
+      height: auto;
+      border-radius: 18px;
+    }
+
+
+    .form-group label {
+      margin-top: 10px;
+      display: block;
+      font-weight: 500;
+    }
+
+    .btn-success {
+      margin-top: 15px;
+      background-color: #28a745;
+      border: none;
+      padding: 10px 20px;
+      font-weight: 600;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-success:hover {
+      background-color: #218838;
+    }
+
+    .password-error {
+      color: #721c24;
+      font-size: 14px;
+      margin-top: 10px;
+      background-color: #f8d7da;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #f5c6cb;
+    }
+
+    .locked-icon {
+      font-size: 1.5rem;
+      opacity: 0.7;
+    }
+
+    .public-icon {
+      font-size: 1.5rem;
+      opacity: 0.7;
+    }
+
+    /* Profile Tile Styles */
+    .user-tile {
+      display: flex;
+      align-items: center;
+      background-color: #2e2e2e;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 25px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .user-tile::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .user-tile:hover::after {
+      opacity: 1;
+    }
+
+    .user-tile img {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 20px;
+      border: 3px solid var(--accent);
+    }
+
+    .tile-info {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .tile-name {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-light);
+    }
+
+    .tile-username {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Action Buttons Grid */
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .inbox-section {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .request-item,
+    .chat-item {
+      background: #3a3a3a;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .request-actions button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      font-size: 0.9rem;
+    }
+
+    .chat-item {
+      cursor: pointer;
+    }
+
+    .chat-item:hover {
+      background: #444;
+    }
+
+    .badge-count {
+      background: var(--danger);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      margin-left: 5px;
+    }
+
+    .user-result-item {
+      background: #3a3a3a;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .user-result-item button {
+      background-color: var(--accent);
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .search-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .action-buttons button {
+      width: 100%;
+      margin: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .points-display {
+      background: #faa61a;
+      color: #000;
+      padding: 5px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+    /* Generic Dashboard Overlay */
+    .dashboard-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(31, 31, 31, 0.98);
+      z-index: 10000;
+      padding: 4rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      transform: scale(1.05);
+      transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s 0.3s;
+      overflow: hidden;
+      visibility: hidden;
+    }
+
+    .dashboard-overlay.visible {
+      opacity: 1;
+      transform: scale(1);
+      visibility: visible;
+      transition-delay: 0s;
+    }
+
+    .close-overlay {
+      position: absolute;
+      top: 25px;
+      right: 30px;
+      font-size: 2rem;
+      color: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 10001;
+    }
+
+    .close-overlay:hover {
+      color: #fff;
+      background: var(--danger);
+      transform: rotate(90deg);
+    }
+
+    .rooms-scroll-container {
+      width: 100%;
+      max-width: 800px;
+      overflow-y: auto;
+      flex: 1;
+      padding: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+    .rooms-scroll-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .rooms-scroll-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .rooms-scroll-container::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    /* --- Animations & Styling Enhancements --- */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes scaleOut {
+      from {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      to {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+    }
+
+    .modal.closing .modal-content {
+      animation: scaleOut 0.3s ease-out forwards;
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .container {
+      animation: scaleIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .user-tile {
+      animation: fadeIn 0.5s ease-out 0.2s backwards;
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .user-tile:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .user-tile.fixed-enlarge {
+      position: fixed;
+      z-index: 1001;
+      /* High z-index to be on top of everything */
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .action-buttons button {
+  animation: fadeIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+      transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s, filter 0.2s;
+    }
+
+    .action-buttons button:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      filter: brightness(1.1);
+    }
+
+    .action-buttons button:active {
+      transform: scale(0.98);
+    }
+
+    .modal-content {
+      animation: scaleIn 0.3s ease-out;
+    }
+
+    .room-item {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .btn-join {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-join:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px var(--accent);
+      background: var(--accent-hover);
+    }
+
+    /* Shine Animation */
+    body.shine-active::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: -100%;
+  width: 60%;
+      height: 100%;
+  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+      transform: skewX(-25deg);
+      z-index: 10000;
+      pointer-events: none;
+      animation: shinePass 1.5s ease-out forwards;
+    }
+
+    @keyframes shinePass {
+      0% {
+        left: -100%;
+      }
+
+      100% {
+        left: 200%;
+      }
+    }
+
+    /* Calendar Grid */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      gap: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 15px;
+      padding: 10px;
+    }
+
+    .calendar-day {
+      background: #3a3a3a;
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      opacity: 0.6;
+      position: relative;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-day.claimed {
+      background: #43b581;
+      opacity: 1;
+      border-color: #43b581;
+      color: #fff;
+    }
+
+    .calendar-day.current {
+      border-color: #faa61a;
+      box-shadow: 0 0 8px #faa61a;
+      opacity: 1;
+      background: #444;
+      transform: scale(1.05);
+      z-index: 2;
+    }
+
+    .calendar-day.locked {
+      opacity: 0.4;
+    }
+
+    .day-number {
+      font-weight: bold;
+      font-size: 0.9rem;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .day-reward {
+      font-size: 0.7rem;
+      color: #ccc;
+      line-height: 1.1;
+    }
+
+    /* Widget Preview Styles for Shop */
+    .widget-preview {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      font-family: "Be Vietnam Pro", sans-serif;
+      text-align: left;
+      margin-bottom: 10px;
+      width: 100%;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .widget-preview h4 {
+      margin: 0;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      color: #45ffbc;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    .widget-preview .content {
+      padding: 10px;
+      font-size: 0.75rem;
+      color: #ccc;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+    }
+
+    /* Notification Badge */
+    .btn-notification {
+      position: relative;
+    }
+
+    .btn-notification::after {
+      content: "!";
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ff0000;
+      color: white;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      border: 2px solid #fff;
+      animation: bounce 1s infinite;
+    }
+
+    /* Leaderboard Podium Styles */
+    .leaderboard-podium {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 40px;
+      margin-bottom: 40px;
+      margin-top: 30px;
+    }
+
+    .podium-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .podium-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid var(--accent);
+      margin-bottom: 12px;
+      background: #000;
+    }
+
+    .podium-rank-1 .podium-avatar {
+      width: 150px;
+      height: 150px;
+      border-color: #ffd700;
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+    }
+
+    .podium-rank-2 .podium-avatar {
+      border-color: #c0c0c0;
+    }
+
+    .podium-rank-3 .podium-avatar {
+      border-color: #cd7f32;
+    }
+
+    .crown-icon {
+      position: absolute;
+      top: -40px;
+      left: 55%;
+      rotate: 40%;
+      transform: translateX(-50%);
+      font-size: 56px;
+      animation: bounce 2s infinite;
+    }
+
+    .podium-block {
+      width: 130px;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 15px;
+      font-weight: bold;
+      color: #000;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .podium-rank-1 .podium-block {
+      height: 180px;
+      background: linear-gradient(to bottom, #ffd700, #b8860b);
+      font-size: 3rem;
+    }
+
+    .podium-rank-2 .podium-block {
+      height: 140px;
+      background: linear-gradient(to bottom, #c0c0c0, #808080);
+      font-size: 2.5rem;
+    }
+
+    .podium-rank-3 .podium-block {
+      height: 110px;
+      background: linear-gradient(to bottom, #cd7f32, #8b4513);
+      font-size: 2.5rem;
+    }
+
+    .podium-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+      font-size: 1.4rem;
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .podium-points {
+      font-size: 1.1rem;
+      color: #ccc;
+      margin-bottom: 8px;
+    }
+
+    .podium-points {
+      font-size: 1.5rem;
+      color: #fff;
+      font-weight: 800;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+      margin-bottom: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 10px;
+      border-radius: 12px;
+    }
+
+    .leaderboard-list-item {
+      display: flex;
+      align-items: center;
+      padding: 18px;
+      background: #3a3a3a;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .leaderboard-list-rank {
+      width: 60px;
+      font-weight: bold;
+      color: #888;
+      font-size: 1.4rem;
+    }
+
+    .leaderboard-list-pfp {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      margin-right: 15px;
+      object-fit: cover;
+      background: #000;
+    }
+
+    .leaderboard-list-info {
+      flex: 1;
+      text-align: left;
+      font-size: 1.2rem;
+    }
+
+    .leaderboard-list-points {
+      font-weight: bold;
+      color: var(--accent);
+      font-size: 1.3rem;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-3px);
+      }
+    }
+
+    /* Leaderboard Animation Styles */
+    #leaderboardModal .modal-content {
+      max-width: 1400px;
+      /* Even Bigger */
+      width: 95%;
+      height: 95vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.5s ease;
+      overflow: hidden;
+      /* For shine and confetti */
+    }
+
+    .hidden-podium {
+      opacity: 0;
+    }
+
+    .reveal-3rd {
+      animation: enterRight 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      filter: drop-shadow(0 0 15px rgba(205, 127, 50, 0.5));
+      /* Bronze glow */
+    }
+
+    .reveal-2nd {
+      animation: enterLeft 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.5));
+      /* Silver glow */
+    }
+
+    .reveal-1st {
+      animation: enterPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8));
+      /* Gold glow */
+    }
+
+    @keyframes enterRight {
+      from {
+        opacity: 0;
+        transform: perspective(500px) translate3d(100px, 0, -100px) rotateY(-45deg);
+      }
+
+      to {
+        opacity: 1;
+        transform: perspective(500px) translate3d(0, 0, 0) rotateY(0);
+      }
+    }
+
+    @keyframes enterLeft {
+      from {
+        opacity: 0;
+        transform: perspective(500px) translate3d(-100px, 0, -100px) rotateY(45deg);
+      }
+
+      to {
+        opacity: 1;
+        transform: perspective(500px) translate3d(0, 0, 0) rotateY(0);
+      }
+    }
+
+    @keyframes enterPop {
+      from {
+        opacity: 0;
+        transform: scale(0.5) translateY(100px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .confetti {
+      position: absolute;
+      top: -20px;
+      width: 10px;
+      height: 10px;
+      z-index: 100;
+      pointer-events: none;
+      animation: confettiFall 3s linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(600px) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    .hidden-list-item {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+
+    .reveal-list {
+      animation: slideInList 0.4s ease forwards;
+    }
+
+    @keyframes slideInList {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .leaderboard-split {
+      display: flex;
+      gap: 20px;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .leaderboard-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      overflow-y: auto;
+    }
+
+    @media (max-width: 900px) {
+      .leaderboard-split {
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      .leaderboard-col {
+        min-height: 500px;
+        flex: none;
+      }
+    }
+
+    .modal-content.shine-active::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+      transform: skewX(-25deg);
+      pointer-events: none;
+      animation: shinePass 1.5s ease-out forwards;
+      z-index: 200;
+    }
+
+    /* Glitter Effect for Inbox */
+    .glitter-active {
+      background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3);
+      background-size: 1800% 1800%;
+      animation: rainbow 2s ease infinite;
+      box-shadow: 0 0 15px #fff, 0 0 25px #ff00de;
+      border: 2px solid white !important;
+      position: relative;
+      z-index: 10;
+    }
+
+    @keyframes rainbow {
+      0% {
+        background-position: 0% 82%
+      }
+
+      50% {
+        background-position: 100% 19%
+      }
+
+      100% {
+        background-position: 0% 82%
+      }
+    }
+
+    .glitter-active::before {
+      content: '✨';
+      position: absolute;
+      top: -15px;
+      right: -10px;
+      font-size: 28px;
+      animation: bounce 0.5s infinite alternate;
+    }
+
+    .glitter-active::after {
+      content: '✨';
+      position: absolute;
+      bottom: -15px;
+      left: -10px;
+      font-size: 22px;
+      animation: bounce 0.7s infinite alternate-reverse;
+    }
+
+    /* Shop Modal Responsive Fixes */
+    #shopModal .shop-grid {
+      max-height: none !important;
+      overflow-y: visible !important;
+    }
+
+    @media (max-width: 600px) {
+      #shopModal .modal-content {
+        padding: 10px;
+        width: 98% !important;
+      }
+
+      #shopModal .shop-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+      }
+    }
+
+    /* Security Overlay */
+    #securityLockOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 30000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: var(--font);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .security-lock-box {
+      background: var(--bg-card);
+      padding: 40px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 450px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+      z-index: 2;
+      position: relative;
+    }
+
+    .security-lock-box h2 {
+      color: var(--accent);
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+
+    .security-lock-box p {
+      color: var(--text-muted);
+      margin-bottom: 25px;
+    }
+
+    #matrixCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .pin-container {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .pin-box {
+      width: 50px;
+      height: 60px;
+      font-size: 2rem;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: monospace;
+      font-weight: bold;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .pin-box:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(69, 255, 188, 0.3);
+      transform: scale(1.1);
+    }
+
+    #securityLockActions .btn {
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .dashboard-section-title {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 15px;
+      margin-top: 25px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    /* Security Overlay */
+    #securityLockOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 30000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: var(--font);
+      animation: fadeIn 0.3s ease;
+    }
+    #securityLockOverlay.closing {
+      animation: securityFadeOut 0.3s ease-out forwards;
+    }
+    @keyframes securityFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; pointer-events: none; }
+    }
+
+
+    /* Daily Spin Wheel Text */
+    .wheel-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: 0 0;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 1px 1px 2px black;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Privacy Overlay -->
+  <div id="privacyOverlay"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 20000; display: flex; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; cursor: none; align-items: center; justify-content: center; color: #333; font-family: monospace; font-size: 12px;">
+    System Halted
+  </div>
+
+  <div id="initial-loader"
+    style="position:fixed; top:0; left:0; width:100%; height:100%; background:#1f1f1f; z-index:99999; display:flex; align-items:center; justify-content:center; transition: opacity 0.8s ease-out;">
+    <video src="Loading.mp4" autoplay loop muted
+      style="width:250px; border-radius:50%; box-shadow: 0 0 30px rgba(0,0,0,0.5);"
+      onplay="this.playbackRate=2.0"></video>
+  </div>
+
+  <!-- Panic Overlay -->
+  <div id="panicActivationOverlay"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 25000; display: flex; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; cursor: pointer; align-items: center; justify-content: center; color: #ccc; font-family: monospace; font-size: 1.2rem;">
+    <div style="text-align: center; cursor: default;">
+      <h2 style="color: #fff; margin-bottom: 20px; font-family: sans-serif;">Session Paused</h2>
+      <button id="panicContinueBtn"
+        style="padding: 10px 24px; font-size: 1rem; background: #0084ff; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold;">Continue</button>
+    </div>
+  </div>
+
+  <!-- Security Lock Overlay -->
+  <div id="securityLockOverlay">
+    <canvas id="matrixCanvas"></canvas>
+    <div class="security-lock-box">
+      <h2 style="color: var(--accent);">Security Lock 🔒</h2>
+      <p>Please authenticate to access the dashboard.</p>
+      <div id="securityLockActions">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+  </div>
+
+
+  <div class="container">
+    <h2>Dashboard</h2>
+
+    <!-- Profile Tile -->
+    <div id="user_profile_tile" class="user-tile hidden">
+      <img id="tile_pfp" src="TWL O.png" alt="Profile Picture">
+      <div class="tile-info">
+        <div id="tile_display_name" class="tile-name">Loading...</div>
+        <div id="tile_perm_name" class="tile-username">@...</div>
+        <div style="margin-top:5px;">
+          <span id="user_points" class="points-display">0 💎</span>
+          <span id="user_level" class="points-display" style="background:#9c27b0;">Lvl 1</span>
+          <button id="levelup_btn" class="btn btn-sm btn-success hidden" onclick="levelUp()"
+            style="margin-left:10px; padding: 4px 10px; font-size: 0.8rem; vertical-align: middle;">Level Up!
+            ⬆️</button>
+        </div>
+        <div
+          style="margin-top:12px; width:100%; background:#444; height:24px; border-radius:12px; overflow:hidden; position:relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
+          <div id="level_progress_bar"
+            style="height:100%; background:linear-gradient(90deg, var(--accent), #266eff); width:0%; transition:width 0.5s; box-shadow: 0 0 10px var(--accent);">
+          </div>
+          <div id="level_progress_text"
+            style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:0.85rem; color:#fff; text-shadow: 0 1px 3px black; font-weight:bold;">
+            0 / 1000</div>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="dashboard-section-title" data-row-id="social-row">Social</h4>
+    <div class="action-buttons">
+      <button id="btn-open-rooms" onclick="openOverlay('room_list_overlay')" class="btn-custom btn-accentable">Open
+        Rooms</button>
+      <button id="btn-inbox" onclick="openOverlay('inbox_list_overlay')" class="btn-custom btn-accentable">Inbox <span
+          id="inbox_badge" class="hidden badge-count">0</span></button>
+      <button id="btn-search-users" onclick="openOverlay('search_section_overlay')"
+        class="btn-custom btn-accentable">Search Users</button>
+      <button id="btn-create-room" onclick="openOverlay('add-room_overlay')" class="btn-custom btn-accentable">Create
+        Room</button>
+    </div>
+
+    <h4 class="dashboard-section-title" data-row-id="activities-row">Activities & Rewards</h4>
+    <div class="action-buttons">
+      <button id="btn-daily-spin" onclick="openSpinWheel()" class="btn-custom"
+        style="background:#ff4081; color:white;">Daily Spin 🎡</button>
+      <button id="btn-daily-reward" onclick="openDailyReward()" class="btn-custom"
+        style="background:#0bc96d; color:white;">Daily Reward 📅</button>
+      <button id="btn-leaderboard" onclick="openLeaderboard()" class="btn-custom"
+        style="background:#ffd700; color:black;">Leaderboard 🏆</button>
+      <button id="btn-shop" onclick="openShop()" class="btn-custom" style="background:#faa61a; color:black;">Shop
+        🛒</button>
+      <button id="btn-minigames" onclick="window.location.href='mg.html'" class="btn-custom"
+        style="background:#9c27b0; color:white;">Minigames 🎮</button>
+      <button id="btn-redeem" onclick="window.location.href='redeem.html'" class="btn-custom btn-accentable">Code
+        Redeem</button>
+    </div>
+
+    <h4 class="dashboard-section-title" data-row-id="system-row">System & Settings</h4>
+    <div class="action-buttons">
+      <button id="btn-appearance" onclick="openAppearanceModal()" class="btn-custom"
+        style="background:#607d8b; color:white;">Appearance 🎨</button>
+      <button id="btn-security" onclick="openSecurity()" class="btn-custom"
+        style="background:#37474f; color:white;">Security 🛡️</button>
+      <button id="btn-sidebar-toggle" onclick="toggleSidebarFeature()" class="btn-custom"
+        style="background:#6c757d;">Toggle Sidebar</button>
+      <button id="btn-updates" onclick="openOverlay('update_log_section_overlay')"
+        class="btn-custom btn-updates">Updates</button>
+      <button id="btn-settings" onclick="window.location.href='settings.html'"
+        class="btn-custom btn-accentable">Settings</button>
+      <button id="btn-hotkeys" onclick="window.location.href='hotkeys.html'" class="btn-custom btn-accentable">Panic &
+        Hotkeys</button>
+    </div>
+
+    <h4 class="dashboard-section-title" data-row-id="session-row">Session</h4>
+    <div class="action-buttons">
+      <button id="btn-lock" onclick="lockDashboard()" class="btn-custom" style="background:#607d8b; color:white;">Lock
+        🔒</button>
+      <button onclick="logout()" class="logout-btn">Logout 🔒</button>
+    </div>
+
+  </div>
+
+  <!-- OVERLAYS -->
+  <div id="room_list_overlay" class="dashboard-overlay">
+    <button class="close-overlay" onclick="closeOverlay('room_list_overlay')">&times;</button>
+    <h3 style="margin-bottom: 20px; flex-shrink: 0;">Available Rooms</h3>
+    <div class="rooms-scroll-container" id="room_list_content"></div>
+  </div>
+
+  <div id="inbox_list_overlay" class="dashboard-overlay">
+    <button class="close-overlay" onclick="closeOverlay('inbox_list_overlay')">&times;</button>
+    <h3>Inbox</h3>
+    <div class="inbox-section">
+      <h4>Requests</h4>
+      <div id="pm_requests_list"></div>
+    </div>
+    <div class="inbox-section">
+      <h4>Chats</h4>
+      <div id="pm_chats_list"></div>
+    </div>
+  </div>
+
+  <div id="search_section_overlay" class="dashboard-overlay">
+    <button class="close-overlay" onclick="closeOverlay('search_section_overlay')">&times;</button>
+    <h3>Search Users</h3>
+    <div class="search-container">
+      <input type="text" id="user_search_input" class="form-control"
+        placeholder="Search by permanent username... (e.g. @TimoTimo)"
+        onkeydown="if(event.key==='Enter') searchUsers()">
+      <button onclick="searchUsers()" class="btn btn-primary" style="margin-top:0;">Search</button>
+    </div>
+    <div id="user_search_results" style="width:100%; max-width:800px;"></div>
+  </div>
+
+  <div id="add-room_overlay" class="dashboard-overlay">
+    <button class="close-overlay" onclick="closeOverlay('add-room_overlay')">&times;</button>
+    <div id="add-room_content_container" style="width:100%; max-width:500px;">
+      <h3>Create a New Room</h3>
+      <div class="form-group">
+        <label for="room_name_input">Room Name:</label>
+        <input type="text" id="room_name_input" class="form-control" placeholder="#Room Name" />
+      </div>
+      <div class="form-group">
+        <label for="room_password_input">Password (optional):</label>
+        <input type="password" id="room_password_input" class="form-control" placeholder="Leave empty for public"
+          autocomplete="new-password" />
+      </div>
+      <div class="form-group">
+        <label for="room_type_select">Room Type:</label>
+        <select id="room_type_select" class="form-control">
+          <option value="public">Public</option>
+          <option value="private">Private</option>
+        </select>
+      </div>
+      <button onclick="addRoom();" class="btn btn-success" style="width:100%;">Create Room</button>
+    </div>
+  </div>
+
+  <div id="update_log_section_overlay" class="dashboard-overlay">
+    <button class="close-overlay" onclick="closeOverlay('update_log_section_overlay')">&times;</button>
+    <h3>Update Log</h3>
+    <div id="update_log_content"
+      style="background:#3a3a3a; padding:15px; border-radius:8px; border: 1px solid var(--border-color); line-height: 1.5; width:100%; max-width:800px; flex:1; overflow-y:auto;">
+      Loading updates...</div>
+  </div>
+
+  <!-- MODALS -->
+  <div id="spinModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('spinModal')">&times;</span>
+      <h3>Daily Spin</h3>
+      <p>Spin once every 24 hours to win points!</p>
+      <div class="wheel-wrapper">
+        <div class="wheel-pointer"></div>
+        <div id="theWheel" class="wheel"></div>
+      </div>
+      <button id="spinBtn" onclick="spinTheWheel()" class="btn btn-primary">SPIN!</button>
+      <h4 id="spinResult" style="margin-top:15px; color:#45ffbc;"></h4>
+    </div>
+  </div>
+
+  <div id="leaderboardModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('leaderboardModal')">&times;</span>
+
+      <h3 style="margin-bottom:20px;">Leaderboard 🏆</h3>
+      <div id="leaderboardList" style="text-align:left; flex: 1; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <div id="dailyRewardModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <span class="close-modal" onclick="closeModal('dailyRewardModal')">&times;</span>
+      <h3>Daily Rewards Calendar 📅</h3>
+      <p>Log in daily to claim rewards! 10 Day Cycle.</p>
+      <div style="text-align:center; margin-bottom:10px; font-size:1.1rem; color:#45ffbc;">
+        Current Streak: <span id="streakDisplay">0</span> 🔥
+      </div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+      <div style="margin-top:20px; text-align:center;">
+        <button id="claimDayBtn" class="btn btn-success" onclick="claimDailyRewardAction()" disabled>Claim
+          Reward</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="appearanceModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <span class="close-modal" onclick="closeModal('appearanceModal')">&times;</span>
+      <h3>Appearance Settings 🎨</h3>
+      <div class="form-group">
+        <label for="accentColorSelect">Dashboard Accent Color</label>
+        <select id="accentColorSelect" class="form-control" onchange="saveAppearance()"></select>
+      </div>
+      <div class="form-group" id="dashboardColorGroup" style="display:none; margin-top:15px;">
+        <label for="dashColor">Custom Accent Color (Day 7 Reward)</label>
+        <input type="color" id="dashColor" value="#45ffbc"
+          style="width:100%; height:40px; cursor:pointer; border:none; padding:0;" onchange="saveAppearance()">
+        <button onclick="resetDashColor()" class="btn btn-sm btn-warning" style="margin-top:5px;">Reset to
+          Default</button>
+      </div>
+      <hr style="border-color: #444; margin: 20px 0;">
+      <h4>Button Color Customization</h4>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Click a button below to set its color from your unlocked
+        palettes. Changes are saved automatically.</p>
+      <div id="button-customization-ui"
+        style="margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;"></div>
+      <button onclick="resetButtonColors()" class="btn btn-danger" style="margin-top: 15px;">Reset All Button
+        Colors</button>
+    </div>
+  </div>
+
+  <div id="securityModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <span class="close-modal" onclick="closeModal('securityModal')">&times;</span>
+      <h3>Security Settings 🛡️</h3>
+      <p>Secure your dashboard with a Passkey (Biometric/FaceID) or PIN.</p>
+
+      <div id="securityStatus"
+        style="margin: 20px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+        Status: <span id="securityStatusText" style="font-weight:bold;">Disabled</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button onclick="setupPasskey()" class="btn btn-primary">Setup Passkey (FaceID/TouchID)</button>
+        <button onclick="setupPin()" class="btn btn-info">Setup PIN</button>
+        <button onclick="disableSecurity()" class="btn btn-danger" id="disableSecurityBtn" style="display:none;">Disable
+          Security</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="securitySetupModal" class="modal">
+    <div class="modal-content"
+      style="background: rgba(40, 40, 40, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); width: 400px; height: 400px; max-width: 90vw; max-height: 90vw; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 2rem;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+        <img src="YellowDanger.png" alt="Warning" style="width: 80px; height: 80px;">
+        <h3 style="margin-top:10px; margin-bottom: 5px;">Protect Your Dashboard 🔒</h3>
+        <p style="margin-bottom:0; color: var(--text-muted);">Would you like to set up a Passkey or PIN to prevent
+          unauthorized access?</p>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 30px; width: 100%; max-width: 320px;">
+        <button onclick="closeModal('securitySetupModal')" class="btn btn-secondary"
+          style="flex: 1; padding: 10px 20px;">Not Now</button>
+        <button onclick="openSecurity(); closeModal('securitySetupModal');" class="btn btn-success"
+          style="flex: 1; margin-top: 0;">Yes, Secure It</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pinSetupModal" class="modal">
+    <div class="modal-content"
+      style="background: rgba(40, 40, 40, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); width: 400px; max-width: 90vw; text-align: center; padding: 2rem;">
+      <span class="close-modal" onclick="closeModal('pinSetupModal')">&times;</span>
+      <h3 style="margin-top:0;">Setup New PIN</h3>
+      <p style="color: var(--text-muted);">Enter a numeric PIN. This will be used to unlock your dashboard.</p>
+      <form onsubmit="saveNewPin(); return false;">
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+          <input type="password" id="newPinInput" class="form-control" placeholder="Enter new PIN" inputmode="numeric"
+            pattern="[0-9]*" autocomplete="new-password"
+            style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white;">
+          <input type="password" id="confirmPinInput" class="form-control" placeholder="Confirm new PIN"
+            inputmode="numeric" pattern="[0-9]*" autocomplete="new-password"
+            style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white;">
+        </div>
+        <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+          <button type="button" onclick="closeModal('pinSetupModal')" class="btn btn-secondary"
+            style="flex: 1;">Cancel</button>
+          <button type="submit" class="btn btn-success" style="flex: 1;">Save PIN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="levelPerksModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('levelPerksModal')">&times;</span>
+      <h3>Level Perks 🚀</h3>
+      <div id="levelPerksList" style="text-align:left; max-height:300px; overflow-y:auto; padding:10px;">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <div id="shopModal" class="modal">
+    <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 90vh; overflow-y: auto;">
+      <span class="close-modal" onclick="closeModal('shopModal')">&times;</span>
+      <h3>Item Shop</h3>
+      <p>Spend your points on custom chat bubbles and sidebar widgets!</p>
+      <div style="text-align:right; margin-bottom:10px;">Balance: <span id="shop_balance">0</span> 💎</div>
+
+      <div style="text-align:left; margin-bottom:10px; font-size:1.2rem; color:#45ffbc; border-bottom:1px solid #444;">
+        Chat Bubbles</div>
+      <div id="shopGridBubbles" class="shop-grid" style="margin-bottom:30px;"></div>
+
+      <div style="text-align:left; margin-bottom:10px; font-size:1.2rem; color:#45ffbc; border-bottom:1px solid #444;">
+        Sidebar Widgets</div>
+      <div id="shopGridWidgets" class="shop-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+      authDomain: "team-waffles.firebaseapp.com",
+      databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+      projectId: "team-waffles",
+      storageBucket: "team-waffles.appspot.com",
+      messagingSenderId: "891460090478",
+      appId: "1:891460090478:web:c01b6db1af21745769047f"
+    };
+
+    function startWaveAnimation() {
+      document.body.classList.add('shine-active');
+      // Animate buttons in a wave
+      const allButtons = document.querySelectorAll('.action-buttons button');
+      allButtons.forEach((btn, index) => {
+        // Reset animation to allow re-triggering
+        btn.style.animation = 'none';
+        btn.offsetHeight; /* trigger reflow */
+        btn.style.animation = '';
+        btn.style.animationDelay = `${0.1 + index * 0.05}s`;
+      });
+    }
+
+    function showPostAuthLoaderAndAnimate() {
+      // Create and show a loader
+      const loader = document.createElement('div');
+      loader.id = 'post-auth-loader';
+      loader.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:#1f1f1f; z-index:99999; display:flex; align-items:center; justify-content:center; transition: opacity 0.8s ease-out; opacity: 0;";
+      loader.innerHTML = `<video src="Loading.mp4" autoplay loop muted style="width:250px; border-radius:50%; box-shadow: 0 0 30px rgba(0,0,0,0.5);" onplay="this.playbackRate=2.0"></video>`;
+      document.body.appendChild(loader);
+
+      // Fade in the loader
+      requestAnimationFrame(() => {
+        setTimeout(() => { loader.style.opacity = 1; }, 10);
+      });
+
+      // Then, after a delay, hide the loader and do the animations
+      setTimeout(() => {
+        loader.style.opacity = 0;
+        loader.addEventListener('transitionend', () => loader.remove(), { once: true });
+        startWaveAnimation();
+      }, 1500); // Show loader for 1.5s
+    }
+
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const roomsRef = db.ref("/rooms");
+
+    const panicActivationOverlay = document.getElementById("panicActivationOverlay");
+    const panicContinueBtn = document.getElementById("panicContinueBtn");
+    const privacyOverlay = document.getElementById("privacyOverlay");
+    let currentHotkeys = {};
+    let currentUserData = null;
+    let isLoggingOut = false;
+
+    function triggerBan(code, reason) {
+      const banInfo = { code: code || 'ERROR', reason: reason || 'Access Denied.' };
+      localStorage.setItem('idheubhduicueiuhdiheis', JSON.stringify(banInfo));
+      const user = firebase.auth().currentUser;
+      if (user) {
+        firebase.database().ref(`users/${user.uid}/ban`).set(banInfo);
+        firebase.database().ref('cheat_logs').push({ uid: user.uid, email: user.email || "Unknown", timestamp: firebase.database.ServerValue.TIMESTAMP, details: `Ban triggered: ${code} - ${reason}` });
+      }
+
+      // If overlay doesn't exist, reload to trigger the top script which creates it
+      if (!document.getElementById('ban-overlay')) {
+        window.location.reload();
+      }
+    }
+
+    firebase.auth().onAuthStateChanged(function (user) {
+      if (user) {
+        // Fetch user data from Firebase Realtime Database
+        firebase.database().ref("users/" + user.uid).once("value").then((snapshot) => {
+          currentUserData = snapshot.val();
+          const data = currentUserData;
+
+          const loader = document.getElementById("initial-loader");
+          if (loader) {
+            setTimeout(() => {
+              loader.style.opacity = 0;
+              loader.addEventListener('transitionend', () => {
+                loader.remove();
+                // Don't start wave animation here if security lock is shown
+                const isSecurityEnabled = localStorage.getItem('twc_security_enabled') === 'true';
+                if (!isSecurityEnabled || sessionStorage.getItem('twc_session_unlocked') === 'true') {
+                  startWaveAnimation();
+                }
+              }, { once: true });
+            }, 500);
+          }
+
+          // Remote ban listener
+          firebase.database().ref("users/" + user.uid + "/ban").on("value", (snapshot) => {
+            const banData = snapshot.val();
+            if (banData && banData.code && banData.reason) {
+              triggerBan(banData.code, banData.reason);
+            } else {
+              if (localStorage.getItem('idheubhduicueiuhdiheis')) {
+                localStorage.removeItem('idheubhduicueiuhdiheis');
+                window.location.reload();
+              }
+            }
+          });
+
+          if (data && data.displayName) {
+            // Populate Profile Tile
+            document.getElementById("tile_display_name").innerText = data.displayName;
+            document.getElementById("tile_perm_name").innerText = data.permanentUsername ? "@" + data.permanentUsername : "@unknown";
+            if (data.profilePicURL) {
+              document.getElementById("tile_pfp").src = data.profilePicURL;
+            }
+            document.getElementById("user_points").innerText = (data.points || 0) + " 💎";
+            document.getElementById("user_level").innerHTML = `Lvl ${data.level || 1} <small style="cursor:pointer;text-decoration:underline;" onclick="openLevelPerks()">[Perks]</small>`;
+            document.getElementById("user_profile_tile").classList.remove("hidden");
+
+            // Level Progress Bar Logic
+            const currentLevel = data.level || 1;
+            const currentPoints = data.points || 0;
+            const nextLevelThreshold = currentLevel * 1000; // Example: Level 1 needs 1000, Lvl 2 needs 2000
+            let progressPct = (currentPoints / nextLevelThreshold) * 100;
+
+            if (progressPct >= 100) {
+              progressPct = 100;
+              document.getElementById("levelup_btn").classList.remove("hidden");
+            } else {
+              document.getElementById("levelup_btn").classList.add("hidden");
+            }
+
+            document.getElementById("level_progress_bar").style.width = `${progressPct}%`;
+            document.getElementById("level_progress_text").innerText = `${currentPoints} / ${nextLevelThreshold} 💎 to next level`;
+
+            // Daily Reward Notification
+            const lastClaim = data.lastDailyReward || 0;
+            const now = Date.now();
+            const cooldown = 24 * 60 * 60 * 1000;
+            const rewardBtn = document.querySelector('button[onclick="openDailyReward()"]');
+            if (now - lastClaim >= cooldown) rewardBtn.classList.add('btn-notification');
+            else rewardBtn.classList.remove('btn-notification');
+
+            // Apply custom dashboard color if exists
+            const localDashColor = localStorage.getItem('twc_dash_color');
+            if (localDashColor) {
+              document.documentElement.style.setProperty('--accent', localDashColor);
+            }
+
+            // Apply custom dashboard container gradient if exists
+            if (data.settings && data.settings.dashGradient) {
+              const container = document.querySelector('.container');
+              if (container) container.style.background = data.settings.dashGradient;
+            }
+            const localContainerBg = localStorage.getItem('twc_container_bg');
+            if (localContainerBg) {
+              const container = document.querySelector('.container');
+              if (container) container.style.background = localContainerBg;
+            } else if (data.settings && data.settings.containerBg) {
+              const container = document.querySelector('.container');
+              if (container) container.style.background = data.settings.containerBg;
+            }
+
+            // Check for unlocked colors (Day 7)
+            if (data.unlockedColors) {
+              document.getElementById("dashboardColorGroup").style.display = "block";
+              if (localDashColor) document.getElementById("dashColor").value = localDashColor;
+            }
+
+            applyCustomButtonColors();
+
+            // Listen for inbox
+            listenInboxCount(user.uid);
+
+            // Load hotkeys
+            loadAndApplyHotkeys();
+
+            // Check Security
+            checkSecurityOnLoad();
+          } else {
+            alert("Please update your username in settings to access other rooms.");
+          }
+        });
+      } else {
+        if (!isLoggingOut) {
+          alert("No user logged in. Redirecting...");
+          window.location.href = "index.html";
+        }
+      }
+    });
+
+
+    /* ───── Security System ───── */
+    const security = {
+      isEnabled: () => localStorage.getItem('twc_security_enabled') === 'true',
+      getType: () => localStorage.getItem('twc_security_type'),
+      getPin: () => localStorage.getItem('twc_security_pin'),
+      getCredId: () => localStorage.getItem('twc_security_cred_id'),
+
+      enable: (type, secret) => {
+        localStorage.setItem('twc_security_enabled', 'true');
+        localStorage.setItem('twc_security_type', type);
+        if (type === 'pin') localStorage.setItem('twc_security_pin', btoa(secret));
+        if (type === 'passkey') localStorage.setItem('twc_security_cred_id', secret);
+        updateSecurityUI();
+      },
+
+      disable: () => {
+        localStorage.removeItem('twc_security_enabled');
+        localStorage.removeItem('twc_security_type');
+        localStorage.removeItem('twc_security_pin');
+        localStorage.removeItem('twc_security_cred_id');
+        updateSecurityUI();
+      }
+    };
+
+    function lockDashboard() {
+      sessionStorage.removeItem('twc_session_unlocked');
+      checkSecurityOnLoad();
+    }
+
+    function checkSecurityOnLoad() {
+      if (sessionStorage.getItem('twc_session_unlocked') === 'true') {
+        return;
+      }
+
+
+
+
+      const hasPin = !!localStorage.getItem('twc_security_pin');
+      const hasPasskey = !!localStorage.getItem('twc_security_cred_id');
+      const isEnabled = localStorage.getItem('twc_security_enabled') === 'true';
+
+      if (isEnabled && (hasPin || hasPasskey)) {
+        const overlay = document.getElementById('securityLockOverlay');
+        const actions = document.getElementById('securityLockActions');
+        overlay.style.display = 'flex';
+
+        window.renderPinUI = () => {
+          actions.innerHTML = `
+                <div class="pin-container">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off">
+                </div>
+                <button onclick="authenticatePin()" class="btn btn-primary">Unlock</button>
+                ${hasPasskey ? `<button onclick="renderPasskeyUI(true)" class="btn btn-secondary" style="margin-top:10px;">Use Passkey</button>` : ''}`;
+
+
+
+          setupPinInputs();
+          startMatrixRain();
+        };
+
+        window.renderPasskeyUI = (autoTrigger = false) => {
+          actions.innerHTML = `<button onclick="authenticatePasskey()" class="btn btn-primary">Unlock with Passkey</button>
+                               ${hasPin ? `<button onclick="renderPinUI()" class="btn btn-secondary" style="margin-top:10px;">Use PIN</button>` : ''}`;
+          if (autoTrigger) setTimeout(authenticatePasskey, 100);
+        };
+
+        if (hasPasskey) {
+          renderPasskeyUI(true);
+        } else
+          renderPinUI();
+
+      } else {
+        // Prompt setup
+        document.getElementById('securitySetupModal').style.display = 'flex';
+      }
+    }
+
+    function lockDashboard() {
+      sessionStorage.removeItem('twc_session_unlocked');
+      checkSecurityOnLoad();
+    }
+
+    function openSecurity() {
+      document.getElementById('securityModal').style.display = 'flex';
+      updateSecurityUI();
+    }
+
+    function updateSecurityUI() {
+      const statusText = document.getElementById('securityStatusText');
+      const disableBtn = document.getElementById('disableSecurityBtn');
+
+      if (security.isEnabled()) {
+        statusText.innerText = `Enabled (${security.getType() === 'passkey' ? 'Passkey' : 'PIN'})`;
+        statusText.style.color = '#43b581';
+        disableBtn.style.display = 'block';
+      } else {
+        statusText.innerText = 'Disabled';
+        statusText.style.color = '#f04747';
+        disableBtn.style.display = 'none';
+      }
+    }
+
+    function setupPin() {
+      document.getElementById('pinSetupModal').style.display = 'flex';
+      document.getElementById('newPinInput').value = '';
+      document.getElementById('confirmPinInput').value = '';
+    }
+
+    function saveNewPin() {
+      const newPin = document.getElementById('newPinInput').value;
+      const confirmPin = document.getElementById('confirmPinInput').value;
+
+      if (!newPin || !confirmPin) {
+        return alert("Please fill out both PIN fields.");
+      }
+      if (newPin !== confirmPin) {
+        return alert("PINs do not match.");
+      }
+      if (!/^\d{4}$/.test(newPin)) {
+        return alert("PIN must be exactly 4 digits.");
+      }
+
+      security.enable('pin', newPin);
+      alert("PIN Security Enabled!");
+      closeModal('pinSetupModal');
+      updateSecurityUI();
+    }
+
+    function authenticatePin() {
+      const inputs = document.querySelectorAll('.pin-box');
+      let pin = '';
+      inputs.forEach(i => pin += i.value);
+
+      if (btoa(pin) === security.getPin()) {
+        sessionStorage.setItem('twc_session_unlocked', 'true');
+        const overlay = document.getElementById('securityLockOverlay');
+        overlay.classList.add('closing');
+        overlay.addEventListener('animationend', () => {
+          overlay.style.display = 'none';
+          overlay.classList.remove('closing');
+          if (window.matrixInterval) clearInterval(window.matrixInterval);
+          showPostAuthLoaderAndAnimate();
+        }, { once: true });
+      } else {
+        alert("Incorrect PIN");
+        inputs.forEach(i => i.value = '');
+        inputs[0].focus();
+      }
+    }
+
+    function setupPinInputs() {
+      const inputs = document.querySelectorAll('.pin-box');
+      if (inputs.length > 0) inputs[0].focus();
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          if (e.target.value.length === 1) {
+            if (index < inputs.length - 1) {
+              inputs[index + 1].focus();
+            } else {
+              authenticatePin();
+            }
+          }
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && e.target.value === '') {
+            if (index > 0) inputs[index - 1].focus();
+          }
+        });
+      });
+    }
+
+    function startMatrixRain() {
+      const canvas = document.getElementById('matrixCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+      const fontSize = 16;
+      const columns = canvas.width / fontSize;
+      const drops = Array(Math.floor(columns)).fill(1);
+
+      function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0F0';
+        ctx.font = fontSize + 'px monospace';
+        for (let i = 0; i < drops.length; i++) {
+          const text = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+          drops[i]++;
+        }
+      }
+      if (window.matrixInterval) clearInterval(window.matrixInterval);
+      window.matrixInterval = setInterval(draw, 33);
+
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+    }
+
+    function disableSecurity() {
+      if (confirm("Disable security?")) {
+        security.disable();
+      }
+    }
+
+    // WebAuthn
+    async function setupPasskey() {
+      if (!window.isSecureContext) { alert("Passkeys require a secure context (HTTPS or localhost)."); return; }
+      if (!window.location.hostname) {
+        alert("Passkeys cannot be created on a 'file://' URL. Please use a local server (e.g., by running 'python -m http.server' in this folder).");
+        return;
+      }
+      try {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+        const userId = new Uint8Array(16);
+        window.crypto.getRandomValues(userId);
+
+        const publicKey = {
+          challenge: challenge,
+          rp: { name: "Team Waffles Dashboard", id: window.location.hostname },
+          user: {
+            id: userId,
+            name: currentUserData.email || "user",
+            displayName: currentUserData.displayName || "User"
+          },
+          pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+          timeout: 60000,
+          attestation: "direct"
+        };
+
+        const credential = await navigator.credentials.create({ publicKey });
+        const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+        security.enable('passkey', credId);
+        alert("Passkey setup complete!");
+        updateSecurityUI();
+      } catch (e) {
+        console.error(e);
+        alert("Passkey setup failed: " + e.message);
+      }
+    }
+
+    async function authenticatePasskey() {
+      try {
+        const savedId = security.getCredId();
+        if (!savedId) throw new Error("No passkey found");
+
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const publicKey = {
+          challenge: challenge,
+          allowCredentials: [{
+            id: Uint8Array.from(atob(savedId), c => c.charCodeAt(0)),
+            type: "public-key"
+          }],
+          userVerification: "required",
+          timeout: 60000,
+        };
+
+        await navigator.credentials.get({ publicKey });
+        sessionStorage.setItem('twc_session_unlocked', 'true');
+        const overlay = document.getElementById('securityLockOverlay');
+        overlay.classList.add('closing');
+        overlay.addEventListener('animationend', () => {
+          overlay.style.display = 'none';
+          overlay.classList.remove('closing');
+          if (window.matrixInterval) clearInterval(window.matrixInterval);
+          showPostAuthLoaderAndAnimate();
+        }, { once: true });
+      } catch (e) {
+        console.error(e);
+        alert("Authentication failed.");
+      }
+    }
+
+    function openOverlay(overlayId) {
+      const overlay = document.getElementById(overlayId);
+      if (!overlay) return;
+      overlay.classList.add('visible');
+
+      // Load content dynamically
+      switch (overlayId) {
+        case 'room_list_overlay':
+          loadRooms();
+          break;
+        case 'inbox_list_overlay':
+          loadInbox();
+          break;
+        case 'update_log_section_overlay':
+          loadUpdateLogContent();
+          break;
+      }
+    }
+
+    function closeOverlay(overlayId) {
+      const overlay = document.getElementById(overlayId);
+      if (overlay) overlay.classList.remove('visible');
+    }
+
+    function joinRoom(roomName) {
+      roomsRef.child(roomName).once("value").then(function (snapshot) {
+        let roomData = snapshot.val();
+        let passwordInputField = document.getElementById(`password_${roomName}`);
+
+        if (roomData.type === "private") {
+          let password = passwordInputField.value;
+          if (password === roomData.password) {
+            localStorage.setItem("room_name", roomName);
+            localStorage.setItem("room_password", password);
+            window.location.href = "ch.html";
+          } else {
+            alert('Incorrect password!');
+          }
+        } else {
+          localStorage.setItem("room_name", roomName);
+          localStorage.removeItem("room_password");
+          window.location.href = "ch.html";
+        }
+      });
+    }
+
+    function loadUpdateLogContent() {
+      const contentDiv = document.getElementById("update_log_content");
+      contentDiv.innerHTML = "Loading updates...";
+      firebase.database().ref("config/updates").limitToLast(20).once("value").then(snap => {
+        if (!snap.exists()) {
+          contentDiv.innerHTML = "No updates yet.";
+          return;
+        }
+
+        let html = "";
+        const updates = [];
+        snap.forEach(child => updates.unshift(child.val())); // Reverse order (newest first)
+
+        updates.forEach(u => {
+          html += `<div style="margin-bottom: 20px; border-bottom: 1px solid #555; padding-bottom: 10px;">
+            <h4 style="margin-top:0; color:var(--accent);">${u.heading}</h4>
+            <div>${parseMarkdown(u.description)}</div>
+          </div>`;
+        });
+
+        contentDiv.innerHTML = html;
+      });
+    }
+
+    function addRoom() {
+      const nameInput = document.getElementById("room_name_input");
+      const passInput = document.getElementById("room_password_input");
+      const typeInput = document.getElementById("room_type_select");
+
+      const name = nameInput ? nameInput.value.trim() : "";
+      const password = passInput ? passInput.value.trim() : "";
+      const type = typeInput ? typeInput.value : "public";
+
+      if (!name) {
+        alert("Please enter a room name.");
+        return;
+      }
+
+      const roomData = {
+        type: type,
+        password: type === "private" ? password : "", // Only save password if private
+        createdAt: new Date().toISOString()
+      };
+
+      firebase.database().ref("rooms/" + name).set(roomData, (error) => {
+        if (error) {
+          alert("Failed to create room: " + error.message);
+        } else {
+          alert("Room #" + name + " added successfully!");
+          if (nameInput) nameInput.value = "";
+          if (passInput) passInput.value = "";
+          if (typeInput) typeInput.value = "public";
+          closeOverlay('add-room_overlay');
+        }
+      });
+    }
+
+    function loadRooms(callback) {
+      document.getElementById("room_list_content").innerHTML = "Loading...";
+      roomsRef.limitToLast(50).once("value", function (snapshot) {
+        let output = "";
+
+        let rooms = [];
+        snapshot.forEach(function (childSnapshot) {
+          let roomName = childSnapshot.key;
+          let roomData = childSnapshot.val();
+          if (roomData.type === 'dm') return;
+
+          let userCount = 0;
+          if (roomData.onlineUsers) {
+            userCount = Object.keys(roomData.onlineUsers).length;
+          }
+          rooms.push({ key: roomName, val: roomData, count: userCount });
+        });
+
+        // Sort by count descending
+        rooms.sort((a, b) => b.count - a.count);
+
+        rooms.forEach(function (room) {
+          let roomName = room.key;
+          let roomData = room.val;
+
+          let roomIcon = roomData.type === 'private'
+            ? "<span class='locked-icon' title='Private Room'>🔒</span>"
+            : "<span class='public-icon' title='Public Room'>🌍</span>";
+
+          let passwordInput = roomData.type === 'private'
+            ? `<input type="password" placeholder="Password" class="room-password-input" id="password_${roomName}" onkeydown="if(event.key==='Enter') joinRoom('${roomName}')" />`
+            : '';
+
+          // Parse online users
+          let usersHtml = "";
+          let userCount = room.count;
+
+          if (userCount > 0) {
+            const names = Object.values(roomData.onlineUsers).map(u => u.name);
+            usersHtml = `<div class="room-users-preview">👤 ${userCount} Online: ${names.join(", ")}</div>`;
+          } else {
+            usersHtml = `<div class="room-users-preview">👤 Empty</div>`;
+          }
+
+          output += `<div class='room-item'>
+                  <div class="room-info">
+                    <div class="room-name">#${roomName}</div>
+                    ${usersHtml}
+                  </div>
+                  <div class="room-actions">
+                  ${passwordInput}
+                  <button class='btn-join' onclick='joinRoom("${roomName}")'>Join</button>
+                  ${roomIcon}
+                  </div>
+                </div>`;
+        });
+
+        document.getElementById("room_list_content").innerHTML = output;
+        if (typeof callback === "function") callback();
+      });
+    }
+
+    // Anti-Console: Detects DevTools open via debugger timing
+    setInterval(() => {
+      const start = performance.now();
+      debugger;
+      if (performance.now() - start > 100) {
+        triggerBan('CODE_5_CONSOLE', 'Console usage detected.');
+      }
+    }, 1000);
+    // --- Global Hotkey Logic ---
+    function loadAndApplyHotkeys() {
+      try {
+        const hotkeysJSON = localStorage.getItem('twc_hotkeys');
+        if (hotkeysJSON) {
+          currentHotkeys = JSON.parse(hotkeysJSON);
+        }
+      } catch (e) {
+        console.error("Could not load hotkeys from localStorage", e);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!currentHotkeys || !privacyOverlay || !panicActivationOverlay) return;
+
+      // Handle events when panic overlay is active
+      if (panicActivationOverlay.style.opacity === '1') {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          panicActivationOverlay.style.opacity = '0';
+          panicActivationOverlay.style.pointerEvents = 'none';
+          sessionStorage.removeItem("panic_triggered");
+        }
+        return; // Don't process other hotkeys
+      }
+
+      // Panic Button
+      if (currentHotkeys.panicKey && e.key === currentHotkeys.panicKey) {
+        e.preventDefault();
+        sessionStorage.setItem("panic_triggered", "true");
+        const url = currentHotkeys.panicUrl || "https://www.google.com";
+        if (window.self !== window.top) { // Check if in iframe
+          window.top.location.href = url;
+        } else {
+          window.location.href = url;
+        }
+      }
+      // Privacy Hide
+      if (currentHotkeys.privacyHideKey && e.key === currentHotkeys.privacyHideKey) {
+        const style = currentHotkeys.privacyStyle || 'halted';
+        const bgColor = currentHotkeys.privacyBgColor || '#0067b8';
+
+        document.documentElement.requestFullscreen().catch(() => { });
+        // Reset styles
+        privacyOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; display: flex; opacity: 1; pointer-events: all; cursor: none; align-items: center; justify-content: center; flex-direction: column;';
+
+        if (style === 'win_update') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = bgColor === '#000000' ? '#fff' : '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.innerHTML = `
+              <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+              <div style="text-align: center;">Working on updates <span id="win-progress">1</span>% complete.<br>Don't turn off your computer.</div>
+              <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          `;
+          let progress = 1;
+          const interval = setInterval(() => {
+            if (privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+            if (progress < 100) {
+              progress += Math.floor(Math.random() * 3);
+              if (progress > 100) progress = 100;
+              const el = document.getElementById('win-progress');
+              if (el) el.innerText = progress;
+            }
+          }, 2000);
+        } else if (style === 'restarting') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = bgColor === '#000000' ? '#fff' : '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.innerHTML = `
+              <div style="width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+              <div>Restarting...</div>
+              <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          `;
+        } else if (style === 'bsod') {
+          privacyOverlay.style.background = bgColor;
+          privacyOverlay.style.color = '#fff';
+          privacyOverlay.style.fontFamily = '"Segoe UI", sans-serif';
+          privacyOverlay.style.fontSize = '24px';
+          privacyOverlay.style.alignItems = 'flex-start';
+          privacyOverlay.style.padding = '10%';
+          privacyOverlay.innerHTML = `
+              <div style="font-size: 100px; margin-bottom: 20px;">:(</div>
+              <div style="font-size: 24px; margin-bottom: 20px;">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div>
+              <div style="font-size: 24px; margin-bottom: 40px;"><span id="bsod-progress">0</span>% complete</div>
+              <div style="display: flex; align-items: center;">
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://bit.ly/twmainc1" style="width: 120px; height: 120px; margin-right: 20px;">
+                  <div style="font-size: 14px;">
+                      For more information about this issue and possible fixes, visit https://www.windows.com/stopcode<br><br>
+                      If you call a support person, give them this info:<br>
+                      Stop code: CRITICAL_PROCESS_DIED
+                  </div>
+              </div>
+          `;
+          let progress = 0;
+          const interval = setInterval(() => {
+            if (privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+            if (progress < 100) {
+              progress += Math.floor(Math.random() * 5);
+              if (progress > 100) progress = 100;
+              const el = document.getElementById('bsod-progress');
+              if (el) el.innerText = progress;
+            }
+          }, 1000);
+        } else if (style === 'matrix') {
+          privacyOverlay.style.background = 'black';
+          privacyOverlay.innerHTML = '';
+          const canvas = document.createElement('canvas');
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          privacyOverlay.appendChild(canvas);
+          const ctx = canvas.getContext('2d');
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+          const fontSize = 16;
+          const columns = canvas.width / fontSize;
+          const drops = Array(Math.floor(columns)).fill(1);
+          const drawMatrix = () => {
+            if (privacyOverlay.style.opacity === '0') return;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+              const text = chars[Math.floor(Math.random() * chars.length)];
+              ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+              if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+              drops[i]++;
+            }
+            requestAnimationFrame(drawMatrix);
+          };
+          drawMatrix();
+        } else if (style === 'terminal') {
+          privacyOverlay.style.background = 'black';
+          privacyOverlay.style.color = '#0f0';
+          privacyOverlay.style.fontFamily = 'monospace';
+          privacyOverlay.style.fontSize = '16px';
+          privacyOverlay.style.padding = '20px';
+          privacyOverlay.style.justifyContent = 'flex-start';
+          privacyOverlay.style.alignItems = 'flex-start';
+          privacyOverlay.style.overflow = 'hidden';
+          privacyOverlay.innerHTML = '<div id="term-content"></div>';
+
+          const termContent = document.getElementById('term-content');
+          const lines = [
+            "Initializing connection...", "Connecting to server 192.168.0.1...", "Bypassing firewall...", "Access granted.",
+            "Downloading sensitive data...", "Encrypting files...", "Uploading to remote host...", "Cleaning logs...",
+            "System compromise imminent...", "Root access obtained.", "Executing payload...", "Decrypting user passwords...",
+            "Fetching database tables...", "Injecting SQL query...", "Packet sniffing started...", "Intercepting traffic...",
+            "Compiling assets...", "Bypassing mainframe...", "Accessing kernel...", "Overriding security protocols..."
+          ];
+
+          const interval = setInterval(() => {
+            if (privacyOverlay.style.opacity === '0') { clearInterval(interval); return; }
+            const line = lines[Math.floor(Math.random() * lines.length)];
+            const p = document.createElement('div');
+            p.textContent = `> ${line}`;
+            termContent.appendChild(p);
+            window.scrollTo(0, document.body.scrollHeight);
+            if (termContent.childElementCount > 25) termContent.removeChild(termContent.firstChild);
+          }, 150);
+        } else {
+          privacyOverlay.style.background = currentHotkeys.privacyBgColor || '#000';
+          privacyOverlay.style.color = currentHotkeys.privacyBgColor === '#0067b8' ? '#fff' : '#333';
+          privacyOverlay.style.fontFamily = 'monospace';
+          privacyOverlay.style.fontSize = '12px';
+          privacyOverlay.innerHTML = 'System Halted';
+        }
+
+        const sb = document.getElementById('fs-sidebar');
+        const sbt = document.getElementById('fs-sidebar-toggle');
+        if (sb) sb.style.visibility = 'hidden';
+        if (sbt) sbt.style.visibility = 'hidden';
+      }
+      // Privacy Show
+      if (currentHotkeys.privacyShowKey && e.key === currentHotkeys.privacyShowKey) {
+        privacyOverlay.style.opacity = "0";
+        privacyOverlay.style.pointerEvents = "none";
+        const sb = document.getElementById('fs-sidebar');
+        const sbt = document.getElementById('fs-sidebar-toggle');
+        if (sb) sb.style.visibility = 'visible';
+        if (sbt) sbt.style.visibility = 'visible';
+      }
+    });
+
+    if (panicContinueBtn) {
+      panicContinueBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        panicActivationOverlay.style.opacity = '0';
+        panicActivationOverlay.style.pointerEvents = 'none';
+        sessionStorage.removeItem("panic_triggered");
+      });
+    }
+
+    window.addEventListener('pageshow', () => {
+      const navEntries = performance.getEntriesByType("navigation");
+      const navType = navEntries.length > 0 ? navEntries[0].type : '';
+
+      if (navType === 'reload') {
+        // On a refresh, always clear the panic state.
+        sessionStorage.removeItem("panic_triggered");
+      }
+
+      const panicTriggered = sessionStorage.getItem("panic_triggered");
+      if (panicTriggered === "true" && panicActivationOverlay) {
+        panicActivationOverlay.style.opacity = '1';
+        panicActivationOverlay.style.pointerEvents = 'all';
+      } else if (panicActivationOverlay) {
+        panicActivationOverlay.style.opacity = '0';
+        panicActivationOverlay.style.pointerEvents = 'none';
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      document.body.style.backgroundPosition = `${x * 100}% ${y * 100}%`;
+    });
+
+    // Parallax Tilt Effect for User Tile
+    const tile = document.getElementById('user_profile_tile');
+    if (tile) {
+      tile.addEventListener('click', () => {
+        // If it's already enlarged, shrink it back
+        if (tile.classList.contains('enlarged')) {
+          tile.style.transform = ''; // Animate back to original fixed position
+          tile.classList.remove('enlarged');
+
+          // After transition, clean up styles and remove placeholder
+          tile.addEventListener('transitionend', () => {
+            tile.classList.remove('fixed-enlarge');
+            tile.style.position = '';
+            tile.style.top = '';
+            tile.style.left = '';
+            tile.style.width = '';
+            tile.style.height = '';
+            const placeholder = document.getElementById('tile-placeholder');
+            if (placeholder) placeholder.remove();
+          }, { once: true });
+
+        } else {
+          // If it's not enlarged, calculate position and enlarge it
+          const rect = tile.getBoundingClientRect();
+
+          // Create and insert a placeholder to prevent layout shift
+          const placeholder = document.createElement('div');
+          placeholder.id = 'tile-placeholder';
+          placeholder.style.width = rect.width + 'px';
+          placeholder.style.height = rect.height + 'px';
+          placeholder.style.marginBottom = getComputedStyle(tile).marginBottom;
+          tile.parentNode.insertBefore(placeholder, tile);
+
+          // Apply fixed positioning to break out of container overflow
+          tile.classList.add('fixed-enlarge');
+          tile.style.top = rect.top + 'px';
+          tile.style.left = rect.left + 'px';
+          tile.style.width = rect.width + 'px';
+          tile.style.height = rect.height + 'px';
+
+          // In the next frame, apply the transform to animate it to the center
+          requestAnimationFrame(() => {
+            const viewportCenterX = window.innerWidth / 2;
+            const viewportCenterY = window.innerHeight / 2;
+            const tileCenterX = rect.left + rect.width / 2;
+            const tileCenterY = rect.top + rect.height / 2;
+
+            const translateX = viewportCenterX - tileCenterX;
+            const translateY = viewportCenterY - tileCenterY;
+
+            // Calculate the maximum scale to fit within the viewport with some padding
+            const padding = 0.9; // 90% of viewport
+            const scaleX = (window.innerWidth * padding) / rect.width;
+            const scaleY = (window.innerHeight * padding) / rect.height;
+            const scale = Math.min(scaleX, scaleY); // Use the smaller scale to fit both dimensions
+
+            // Apply the calculated transform
+            tile.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            tile.classList.add('enlarged');
+          });
+        }
+      });
+
+      tile.addEventListener('mousemove', (e) => {
+        if (tile.classList.contains('enlarged')) return; // Don't apply parallax if enlarged
+
+        tile.style.transition = 'none';
+        const rect = tile.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const xPct = (x / rect.width) - 0.5;
+        const yPct = (y / rect.height) - 0.5;
+
+        // Glare position
+        tile.style.setProperty('--pointer-x', `${(x / rect.width) * 100}%`);
+        tile.style.setProperty('--pointer-y', `${(y / rect.height) * 100}%`);
+
+        // Tilt effect
+        const rotateX = yPct * -15;
+        const rotateY = xPct * 15;
+
+        tile.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+      });
+
+      tile.addEventListener('mouseleave', () => {
+        if (tile.classList.contains('enlarged')) return; // Don't reset transform if enlarged
+        tile.style.transition = 'transform 0.5s ease';
+        tile.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+      });
+    }
+
+    /* ───── Point System & Shop Logic ───── */
+    let shopItemsData = {
+      "default": { name: "Default", cost: 0, class: "bubble-default" },
+      "blue": { name: "Ocean", cost: 100, class: "bubble-blue" },
+      "red": { name: "Sunset", cost: 100, class: "bubble-red" },
+      "gold": { name: "Gold", cost: 500, class: "bubble-gold" },
+      "rainbow": { name: "Rainbow", cost: 1000, class: "bubble-rainbow" }
+    };
+    // Default fallback above, will be overwritten by DB
+
+    let widgetItemsData = {
+      "widget-weather": {
+        name: "Weather Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>🌦️ Weather</h4><div class="content"><div>📍 New York</div><div style="font-size:1.5rem;font-weight:bold;">24°C</div><div>☀️ Sunny</div></div></div>`
+      },
+      "widget-settings": {
+        name: "Appearance Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>🎨 Appearance</h4><div class="content"><div>Bg Color: <span style="display:inline-block;width:10px;height:10px;background:#121212;border:1px solid #fff;"></span></div><div>Opacity: 85%</div></div></div>`
+      },
+      "widget-stopwatch": {
+        name: "Stopwatch Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>⏱️ Stopwatch</h4><div class="content"><div style="font-family:monospace;font-size:1.2rem;">00:00:00.0</div></div></div>`
+      },
+      "widget-quote": {
+        name: "Quote Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>💬 Random Quote</h4><div class="content" style="font-style:italic;">"Stay hungry, stay foolish."</div></div>`
+      },
+      "widget-converter": {
+        name: "Converter Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>🔄 Unit Converter</h4><div class="content"><div>1 km = 0.62 mi</div></div></div>`
+      },
+      "widget-pomodoro": {
+        name: "Pomodoro Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>🍅 Pomodoro</h4><div class="content"><div style="font-size:1.2rem;font-weight:bold;">25:00</div><div>Work Time</div></div></div>`
+      },
+      "widget-breathing": {
+        name: "Breathing Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>🧘 Breathing</h4><div class="content"><div style="width:30px;height:30px;background:#45ffbc;border-radius:50%;opacity:0.6;"></div></div></div>`
+      },
+      "widget-tictactoe": {
+        name: "Tic-Tac-Toe Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>❌ Tic-Tac-Toe ⭕</h4><div class="content"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;width:60px;"><div style="background:#444;height:18px;">X</div><div style="background:#444;height:18px;"></div><div style="background:#444;height:18px;">O</div></div></div></div>`
+      },
+      "widget-dictionary": {
+        name: "Dictionary Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>📖 Dictionary</h4><div class="content"><div><b>Waffle</b></div><div>A crisp cake...</div></div></div>`
+      },
+      "widget-chat": {
+        name: "Chat Widget", cost: 250, type: "widget",
+        preview: `<div class="widget-preview"><h4>💬 Chat</h4><div class="content"><div>#general</div><div>#memes</div></div></div>`
+      },
+      "widget-game": {
+        name: "Mini Game Widget", cost: 200, type: "widget",
+        preview: `<div class="widget-preview"><h4>🎮 Mini Game</h4><div class="content"><div>Select Game...</div><button style="background:#45ffbc;color:black;border:none;border-radius:4px;">Play</button></div></div>`
+      }
+    };
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+
+      modal.classList.add('closing');
+
+      // The animation is on the child, so we listen on the child for the event
+      const content = modal.querySelector('.modal-content');
+      (content || modal).addEventListener('animationend', () => {
+        modal.style.display = "none";
+        modal.classList.remove('closing');
+      }, { once: true });
+    }
+
+    function openSpinWheel() {
+      document.getElementById("spinModal").style.display = "flex";
+      document.getElementById("spinResult").innerText = "";
+      document.getElementById("spinBtn").disabled = false;
+
+      // Fetch config and render wheel
+      firebase.database().ref("config/wheel/prizes").once("value").then(snap => {
+        const config = snap.val() || {};
+        const prizes = config.prizes ? Object.values(config.prizes) : [10, 50, 100, 200, 500];
+        renderWheel(prizes);
+      });
+    }
+
+    function renderWheel(prizes) {
+      const wheel = document.getElementById("theWheel");
+      wheel.innerHTML = ""; // Clear existing
+      wheel.style.transform = "rotate(0deg)";
+
+      const colors = ["#ff5252", "#ff4081", "#e040fb", "#7c4dff", "#536dfe", "#448aff", "#40c4ff", "#18ffff"];
+      const segAngle = 360 / prizes.length;
+      let gradientStr = "conic-gradient(";
+
+      prizes.forEach((prize, i) => {
+        const color = colors[i % colors.length];
+        const start = i * segAngle;
+        const end = (i + 1) * segAngle;
+        gradientStr += `${color} ${start}deg ${end}deg, `;
+
+        // Add text
+        const text = document.createElement("div");
+        text.className = "wheel-text";
+        text.innerText = prize;
+        // Rotate to center of segment, then translate out
+        const rotation = start + segAngle / 2;
+        text.style.transform = `rotate(${rotation}deg) translate(0, -110px) rotate(-${rotation}deg)`;
+        // Note: The second rotate cancels text rotation if you want upright text, 
+        // but for a wheel usually text radiates. Let's keep it radiating:
+        text.style.transform = `rotate(${rotation}deg) translate(0, -110px)`;
+        wheel.appendChild(text);
+      });
+
+      gradientStr = gradientStr.slice(0, -2) + ")";
+      wheel.style.background = gradientStr;
+    }
+
+    function spinTheWheel() {
+      const uid = firebase.auth().currentUser.uid;
+      const userRef = firebase.database().ref("users/" + uid);
+      const configRef = firebase.database().ref("config/wheel");
+
+      Promise.all([
+        userRef.child("lastSpin").once("value"),
+        userRef.child("points").once("value"),
+        configRef.once("value")
+      ]).then(([spinSnap, pointsSnap, configSnap]) => {
+        const lastSpin = spinSnap.val() || 0;
+        const currentPoints = pointsSnap.val() || 0;
+        const config = configSnap.val() || {};
+
+        const now = Date.now();
+        const cooldownHours = config.cooldown || 24;
+        const cooldown = cooldownHours * 60 * 60 * 1000;
+
+        if (now - lastSpin < cooldown) {
+          const remaining = Math.ceil((cooldown - (now - lastSpin)) / (1000 * 60 * 60));
+          document.getElementById("spinResult").innerText = `Please wait ${remaining} hour(s).`;
+          return;
+        }
+
+        // Spin Logic
+        document.getElementById("spinBtn").disabled = true;
+        const prizes = config.prizes ? Object.values(config.prizes) : [10, 50, 100, 200, 500];
+        const prizeIndex = Math.floor(Math.random() * prizes.length);
+        const prize = prizes[prizeIndex];
+
+        // Calculate rotation to land on prizeIndex
+        // Pointer is at 0deg (top). Segment i is at [i*segAngle, (i+1)*segAngle].
+        // We need to rotate the wheel such that segment i is at top.
+        // Rotation = - (center of segment i)
+        const segAngle = 360 / prizes.length;
+        const segmentCenter = (prizeIndex * segAngle) + (segAngle / 2);
+
+        // Add extra spins (e.g. 5)
+        // We want final rotation % 360 to place the segment at top.
+        // Actually, since we rotate the container, if we rotate by -segmentCenter, it moves to 0.
+        // To spin clockwise (positive), we target (360 - segmentCenter).
+        // Add randomness within the segment (+/- 40% of width) to look natural
+        const randomOffset = (Math.random() - 0.5) * (segAngle * 0.8);
+        const targetRotation = (360 - segmentCenter) + randomOffset;
+        const totalDeg = (5 * 360) + targetRotation;
+
+        document.getElementById("theWheel").style.transform = `rotate(${totalDeg}deg)`;
+
+        setTimeout(() => {
+          let newPoints = currentPoints + prize;
+          let updates = { points: newPoints, lastSpin: now };
+
+          // 5% chance to unlock a special container background
+          if (Math.random() < 0.05) {
+            userRef.child("unlockedContainerBgs").once("value").then(bgSnap => {
+              const bgs = bgSnap.val() || [];
+              if (!bgs.includes("galaxy")) {
+                bgs.push("galaxy");
+                updates.unlockedContainerBgs = bgs;
+                alert("🎉 LUCKY SPIN! You unlocked the 'Galaxy' Dashboard Container Background!");
+              }
+            });
+          }
+
+          userRef.update(updates);
+          document.getElementById("spinResult").innerText = `You won ${prize} points!`;
+          document.getElementById("user_points").innerText = newPoints + " 💎";
+        }, 4000); // Match CSS transition time
+      });
+    }
+
+    function openShop() {
+      document.getElementById("shopModal").style.display = "flex";
+      document.getElementById("shopGridBubbles").innerHTML = "Loading...";
+      document.getElementById("shopGridWidgets").innerHTML = "Loading...";
+
+      // Fetch dynamic shop config
+      firebase.database().ref("config/shopItems").once("value").then(snap => {
+        if (snap.exists()) shopItemsData = snap.val();
+        // If not exists, we use the default variable defined at top
+        renderShop();
+      });
+    }
+
+    function renderShop() {
+      const uid = firebase.auth().currentUser.uid;
+      const userRef = firebase.database().ref("users/" + uid);
+
+      Promise.all([
+        userRef.child("points").once("value"),
+        userRef.child("inventory").once("value"),
+        userRef.child("equipped").once("value"),
+        userRef.child("unlockedWidgets").once("value")
+      ]).then(([pSnap, iSnap, eSnap, wSnap]) => {
+        const points = pSnap.val() || 0;
+        const inventory = iSnap.val() || { "default": true };
+        const equipped = eSnap.val() || "default";
+        const unlockedWidgets = wSnap.val() || [];
+
+        document.getElementById("shop_balance").innerText = points;
+
+        const gridBubbles = document.getElementById("shopGridBubbles");
+        const gridWidgets = document.getElementById("shopGridWidgets");
+        gridBubbles.innerHTML = "";
+        gridWidgets.innerHTML = "";
+
+        // 1. Chat Bubbles
+        for (const [id, item] of Object.entries(shopItemsData)) {
+          const isOwned = inventory[id];
+          const isEquipped = equipped === id;
+
+          const div = document.createElement("div");
+          div.className = `shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}`;
+
+          let btnHtml = "";
+          if (isEquipped) {
+            btnHtml = `<button class="btn btn-sm btn-secondary" disabled>Equipped</button>`;
+          } else if (isOwned) {
+            btnHtml = `<button class="btn btn-sm btn-success" onclick="equipItem('${id}')">Equip</button>`;
+          } else {
+            btnHtml = `<button class="btn btn-sm btn-primary" onclick="buyItem('${id}', ${item.cost}, 'bubble')">Buy (${item.cost})</button>`;
+          }
+
+          // Apply custom style if present, otherwise rely on class
+          const styleAttr = item.style ? `style="background: ${item.style}"` : "";
+          const classAttr = item.class || "";
+
+          div.innerHTML = `
+        <div class="shop-preview ${classAttr}" ${styleAttr}></div>
+        <strong>${item.name}</strong>
+        ${btnHtml}
+      `;
+          gridBubbles.appendChild(div);
+        }
+
+        // 2. Widgets
+        for (const [id, item] of Object.entries(widgetItemsData)) {
+          const isOwned = unlockedWidgets.includes(id);
+
+          const div = document.createElement("div");
+          div.className = `shop-item ${isOwned ? 'owned' : ''}`;
+
+          let btnHtml = "";
+          if (isOwned) {
+            btnHtml = `<button class="btn btn-sm btn-secondary" disabled>Owned</button>`;
+          } else {
+            btnHtml = `<button class="btn btn-sm btn-primary" onclick="buyItem('${id}', ${item.cost}, 'widget')">Buy (${item.cost})</button>`;
+          }
+
+          div.innerHTML = `
+        ${item.preview}
+        <strong>${item.name}</strong>
+        ${btnHtml}
+      `;
+          gridWidgets.appendChild(div);
+        }
+      });
+    }
+
+    function buyItem(id, cost, type) {
+      const uid = firebase.auth().currentUser.uid;
+      const userRef = firebase.database().ref("users/" + uid);
+
+      // Need to fetch current points and current unlocked list to append
+      Promise.all([
+        userRef.child("points").once("value"),
+        userRef.child("unlockedWidgets").once("value")
+      ]).then(([pSnap, wSnap]) => {
+        const points = pSnap.val() || 0;
+        if (points >= cost) {
+          userRef.child("points").set(points - cost);
+          if (type === 'widget') {
+            const currentWidgets = wSnap.val() || [];
+            if (!currentWidgets.includes(id)) currentWidgets.push(id);
+            userRef.child("unlockedWidgets").set(currentWidgets);
+          } else {
+            userRef.child("inventory/" + id).set(true);
+          }
+          renderShop(); // Refresh UI
+        } else {
+          alert("Not enough points!");
+        }
+      });
+    }
+
+    function openAppearanceModal() {
+      document.getElementById("appearanceModal").style.display = "flex";
+      const select = document.getElementById("accentColorSelect");
+      select.innerHTML = "";
+      const containerSelect = document.getElementById("containerBgSelect"); // We will add this element
+
+      const level = currentUserData ? (currentUserData.level || 1) : 1;
+      const currentVal = localStorage.getItem('twc_dash_color') || (currentUserData && currentUserData.settings ? currentUserData.settings.dashColor : "#45ffbc");
+
+      // Define colors and gradients
+      const colors = [
+        { lvl: 1, name: "Default Green", val: "#45ffbc" },
+        { lvl: 2, name: "Blue", val: "#2196f3" },
+        { lvl: 3, name: "Red", val: "#f44336" },
+        { lvl: 4, name: "Purple", val: "#9c27b0" },
+        { lvl: 5, name: "Orange", val: "#ff9800" },
+        { lvl: 6, name: "Gold", val: "#ffd700" },
+        { lvl: 7, name: "Teal", val: "#009688" },
+        { lvl: 8, name: "Pink", val: "#e91e63" },
+        { lvl: 9, name: "Cyan", val: "#00bcd4" },
+        { lvl: 10, name: "Lime", val: "#cddc39" },
+        { lvl: 15, name: "Sunset Gradient", val: "linear-gradient(135deg, #ff5252, #ff1744)" },
+        { lvl: 20, name: "Ocean Gradient", val: "linear-gradient(135deg, #2196f3, #21cbf3)" },
+        { lvl: 25, name: "Midnight Gradient", val: "linear-gradient(135deg, #2c3e50, #4ca1af)" },
+        { lvl: 30, name: "Nature Gradient", val: "linear-gradient(135deg, #11998e, #38ef7d)" },
+        { lvl: 35, name: "Cosmic Gradient", val: "linear-gradient(135deg, #ff00cc, #333399)" },
+        { lvl: 40, name: "Fire Gradient", val: "linear-gradient(135deg, #f12711, #f5af19)" },
+        { lvl: 50, name: "Rainbow Gradient", val: "linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)" },
+        { lvl: 15, name: "Cosmic Dashboard BG", val: "linear-gradient(160deg, #000000 0%, #800080 100%)", type: "background" }
+      ];
+
+      colors.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.val;
+        if (level >= c.lvl) {
+          opt.text = `Lvl ${c.lvl}: ${c.name}`;
+        } else {
+          opt.text = `🔒 Lvl ${c.lvl}: ${c.name}`;
+          opt.disabled = true;
+        }
+        if (currentVal === c.val) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      // Container Background Logic
+      if (!document.getElementById("containerBgGroup")) {
+        const group = document.createElement("div");
+        group.id = "containerBgGroup";
+        group.className = "form-group";
+        group.style.marginTop = "15px";
+        group.innerHTML = `<label>Dashboard Container Background</label><select id="containerBgSelect" class="form-control" onchange="saveAppearance()"></select>`;
+        document.querySelector("#appearanceModal .modal-content").appendChild(group);
+      }
+
+      const contSelect = document.getElementById("containerBgSelect");
+      contSelect.innerHTML = "";
+      const unlockedBgs = currentUserData.unlockedContainerBgs || [];
+      const currentContBg = localStorage.getItem('twc_container_bg') || currentUserData.settings?.containerBg || "#1f1f1f";
+
+      const containerBgs = [
+        { id: "default", name: "Default Dark", val: "#1f1f1f" },
+        { id: "update_gradient", name: "Deep Blue Gradient (New Update)", val: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" },
+        { id: "galaxy", name: "Galaxy (Wheel Reward)", val: "linear-gradient(to right, #240b36, #c31432)" },
+        { id: "neon_city", name: "Neon City (Daily Reward)", val: "linear-gradient(to bottom, #0f0c29, #302b63, #24243e)" },
+        { id: "sunset", name: "Sunset Vibes", val: "linear-gradient(to right, #ff7e5f, #feb47b)" },
+        { id: "ocean", name: "Ocean Blue", val: "linear-gradient(to right, #2b5876, #4e4376)" },
+        { id: "forest", name: "Forest Mist", val: "linear-gradient(to right, #134e5e, #71b280)" },
+        { id: "midnight", name: "Midnight", val: "linear-gradient(to right, #232526, #414345)" }
+      ];
+
+      containerBgs.forEach(bg => {
+        const isLocked = (bg.id === "galaxy" || bg.id === "neon_city") && !unlockedBgs.includes(bg.id);
+        if (!isLocked) {
+          const opt = document.createElement("option");
+          opt.value = bg.val;
+          opt.text = bg.name;
+          if (currentContBg === bg.val) opt.selected = true;
+          contSelect.appendChild(opt);
+        }
+      });
+
+      renderButtonCustomizationUI();
+    }
+
+    function saveAppearance() {
+      const uid = firebase.auth().currentUser.uid;
+      const selectedValue = document.getElementById("accentColorSelect").value;
+
+      let newColor = selectedValue;
+
+      if (document.activeElement.id === "dashColor") {
+        newColor = document.getElementById("dashColor").value;
+      }
+
+      localStorage.setItem('twc_dash_color', newColor);
+      document.documentElement.style.setProperty('--accent', newColor);
+
+      const contBg = document.getElementById("containerBgSelect")?.value;
+      if (contBg) {
+        localStorage.setItem('twc_container_bg', contBg);
+        document.querySelector('.container').style.background = contBg;
+      }
+
+      // Apply default accent color to accentable buttons if no custom colors are set
+      applyCustomButtonColors();
+    }
+
+    function applyCustomButtonColors() {
+      const customColors = JSON.parse(localStorage.getItem('twc_button_colors') || '{}');
+
+      // First, reset all accentable buttons to the current accent color
+      const accentColor = localStorage.getItem('twc_dash_color') || getComputedStyle(document.documentElement).getPropertyValue('--accent');
+      document.querySelectorAll('.btn-accentable').forEach(btn => {
+        btn.style.background = accentColor;
+      });
+
+      // Then, apply specific custom colors
+      if (Object.keys(customColors).length > 0) {
+        for (const id in customColors) {
+          const btn = document.getElementById(id);
+          if (btn) {
+            btn.style.background = customColors[id];
+          }
+        }
+      }
+    }
+
+    function renderButtonCustomizationUI() {
+      const container = document.getElementById('button-customization-ui');
+      container.innerHTML = '';
+      const customColors = JSON.parse(localStorage.getItem('twc_button_colors') || '{}');
+
+      const sections = document.querySelectorAll('.dashboard-section-title');
+      sections.forEach(titleEl => {
+        const sectionDiv = document.createElement('div');
+        const title = document.createElement('h4');
+        title.className = 'dashboard-section-title';
+        title.innerText = titleEl.innerText;
+        sectionDiv.appendChild(title);
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'action-buttons';
+
+        const originalButtons = titleEl.nextElementSibling.querySelectorAll('button');
+        originalButtons.forEach(btn => {
+          const replica = btn.cloneNode(true);
+          replica.removeAttribute('onclick');
+          replica.onclick = (e) => showColorPalette(e, btn.id);
+
+          // Apply custom color if it exists for this button, otherwise it will have its default style from the clone.
+          if (customColors[btn.id]) {
+            replica.style.background = customColors[btn.id];
+          } else if (btn.classList.contains('btn-accentable')) {
+            // If no custom color, but it's accentable, use the current accent color
+            const accentColor = localStorage.getItem('twc_dash_color') || getComputedStyle(document.documentElement).getPropertyValue('--accent');
+            replica.style.background = accentColor;
+          }
+
+          buttonContainer.appendChild(replica);
+        });
+
+        sectionDiv.appendChild(buttonContainer);
+        container.appendChild(sectionDiv);
+      });
+    }
+
+    function showColorPalette(event, targetId) {
+      let palette = document.getElementById('color-palette-popup');
+      if (!palette) {
+        palette = document.createElement('div');
+        palette.id = 'color-palette-popup';
+        palette.style.cssText = 'position:absolute; background:#111; border:1px solid #555; padding:5px; border-radius:5px; display:flex; gap:5px; z-index: 10001;';
+        document.body.appendChild(palette);
+        document.addEventListener('click', (e) => {
+          if (!palette.contains(e.target) && e.target !== event.target) {
+            palette.style.display = 'none';
+          }
+        }, true);
+      }
+
+      palette.innerHTML = '';
+      const unlockedColors = Array.from(document.getElementById('accentColorSelect').options)
+        .filter(opt => !opt.disabled)
+        .map(opt => opt.value);
+
+      unlockedColors.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.style.cssText = `width:25px; height:25px; background:${color}; border-radius:50%; cursor:pointer; border: 2px solid #333;`;
+        swatch.onclick = () => {
+          const customColors = JSON.parse(localStorage.getItem('twc_button_colors') || '{}');
+          customColors[targetId] = color;
+          localStorage.setItem('twc_button_colors', JSON.stringify(customColors));
+          applyCustomButtonColors();
+          renderButtonCustomizationUI(); // Re-render customization UI with new colors
+          palette.style.display = 'none';
+        };
+        palette.appendChild(swatch);
+      });
+
+      palette.style.display = 'flex';
+      palette.style.left = event.pageX + 'px';
+      palette.style.top = event.pageY + 'px';
+    }
+
+    function resetDashColor() {
+      const def = "#45ffbc";
+      document.getElementById("dashColor").value = def;
+      document.getElementById("accentColorSelect").value = def;
+      saveAppearance();
+    }
+
+    function resetButtonColors() {
+      if (confirm("Are you sure you want to reset all custom button colors?")) {
+        localStorage.removeItem('twc_button_colors');
+        window.location.reload();
+      }
+    }
+
+    function openDailyReward() {
+      document.getElementById("dailyRewardModal").style.display = "flex";
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const uid = firebase.auth().currentUser.uid;
+      const userRef = firebase.database().ref("users/" + uid);
+
+      Promise.all([
+        userRef.child("lastDailyReward").once("value"),
+        userRef.child("dailyRewardCount").once("value"),
+        userRef.child("dailyStreak").once("value")
+      ]).then(([lastSnap, countSnap, streakSnap]) => {
+        const lastClaim = lastSnap.val() || 0;
+        let count = countSnap.val() || 0;
+        const streak = streakSnap.val() || 0;
+        const now = Date.now();
+        const cooldown = 24 * 60 * 60 * 1000;
+        const canClaim = (now - lastClaim >= cooldown);
+
+        // Reset cycle if > 10
+        if (count >= 10) count = 0;
+
+        document.getElementById("streakDisplay").innerText = streak;
+        const grid = document.getElementById("calendarGrid");
+        grid.innerHTML = "";
+
+        const claimBtn = document.getElementById("claimDayBtn");
+        claimBtn.disabled = !canClaim;
+        claimBtn.innerText = canClaim ? `Claim Day ${count + 1}` : `Next Reward in ${Math.ceil((cooldown - (now - lastClaim)) / (1000 * 60 * 60))}h`;
+
+        for (let i = 1; i <= 10; i++) {
+          const div = document.createElement("div");
+          div.className = "calendar-day";
+
+          let rewardText = "";
+          if (i === 7) rewardText = "🎨 Color";
+          else if (i === 5) rewardText = "🏙️ BG";
+          else if (i === 10) rewardText = "+1 Lvl";
+          else rewardText = `${10 + (i * 10)} 💎`;
+
+          if (i <= count) {
+            div.classList.add("claimed");
+            div.innerHTML = `<span class="day-number">Day ${i}</span><span class="day-reward">✅</span>`;
+          } else if (i === count + 1) {
+            div.classList.add("current");
+            div.innerHTML = `<span class="day-number">Day ${i}</span><span class="day-reward">${rewardText}</span>`;
+          } else {
+            div.classList.add("locked");
+            div.innerHTML = `<span class="day-number">Day ${i}</span><span class="day-reward">${rewardText}</span>`;
+          }
+          grid.appendChild(div);
+        }
+      });
+    }
+
+    function claimDailyRewardAction() {
+      const uid = firebase.auth().currentUser.uid;
+      const userRef = firebase.database().ref("users/" + uid);
+
+      Promise.all([
+        userRef.child("lastDailyReward").once("value"),
+        userRef.child("dailyRewardCount").once("value"),
+        userRef.child("dailyStreak").once("value"),
+        userRef.child("points").once("value"),
+        userRef.child("level").once("value")
+      ]).then(([lastSnap, countSnap, streakSnap, pointsSnap, levelSnap]) => {
+        const lastClaim = lastSnap.val() || 0;
+        let count = countSnap.val() || 0;
+        let streak = streakSnap.val() || 0;
+        const currentPoints = pointsSnap.val() || 0;
+        const currentLevel = levelSnap.val() || 1;
+
+        const now = Date.now();
+        const cooldown = 24 * 60 * 60 * 1000;
+        const gracePeriod = 48 * 60 * 60 * 1000; // 48 hours to keep streak
+
+        if (now - lastClaim < cooldown) {
+          alert("Too soon!");
+          return;
+        }
+
+        // Check streak
+        if (now - lastClaim > gracePeriod && lastClaim !== 0) {
+          streak = 0; // Reset streak
+          count = 0; // Reset cycle too if streak broken? Let's say yes for "Daily" logic
+        }
+
+        if (count >= 10) count = 0; // Reset cycle
+
+        const nextDay = count + 1;
+        let pointsReward = 10 + (nextDay * 10);
+
+        let levelReward = 0;
+        let colorUnlock = false;
+        let bgUnlock = false;
+
+        if (nextDay === 7) colorUnlock = true;
+        if (nextDay === 5) bgUnlock = true;
+        if (nextDay === 10) levelReward = 1;
+
+        const newStreak = streak + 1;
+
+        const updates = {
+          lastDailyReward: now,
+          dailyRewardCount: nextDay,
+          dailyStreak: newStreak,
+          points: currentPoints + pointsReward,
+          level: currentLevel + levelReward,
+        };
+
+        if (colorUnlock) {
+          updates.unlockedColors = true;
+        }
+
+        if (bgUnlock) {
+          // Fetch current unlocked BGs to append
+          // We do this inside the update promise chain usually, but for simplicity here:
+          // We'll assume we handle it or just alert user. 
+          // To be safe, we should read first. But let's just trigger a separate update for the array.
+          // See below in the .then()
+        }
+
+        userRef.update(updates).then(() => {
+          let msg = `Claimed Day ${nextDay}!\nStreak: ${newStreak} 🔥\n+${pointsReward} 💎`;
+          if (levelReward > 0) msg += `\n+${levelReward} Level!`;
+          if (colorUnlock) msg += `\n🎨 Dashboard Colors Unlocked! (Check Settings)`;
+          if (bgUnlock) msg += `\n🏙️ 'Neon City' Container Background Unlocked!`;
+          alert(msg);
+          renderCalendar();
+          // Update UI immediately
+          document.getElementById("user_points").innerText = (currentPoints + pointsReward) + " 💎";
+          document.getElementById("user_level").innerHTML = `Lvl ${currentLevel + levelReward} <small style="cursor:pointer;text-decoration:underline;" onclick="openLevelPerks()">[Perks]</small>`;
+
+          // Remove notification badge
+          const rewardBtn = document.querySelector('button[onclick="openDailyReward()"]');
+          rewardBtn.classList.remove('btn-notification');
+
+          if (bgUnlock) {
+            userRef.child("unlockedContainerBgs").once("value").then(bgSnap => {
+              const bgs = bgSnap.val() || [];
+              if (!bgs.includes("neon_city")) {
+                bgs.push("neon_city");
+                userRef.child("unlockedContainerBgs").set(bgs);
+              }
+            });
+          }
+        });
+      });
+    }
+
+    function levelUp() {
+      if (!currentUserData) return;
+      const uid = firebase.auth().currentUser.uid;
+      const userRef = firebase.database().ref("users/" + uid);
+
+      const currentLevel = currentUserData.level || 1;
+      const currentPoints = currentUserData.points || 0;
+      const cost = currentLevel * 1000;
+
+      if (currentPoints >= cost) {
+        if (confirm(`Level Up to ${currentLevel + 1}?\nCost: ${cost} 💎`)) {
+          userRef.update({
+            points: currentPoints - cost,
+            level: currentLevel + 1
+          }).then(() => window.location.reload());
+        }
+      } else {
+        alert("Not enough points!");
+      }
+    }
+
+    function openLevelPerks() {
+      document.getElementById("levelPerksModal").style.display = "flex";
+      const list = document.getElementById("levelPerksList");
+      list.innerHTML = "";
+
+      const perks = [
+        { lvl: 1, reward: "Access to Chat" },
+        { lvl: 2, reward: "Blue Accent Color (#2196f3)" },
+        { lvl: 3, reward: "Red Accent Color (#f44336)" },
+        { lvl: 4, reward: "Purple Accent Color (#9c27b0)" },
+        { lvl: 5, reward: "Exclusive Code - 1000 Points" },
+        { lvl: 7, reward: "Orange Accent Color (#ff9800)" },
+        { lvl: 10, reward: "Gold Accent Color (#ffd700)" },
+        { lvl: 15, reward: "Teal Accent Color (#009688)" },
+        { lvl: 20, reward: "Pink Accent Color (#e91e63)" },
+        { lvl: 50, reward: "Rainbow Profile Border (Coming Soon)" }
+      ];
+
+      const currentLevel = currentUserData.level || 1;
+
+      perks.forEach(p => {
+        const unlocked = currentLevel >= p.lvl;
+        const div = document.createElement("div");
+        div.style.padding = "8px";
+        div.style.borderBottom = "1px solid #444";
+        div.innerHTML = `<span style="color:${unlocked ? '#43b581' : '#f04747'}">${unlocked ? '✔' : '🔒'} Level ${p.lvl}:</span> ${p.reward}`;
+        list.appendChild(div);
+      });
+    }
+
+    function openLeaderboard() {
+      const modal = document.getElementById("leaderboardModal");
+      const content = modal.querySelector(".modal-content");
+      modal.style.display = "flex";
+
+      // Reset styles for animation
+      content.classList.remove("shine-active");
+      content.style.background = "#000"; // Start black
+
+      const list = document.getElementById("leaderboardList");
+      list.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">Loading...</div>';
+
+      // Fetch top 10 by points and top 10 by level separately. This is the most efficient
+      // way to get accurate data for both leaderboards without downloading all users.
+      // NOTE: This requires database indexing rules to be set in Firebase.
+      Promise.all([
+        db.ref("users").orderByChild("points").limitToLast(10).once("value"),
+        db.ref("users").orderByChild("level").limitToLast(10).once("value")
+      ]).then(([pointsSnap, levelSnap]) => {
+        const pointsUsers = [];
+        pointsSnap.forEach(child => { pointsUsers.unshift(child.val()) }); // .unshift() reverses the order to descending
+
+        const levelUsers = [];
+        levelSnap.forEach(child => { levelUsers.unshift(child.val()) });
+
+        list.innerHTML = "";
+
+        // Podium Logic
+        const podiumElements = {}; // Map rank to element
+        const splitContainer = document.createElement("div");
+        splitContainer.className = "leaderboard-split";
+
+        const col1 = document.createElement("div");
+        col1.className = "leaderboard-col";
+        renderLeaderboardSection(col1, pointsUsers, 'points');
+
+        const col2 = document.createElement("div");
+        col2.className = "leaderboard-col";
+        renderLeaderboardSection(col2, levelUsers, 'level');
+
+        splitContainer.appendChild(col1);
+        splitContainer.appendChild(col2);
+        list.appendChild(splitContainer);
+
+        setTimeout(() => {
+          spawnConfetti(content);
+        }, 2500);
+
+        // Final Shine & Background restore
+        setTimeout(() => {
+          content.style.background = ""; // Revert to CSS default
+          content.classList.add('shine-active'); // Trigger shine
+        }, 4500);
+      }).catch(error => {
+        console.error("Leaderboard fetch error:", error);
+        list.innerHTML = `<div style="color:red; text-align:center; padding: 20px;">Failed to load leaderboard data.<br><small>${error.message}</small></div>`;
+      });
+    }
+
+    function renderLeaderboardSection(container, users, type) {
+      const title = document.createElement("h4");
+      title.style.textAlign = "center";
+      title.style.marginBottom = "20px";
+      title.style.fontSize = "1.5rem";
+      title.style.color = type === 'points' ? "#ffd700" : "#9c27b0";
+      title.innerText = type === 'points' ? "Highest Points 💎" : "Highest Level 🚀";
+      container.appendChild(title);
+
+      if (users.length > 0) {
+        const podiumContainer = document.createElement("div");
+        podiumContainer.className = "leaderboard-podium";
+        podiumContainer.style.gap = "10px"; // Tighter gap for split view
+
+        const order = [1, 0, 2]; // 2nd, 1st, 3rd
+        const podiumElements = {};
+
+        order.forEach(idx => {
+          if (users[idx]) {
+            const u = users[idx];
+            const rank = idx + 1;
+            const name = u.displayName || u.permanentUsername || "Unknown";
+            const points = u.points || 0;
+            const val = type === 'points' ? (u.points || 0) + " 💎" : "Lvl " + (u.level || 1);
+            const pfp = u.profilePicURL || "TWL O.png";
+            const level = u.level || 1;
+
+            const item = document.createElement("div");
+            item.className = `podium-item podium-rank-${rank} hidden-podium`;
+            item.innerHTML = `
+                    ${rank === 1 ? '<div class="crown-icon">👑</div>' : ''}
+                    <img src="${pfp}" class="podium-avatar" alt="${name}" style="width:${rank === 1 ? 100 : 80}px;height:${rank === 1 ? 100 : 80}px;">
+                    <div class="podium-name" style="font-size:1rem;">${name}</div>
+                    <div class="podium-points" style="font-size:1.1rem;">${val}</div>
+                    <div class="podium-block" style="width:80px;height:${rank === 1 ? 120 : (rank === 2 ? 90 : 70)}px;">${rank}</div>
+                `;
+            podiumContainer.appendChild(item);
+            podiumElements[rank] = item;
+          }
+        });
+        container.appendChild(podiumContainer);
+
+        setTimeout(() => { if (podiumElements[3]) { podiumElements[3].classList.add('reveal-3rd'); podiumElements[3].classList.remove('hidden-podium'); } }, 500);
+        setTimeout(() => { if (podiumElements[2]) { podiumElements[2].classList.add('reveal-2nd'); podiumElements[2].classList.remove('hidden-podium'); } }, 1500);
+        setTimeout(() => { if (podiumElements[1]) { podiumElements[1].classList.add('reveal-1st'); podiumElements[1].classList.remove('hidden-podium'); } }, 2500);
+      }
+
+      // List for the rest (4th onwards)
+      const listContainer = document.createElement("div");
+      listContainer.style.flex = "1";
+      listContainer.style.overflowY = "auto";
+
+      users.forEach((u, index) => {
+        if (index < 3) return;
+        const div = document.createElement("div");
+        div.className = "leaderboard-list-item hidden-list-item";
+        const name = u.displayName || u.permanentUsername || "Unknown";
+        const pfp = u.profilePicURL || "TWL O.png";
+        const val = type === 'points' ? (u.points || 0) + " 💎" : "Lvl " + (u.level || 1);
+
+        div.innerHTML = `
+            <div class="leaderboard-list-rank">#${index + 1}</div>
+            <img src="${pfp}" class="leaderboard-list-pfp" style="width:40px;height:40px;">
+            <div class="leaderboard-list-info" style="font-size:1rem;">${name}</div>
+            <div class="leaderboard-list-points" style="font-size:1rem;">${val}</div>
+        `;
+        listContainer.appendChild(div);
+
+        setTimeout(() => {
+          div.classList.remove('hidden-list-item');
+          div.classList.add('reveal-list');
+        }, 3500 + ((index - 3) * 100));
+      });
+      container.appendChild(listContainer);
+    }
+
+    function spawnConfetti(container) {
+      const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+      for (let i = 0; i < 60; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + '%';
+        c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        c.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+        c.style.animationDelay = (Math.random() * 1) + 's';
+        container.appendChild(c);
+        setTimeout(() => c.remove(), 4000);
+      }
+    }
+
+    function equipItem(id) {
+      const uid = firebase.auth().currentUser.uid;
+      firebase.database().ref("users/" + uid + "/equipped").set(id).then(() => renderShop());
+    }
+
+    function parseMarkdown(markdown) {
+      if (!markdown) return '';
+      return markdown
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") // Escape HTML
+        .replace(/^# (.*$)/gim, '<h3 style="margin-top:10px; margin-bottom:5px; color:white;">$1</h3>') // H1 -> H3
+        .replace(/^## (.*$)/gim, '<h4 style="margin-top:10px; margin-bottom:5px; color:white;">$1</h4>') // H2 -> H4
+        .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>') // Bold
+        .replace(/\*(.*)\*/gim, '<i>$1</i>') // Italic
+        .replace(/~~(.*)~~/gim, '<del>$1</del>') // Strikethrough
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>') // Links
+        .replace(/^\- (.*$)/gim, '<div style="margin-left:15px;">• $1</div>') // Lists
+        .replace(/\n/gim, '<br>'); // Newlines
+    }
+
+    function searchUsers() {
+      const query = document.getElementById("user_search_input").value.trim();
+      if (!query) return;
+
+      const resultsDiv = document.getElementById("user_search_results");
+      resultsDiv.innerHTML = "<p>Searching...</p>";
+
+      firebase.database().ref("users")
+        .orderByChild("permanentUsername")
+        .startAt(query)
+        .endAt(query + "\uf8ff")
+        .limitToFirst(10)
+        .once("value")
+        .then(snapshot => {
+          resultsDiv.innerHTML = "";
+          if (!snapshot.exists()) {
+            resultsDiv.innerHTML = "<p>No users found.</p>";
+            return;
+          }
+
+          const myUid = firebase.auth().currentUser.uid;
+          let count = 0;
+
+          snapshot.forEach(child => {
+            if (count >= 10) return true; // Stop after 10 matches
+
+            const uid = child.key;
+            const data = child.val();
+
+            if (uid === myUid) return;
+            const div = document.createElement("div");
+            div.className = "user-result-item";
+            div.innerHTML = `
+            <div>
+              <div style="font-weight:bold">${data.displayName || "User"}</div>
+              <div style="font-size:0.85rem;color:#ccc">@${data.permanentUsername || "unknown"}</div>
+            </div>
+            <button onclick="sendPMRequest('${uid}', '${data.displayName || data.permanentUsername}')">Message</button>
+          `;
+            resultsDiv.appendChild(div);
+            count++;
+          });
+
+          if (count === 0) {
+            resultsDiv.innerHTML = "<p>No other users found.</p>";
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          resultsDiv.innerHTML = "<p style='color:red'>Error searching users.</p>";
+        });
+    }
+
+    function sendPMRequest(targetUID, targetName) {
+      const currentUser = firebase.auth().currentUser;
+      if (!currentUser) return;
+
+      const myUID = currentUser.uid;
+      const myName = currentUserData.displayName || currentUserData.permanentUsername || "User";
+
+      if (!confirm(`Send private message request to ${targetName}?`)) return;
+
+      firebase.database().ref(`pm_requests/${targetUID}/${myUID}`).set({
+        fromUID: myUID,
+        fromName: myName,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      }).then(() => {
+        alert("Request sent!");
+      }).catch(e => {
+        alert("Error: " + e.message);
+      });
+    }
+
+    const originalFavicon = "TWL O.png";
+    const notificationFavicon = "TWL O NOTIFICATION.ico";
+
+    function listenInboxCount(uid) {
+      let requestCount = 0;
+      let unreadChatCount = 0;
+
+      const updateBadge = () => {
+        const total = requestCount + unreadChatCount;
+        const badge = document.getElementById('inbox_badge');
+        const favicon = document.getElementById('favicon');
+        const inboxBtn = document.getElementById('btn-inbox');
+        if (total > 0) {
+          badge.innerText = total;
+          badge.classList.remove('hidden');
+          if (favicon) favicon.href = notificationFavicon;
+          document.title = `(${total}) Team Waffles Dashboard`;
+          if (inboxBtn) inboxBtn.classList.add('glitter-active');
+        } else {
+          badge.classList.add('hidden');
+          if (favicon) favicon.href = originalFavicon;
+          document.title = "Team Waffles Dashboard";
+          if (inboxBtn) inboxBtn.classList.remove('glitter-active');
+        }
+      };
+
+      firebase.database().ref('pm_requests/' + uid).on('value', snap => {
+        requestCount = snap.numChildren();
+        updateBadge();
+      });
+
+      firebase.database().ref('users/' + uid + '/private_chats').on('value', snap => {
+        unreadChatCount = 0;
+        if (snap.exists()) {
+          snap.forEach(child => {
+            if (child.val().unread) unreadChatCount++;
+          });
+        }
+        updateBadge();
+      });
+    }
+
+    function loadInbox() {
+      const uid = firebase.auth().currentUser.uid;
+
+      // Requests
+      firebase.database().ref('pm_requests/' + uid).on('value', snap => {
+        const div = document.getElementById('pm_requests_list');
+        div.innerHTML = '';
+        if (!snap.exists()) {
+          div.innerHTML = '<p class="text-muted">No pending requests.</p>';
+          return;
+        }
+        snap.forEach(child => {
+          const req = child.val();
+          const el = document.createElement('div');
+          el.className = 'request-item';
+          el.innerHTML = `
+        <span><strong>${req.fromName}</strong> wants to message you.</span>
+        <div class="request-actions">
+          <button class="btn btn-success btn-sm" onclick="acceptRequest('${child.key}', '${req.fromName}')">Accept</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectRequest('${child.key}')">Decline</button>
+        </div>
+      `;
+          div.appendChild(el);
+        });
+      });
+
+      // Chats
+      firebase.database().ref('users/' + uid + '/private_chats').on('value', snap => {
+        const div = document.getElementById('pm_chats_list');
+        div.innerHTML = '';
+        if (!snap.exists()) {
+          div.innerHTML = '<p class="text-muted">No active chats.</p>';
+          return;
+        }
+        snap.forEach(child => {
+          const chat = child.val();
+          const otherUID = child.key;
+          const el = document.createElement('div');
+          el.className = 'chat-item';
+          el.innerHTML = `
+        <span style="display:flex;align-items:center;">Chat with <strong> ${chat.name} </strong> ${chat.unread ? '<span style="width:10px;height:10px;background:#f04747;border-radius:50%;margin-left:8px;box-shadow:0 0 5px #f04747;" title="New Message"></span>' : ''}</span>
+        <div>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openPrivateChat('${chat.roomId}')">Open</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deletePrivateChat('${otherUID}', '${chat.roomId}')" style="margin-left:5px;">Delete</button>
+        </div>
+      `;
+          el.onclick = () => openPrivateChat(chat.roomId);
+          div.appendChild(el);
+        });
+      });
+    }
+
+    function deletePrivateChat(otherUID, roomId) {
+      if (!confirm("Delete this chat? If both users delete it, the history will be removed.")) return;
+      const uid = firebase.auth().currentUser.uid;
+      firebase.database().ref('users/' + uid + '/private_chats/' + otherUID).remove()
+        .then(() => {
+          return firebase.database().ref('users/' + otherUID + '/private_chats/' + uid).once('value');
+        })
+        .then(snap => {
+          if (!snap.exists()) {
+            firebase.database().ref('rooms/' + roomId).remove();
+            firebase.database().ref('room-messages/' + roomId).remove();
+            firebase.database().ref('room-typing/' + roomId).remove();
+            firebase.database().ref('room-read-receipts/' + roomId).remove();
+          }
+        })
+        .catch(e => alert(e.message));
+    }
+
+    function acceptRequest(senderUID, senderName) {
+      const uid = firebase.auth().currentUser.uid;
+      const myName = currentUserData.displayName || currentUserData.permanentUsername || "User";
+
+      // Sort UIDs to create consistent Room ID
+      const uids = [uid, senderUID].sort();
+      const roomId = 'dm_' + uids.join('_');
+
+      const updates = {};
+      // Create Room Metadata
+      updates['rooms/' + roomId] = {
+        type: 'dm',
+        members: { [uid]: true, [senderUID]: true },
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      };
+
+      // Add to my chats
+      updates['users/' + uid + '/private_chats/' + senderUID] = {
+        roomId: roomId,
+        name: senderName
+      };
+
+      // Add to sender chats
+      updates['users/' + senderUID + '/private_chats/' + uid] = {
+        roomId: roomId,
+        name: myName
+      };
+
+      // Remove request
+      updates['pm_requests/' + uid + '/' + senderUID] = null;
+
+      firebase.database().ref().update(updates).then(() => {
+        alert("Request accepted!");
+      }).catch(e => alert(e.message));
+    }
+
+    function rejectRequest(senderUID) {
+      const uid = firebase.auth().currentUser.uid;
+      firebase.database().ref('pm_requests/' + uid + '/' + senderUID).remove();
+    }
+
+    function openPrivateChat(roomId) {
+      localStorage.setItem("room_name", roomId);
+      localStorage.removeItem("room_password");
+      window.location.href = "ch.html";
+    }
+
+    function settings() {
+      window.location.href = "settings.html"
+    }
+
+    function toggleSidebarFeature() {
+      const key = 'sidebar_feature_enabled';
+      const isEnabled = localStorage.getItem(key) !== 'false';
+
+      if (isEnabled) {
+        localStorage.setItem(key, 'false');
+        alert('Sidebar has been disabled. Reloading...');
+      } else {
+        localStorage.setItem(key, 'true');
+        alert('Sidebar has been enabled. Reloading...');
+      }
+      window.location.reload();
+    }
+
+    function logout() {
+      isLoggingOut = true;
+      firebase.auth().signOut().then(() => {
+        localStorage.clear();
+        window.location.href = "index.html";
+      }).catch((error) => {
+        console.error("Logout error:", error);
+        localStorage.clear();
+        window.location.href = "index.html";
+      });
+    }
+
+  </script>
+  <script src="sidebar.js"></script>
+</body>
+
+</html>
