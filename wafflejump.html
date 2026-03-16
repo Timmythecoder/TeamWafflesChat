@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Waffle Jump</title>
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700&display=swap");
+    body {
+        margin: 0; padding: 0;
+        background-color: #202225;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: "Be Vietnam Pro", sans-serif;
+        overflow: hidden;
+    }
+    canvas {
+        background: linear-gradient(#2f3136, #1a1b1e);
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    #ui-layer {
+        position: absolute;
+        color: white;
+        text-align: center;
+        pointer-events: none;
+    }
+    #score { font-size: 3em; font-weight: 700; text-shadow: 3px 3px 0 rgba(0,0,0,0.2); }
+    #message-box {
+        display: none;
+        background: rgba(0,0,0,0.8);
+        padding: 20px 40px;
+        border-radius: 15px;
+        pointer-events: auto;
+    }
+    #message-box h1 { color: #faa61a; }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="ui-layer">
+    <div id="score">0</div>
+    <div id="message-box">
+        <h1>Game Over</h1>
+        <p>Score: <span id="final-score">0</span></p>
+        <p>Best: <span id="best-score">0</span></p>
+        <p style="margin-top:20px;">Click to restart</p>
+        <button onclick="finishChallenge()" id="finish-challenge-btn" style="display:none; background:#43b581; border:none; padding:10px; border-radius:5px; color:white; font-weight:bold; margin-top:10px; pointer-events:auto;">Collect Points & Exit</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = Math.min(window.innerWidth - 20, 400);
+    canvas.height = Math.min(window.innerHeight - 20, 600);
+
+    let score, highScore, player, platforms, isGameOver, keys;
+    highScore = localStorage.getItem('waffleJumpHigh') || 0;
+    const urlParams = new URLSearchParams(window.location.search);
+    const isChallenge = urlParams.get('challenge') === 'true';
+
+    function init() {
+        score = 0;
+        isGameOver = false;
+        keys = {};
+        player = { x: canvas.width / 2 - 15, y: canvas.height - 50, w: 30, h: 30, dy: 0 };
+        platforms = [{ x: canvas.width / 2 - 50, y: canvas.height - 20, w: 100 }];
+        
+        for (let i = 0; i < 10; i++) {
+            platforms.push({
+                x: Math.random() * (canvas.width - 60),
+                y: canvas.height - 75 * i - 75,
+                w: 60 + Math.random() * 40
+            });
+        }
+
+        document.getElementById('score').innerText = score;
+        document.getElementById('message-box').style.display = 'none';
+        loop();
+    }
+
+    function loop() {
+        if (isGameOver) return;
+
+        // Update
+        player.dy += 0.2; // Gravity
+        player.y += player.dy;
+
+        if (keys.ArrowLeft) player.x -= 4;
+        if (keys.ArrowRight) player.x += 4;
+
+        // Screen wrap
+        if (player.x > canvas.width) player.x = -player.w;
+        else if (player.x < -player.w) player.x = canvas.width;
+
+        // Camera follow
+        if (player.y < canvas.height / 2 && player.dy < 0) {
+            platforms.forEach(p => {
+                p.y -= player.dy;
+            });
+            player.y = canvas.height / 2;
+
+            platforms.forEach(p => {
+                if (p.y > canvas.height) {
+                    score++;
+                    p.y = -10;
+                    p.x = Math.random() * (canvas.width - 60);
+                }
+            });
+        }
+
+        // Platform collision
+        platforms.forEach(p => {
+            if (player.dy > 0 && player.x < p.x + p.w && player.x + player.w > p.x && player.y + player.h > p.y && player.y + player.h < p.y + 20) {
+                player.dy = -8; // Jump
+            }
+        });
+
+        if (player.y > canvas.height) gameOver();
+
+        // Draw
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById('score').innerText = score;
+
+        ctx.fillStyle = '#e6a15c';
+        platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, 10));
+
+        ctx.font = "30px Arial";
+        ctx.fillText('🧇', player.x, player.y + player.h);
+
+        requestAnimationFrame(loop);
+    }
+
+    function gameOver() {
+        isGameOver = true;
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('waffleJumpHigh', highScore);
+        }
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('best-score').innerText = highScore;
+        document.getElementById('message-box').style.display = 'block';
+        
+        if (isChallenge) {
+            document.querySelector('#message-box p:last-of-type').style.display = 'none';
+            document.getElementById('finish-challenge-btn').style.display = 'block';
+        }
+    }
+
+    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keyup', e => keys[e.key] = false);
+    canvas.addEventListener('click', () => { if (isGameOver && !isChallenge) init(); });
+    
+    function finishChallenge() {
+        window.parent.postMessage({ type: 'GAME_OVER', score: score }, '*');
+    }
+
+    init();
+</script>
+</body>
+</html>

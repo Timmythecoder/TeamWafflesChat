@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Waffles Settings</title>
+
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap");
+
+    :root {
+      --bg-main: linear-gradient(135deg, #f6b98d, #ffa07a);
+      --bg-card: #1f1f1f;
+      --text-light: #ffffff;
+      --text-muted: #bbbbbb;
+      --accent: #45ffbc;
+      --accent-hover: #34e3a5;
+      --danger: #dc3545;
+      --danger-hover: #c82333;
+      --border-color: #3c3c3c;
+      --font: "Be Vietnam Pro", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--font);
+      background: var(--bg-main);
+      color: var(--text-light);
+      display: flex;
+      justify-content: center;
+      padding: 3vw;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background-color: var(--bg-card);
+      padding: 3rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      font-weight: 600;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 15px;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 1px solid #555;
+      background-color: #222;
+      color: #eee;
+      margin-bottom: 1.5rem;
+    }
+
+    button {
+      font-family: var(--font);
+      font-weight: 600;
+      background: var(--accent);
+      color: #000;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+    }
+
+    .error-message {
+      color: #f44336;
+      margin-bottom: 1rem;
+    }
+
+    .success-message {
+      color: #4caf50;
+      margin-bottom: 1rem;
+    }
+
+    .back-btn {
+      margin-top: 20px;
+      background: var(--danger);
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--danger-hover);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Settings</h2>
+
+    <div id="messages"></div>
+
+    <form id="settings-form">
+      <div class="form-group">
+        <label for="displayName">Display Name</label>
+        <input type="text" id="displayName" name="displayName" placeholder="Your display name" required />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email (cannot be changed here)</label>
+        <input type="email" id="email" name="email" disabled />
+      </div>
+
+      <div class="form-group">
+        <label for="oldPassword">Old Password</label>
+        <input type="password" id="oldPassword" name="oldPassword" placeholder="Enter old password to change" />
+      </div>
+
+      <div class="form-group">
+        <label for="newPassword">New Password</label>
+        <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password" />
+      </div>
+
+      <div class="form-group">
+        <label for="confirmNewPassword">Confirm New Password</label>
+        <input type="password" id="confirmNewPassword" name="confirmNewPassword" placeholder="Confirm new password" />
+      </div>
+
+      <button type="submit">Save Settings</button>
+    </form>
+
+    <button class="back-btn" onclick="goBack()">Back to Dashboard</button>
+  </div>
+
+  <script>
+    // Your Firebase config - use same as dashboard
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+      authDomain: "team-waffles.firebaseapp.com",
+      databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+      projectId: "team-waffles",
+      storageBucket: "team-waffles.appspot.com",
+      messagingSenderId: "891460090478",
+      appId: "1:891460090478:web:c01b6db1af21745769047f"
+    };
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const displayNameInput = document.getElementById("displayName");
+    const emailInput = document.getElementById("email");
+    const oldPasswordInput = document.getElementById("oldPassword");
+    const newPasswordInput = document.getElementById("newPassword");
+    const confirmNewPasswordInput = document.getElementById("confirmNewPassword");
+    const messagesDiv = document.getElementById("messages");
+    const settingsForm = document.getElementById("settings-form");
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // Fill email
+        emailInput.value = user.email;
+
+        // Load displayName from DB if set
+        db.ref("users/" + user.uid + "/displayName").once("value").then(snapshot => {
+          if (snapshot.exists()) {
+            displayNameInput.value = snapshot.val();
+          }
+        });
+      } else {
+        alert("No user logged in. Redirecting to login.");
+        window.location.href = "index.html";
+      }
+    });
+
+    function showMessage(text, isError = false) {
+      messagesDiv.textContent = text;
+      messagesDiv.className = isError ? "error-message" : "success-message";
+      setTimeout(() => {
+        messagesDiv.textContent = "";
+        messagesDiv.className = "";
+      }, 4000);
+    }
+
+    settingsForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      messagesDiv.textContent = "";
+
+      const user = auth.currentUser;
+      if (!user) {
+        showMessage("No user logged in.", true);
+        return;
+      }
+
+      const newDisplayName = displayNameInput.value.trim();
+      const oldPassword = oldPasswordInput.value;
+      const newPassword = newPasswordInput.value;
+      const confirmNewPassword = confirmNewPasswordInput.value;
+
+      if (!newDisplayName) {
+        showMessage("Display Name cannot be empty.", true);
+        return;
+      }
+
+      // Update display name in database
+      try {
+        await db.ref("users/" + user.uid).update({ displayName: newDisplayName });
+      } catch (error) {
+        showMessage("Failed to update display name: " + error.message, true);
+        return;
+      }
+
+      // Handle password change if requested
+      if (oldPassword || newPassword || confirmNewPassword) {
+        if (!oldPassword || !newPassword || !confirmNewPassword) {
+          showMessage("Please fill all password fields to change password.", true);
+          return;
+        }
+
+        if (newPassword !== confirmNewPassword) {
+          showMessage("New passwords do not match.", true);
+          return;
+        }
+
+        // Reauthenticate user
+        const credential = firebase.auth.EmailAuthProvider.credential(
+          user.email,
+          oldPassword
+        );
+
+        try {
+          await user.reauthenticateWithCredential(credential);
+        } catch (error) {
+          showMessage("Old password is incorrect.", true);
+          return;
+        }
+
+        // Update password
+        try {
+          await user.updatePassword(newPassword);
+          showMessage("Password updated successfully.");
+        } catch (error) {
+          showMessage("Failed to update password: " + error.message, true);
+          return;
+        }
+      } else {
+        showMessage("Settings saved successfully.");
+      }
+
+      // Clear password fields
+      oldPasswordInput.value = "";
+      newPasswordInput.value = "";
+      confirmNewPasswordInput.value = "";
+    });
+
+    function goBack() {
+      window.location.href = "dashboard.html"; // Or your main dashboard page
+    }
+
+    // Anti-Console
+    setInterval(() => {
+        const start = performance.now();
+        debugger; 
+        if (performance.now() - start > 100) {
+            triggerBan('CODE_5_CONSOLE', 'Console usage detected.');
+        }
+    }, 1000);
+  </script>
+  <script src="sidebar.js"></script>
+</body>
+</html>
