@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Badge Panel with Profile Pictures</title>
+  <style>
+    :root {
+        --bg-dark: #2f3136;
+        --bg-medium: #36393f;
+        --bg-light: #40444b;
+        --border-color: #202225;
+        --text-primary: #dcddde;
+        --text-secondary: #b9bbbe;
+        --accent: #5865F2;
+        --danger: #f04747;
+    }
+    body { 
+        font-family: 'Segoe UI', 'Roboto', sans-serif; 
+        background: var(--bg-dark); 
+        color: var(--text-primary);
+        padding: 20px; 
+        margin: 0;
+    }
+    h1, h2 { 
+        color: #fff; 
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+        margin-top: 0;
+    }
+    .section {
+      background: var(--bg-medium); 
+      padding: 20px; 
+      margin-bottom: 20px; 
+      border-radius: 8px; 
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .user, .badge-item {
+      background: var(--bg-light); 
+      padding: 15px; 
+      margin-bottom: 10px;
+      border: 1px solid var(--border-color); 
+      border-radius: 6px;
+    }
+    .user-info, .badge-name {
+      font-weight: bold; 
+      margin-bottom: 6px; 
+      color: #fff;
+    }
+    .badges { margin-bottom: 6px; }
+    .badge {
+      display: inline-block; background: var(--accent); color: white;
+      padding: 4px 8px; border-radius: 5px; margin: 2px;
+      user-select: none; cursor: default; position: relative;
+    }
+    input[type="text"], input[type="number"], input[type="password"], textarea, select { margin-top: 5px; padding: 10px; font-size: 14px; width: 100%; box-sizing: border-box; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-dark); color: var(--text-primary); }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    button {
+      margin-top: 10px; cursor: pointer; padding: 10px 15px;
+      border-radius: 5px; border: none; background-color: var(--accent);
+      color: white; font-weight: bold; transition: filter 0.2s;
+    }
+    button:hover { filter: brightness(1.1); }
+    button.remove { background-color: var(--danger); }
+    #pinOverlay { background: var(--bg-medium); }
+    #pinOverlay {
+        background: rgba(0, 0, 0, 0.9) !important;
+        backdrop-filter: blur(10px);
+    }
+    .pin-box {
+        background: var(--bg-medium);
+        padding: 40px;
+        border-radius: 10px;
+        border: 1px solid var(--accent);
+        box-shadow: 0 0 20px rgba(88, 101, 242, 0.3);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 300px;
+    }
+    .pin-box input {
+        letter-spacing: 5px;
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    .history-entry { background: var(--bg-dark); padding: 10px; margin-bottom: 5px; border-radius: 4px; border: 1px solid var(--border-color); }
+  </style>
+</head>
+<body>
+  <div id="pinOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;color:white;">
+    <div class="pin-box">
+        <h2 style="margin-top:0; border:none; color: white;">Admin Access</h2>
+        <p style="color:var(--text-secondary); margin-bottom: 20px;">Enter PIN to continue</p>
+        <input type="password" id="adminPinInput" placeholder="PIN">
+        <button id="verifyPinBtn" style="width:100%; padding:15px; font-size:18px;">Unlock Panel</button>
+    </div>
+  </div>
+
+  <div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:var(--bg-medium); padding:20px; border-radius:8px; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; position:relative; color: var(--text-primary);">
+        <button onclick="document.getElementById('historyModal').style.display='none'" style="position:absolute; top:10px; right:10px; background:transparent; border:none; color:white; font-size:20px; cursor:pointer;">&times;</button>
+        <h2 id="historyModalTitle">Redemption History</h2>
+        <div id="historyModalContent"></div>
+    </div>
+  </div>
+
+  <h1>Admin Panel - Badge & Profile Picture Management</h1>
+
+  <div class="section" id="maintenance-section">
+    <h2>Maintenance Control</h2>
+    <div style="margin-bottom:15px; padding:15px; background:rgba(255,0,0,0.1); border:1px solid rgba(255,0,0,0.3); border-radius:5px;">
+        <label style="display:flex; align-items:center; cursor:pointer; justify-content:space-between;">
+            <span style="font-weight:bold; color:var(--danger);">🔴 Maintenance Mode</span>
+            <input type="checkbox" id="admin-maint-toggle" style="transform:scale(1.5);">
+        </label>
+    </div>
+    <div style="margin-bottom:10px;">
+        <label>Image URL</label>
+        <input type="text" id="admin-maint-img" placeholder="https://...">
+    </div>
+    <div style="margin-bottom:10px;">
+        <label>Message (HTML allowed)</label>
+        <textarea id="admin-maint-msg" rows="4" placeholder="<h1>We'll be back!</h1>"></textarea>
+    </div>
+    <button id="admin-save-btn" style="background:var(--danger);">Save Maintenance Config</button>
+  </div>
+
+  <div class="section" id="scheduled-maintenance-section">
+    <h2>Scheduled Maintenance</h2>
+    <p>Set a future time for maintenance to end. This will automatically enable maintenance mode and start a countdown timer for all users.</p>
+    <div style="margin-bottom:10px;">
+        <label>Maintenance End Time</label>
+        <input type="datetime-local" id="maint-end-time">
+    </div>
+    <button id="schedule-maint-btn">Schedule & Activate</button>
+  </div>
+
+  <div class="section" id="broadcast-section">
+    <h2>Broadcast Message</h2>
+    <p>Send a popup message to all currently active users.</p>
+    <textarea id="broadcast-msg" rows="3" placeholder="Enter broadcast message..."></textarea>
+    <button id="send-broadcast-btn">Send Broadcast</button>
+    <button id="clear-broadcasts-btn" class="remove" style="margin-left: 10px;">Clear All Broadcasts</button>
+  </div>
+
+  <div class="section" id="badge-list-section">
+    <h2>Badge List</h2>
+    <button id="loadBadgesBtn" style="margin-bottom: 10px;">Load Badges</button>
+    <div id="badges" style="transition: all 0.3s ease;"></div>
+    <h3>Add New Badge</h3>
+    <input type="text" id="newBadgeName" placeholder="Badge ID (unique, no spaces)" />
+    <input type="text" id="newBadgeDisplayName" placeholder="Badge Display Name" />
+    <textarea id="newBadgeDescription" rows="2" placeholder="Badge Description"></textarea>
+    <button id="addBadgeBtn">Add Badge</button>
+  </div>
+
+  <div class="section" id="promo-code-section">
+    <h2>Promo Code Management</h2>
+    <button id="loadPromoCodesBtn" style="margin-bottom: 10px;">Load Promo Codes</button>
+    <div id="promoCodesList">Click Load to See codes</div>
+    
+    <h3>Add New Promo Code</h3>
+    <button onclick="window.location.href='promousers.html'" style="margin-bottom: 10px; background-color: #17a2b8;">View Code Usage</button>
+    <input type="text" id="newPromoCode" placeholder="Promo Code (unique)" />
+    <input type="number" id="newPromoPoints" placeholder="Points to Award" />
+    <input type="number" id="newPromoUses" placeholder="Max Uses (0 for unlimited)" value="0" />
+    
+    <div style="margin-bottom:10px;">
+        <label>Expiry Date/Time (Optional)</label>
+        <input type="datetime-local" id="newPromoExpiry">
+    </div>
+
+    <button id="addPromoCodeBtn">Add Promo Code</button>
+  </div>
+
+  <div class="section" id="security-settings-section">
+    <h2>Security Settings</h2>
+    <label>Admin PIN (for this panel):</label>
+    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
+      <input type="password" id="configAdminPin" placeholder="Current: 1234" style="flex-grow: 1; margin-top: 0;">
+      <button id="toggleAdminPinView" style="margin-top: 0; width: 80px;">View</button>
+    </div>
+    <button id="saveAdminPinBtn">Update Admin PIN</button>
+    <br><br>
+    <label>Rescue PIN (for rescue.html):</label>
+    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
+      <input type="password" id="configRescuePin" placeholder="Current: 9999" style="flex-grow: 1; margin-top: 0;">
+      <button id="toggleRescuePinView" style="margin-top: 0; width: 80px;">View</button>
+    </div>
+    <button id="saveRescuePinBtn">Update Rescue PIN</button>
+  </div>
+
+  <div class="section" id="security-logs-section">
+    <h2>Security Logs (Cheat Attempts)</h2>
+    <button id="loadCheatLogsBtn" style="margin-bottom: 10px; background-color: var(--danger);">Load Logs</button>
+    <button id="clearCheatLogsBtn" class="remove" style="margin-left: 10px;">Clear Logs</button>
+    <div id="cheatLogsList">Click Load to see logs.</div>
+  </div>
+
+  <div class="section" id="game-limits-section">
+    <h2>Game Score Limits (Anti-Cheat)</h2>
+    <p>Set the maximum allowed score for challenges. Scores above this will trigger an auto-ban.</p>
+    <button id="loadGameLimitsBtn" style="margin-bottom: 10px;">Load Limits</button>
+    <div id="gameLimitsList">Click Load to see limits.</div>
+    <button id="saveGameLimitsBtn" style="margin-top:10px;">Save Limits</button>
+  </div>
+
+  <div class="section" id="troll-settings-section">
+    <h2>Troll Settings</h2>
+    <p>Customize the cost and duration of trolls. Durations are in minutes.</p>
+    <div style="margin-bottom:15px;">
+        <label>Gamble Spin Cost (when trolled):</label>
+        <input type="number" id="trollGambleCost" placeholder="500">
+    </div>
+    <div style="margin-bottom:15px;">
+        <label>Gamble Multipliers (comma separated, e.g. x0, x2, x0.5):</label>
+        <input type="text" id="trollGambleMultipliers" placeholder="x0, x2, x0.5, x5, x0, x1.5">
+    </div>
+    <button id="loadTrollSettingsBtn" style="margin-bottom: 10px;">Load Troll Settings</button>
+    <div id="trollSettingsContainer">Click Load to see settings.</div>
+    <button id="saveTrollSettingsBtn" style="margin-top: 10px;">Save Troll Settings</button>
+  </div>
+
+
+
+
+
+
+
+  <div class="section" id="user-list-section">
+    <h2>User Management</h2>
+    <p style="color: #bbb; font-size: 0.9em;">Search efficiently by Username prefix or exact UID.</p>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <input type="text" id="userSearchInput" placeholder="Username or UID..." style="margin-top:0;">
+        <button id="userSearchBtn" style="margin-top:0; width: auto; padding: 10px 20px;">Search</button>
+    </div>
+    <div id="users"></div>
+  </div>
+
+  <div class="section" id="wheel-config-section">
+    <h2>Wheel Configuration</h2>
+    <button id="loadWheelBtn" style="margin-bottom: 10px;">Load Config</button><br>
+    <label>Prizes (comma separated numbers):</label>
+    <input type="text" id="wheelPrizes" placeholder="10, 50, 100, 200, 500">
+    <label>Exotic Jackpot Prizes (comma separated numbers):</label>
+    <input type="text" id="wheelExoticPrizes" placeholder="1000, 2500, 5000, 10000">
+    <label>Cooldown (hours):</label>
+    <input type="number" id="wheelCooldown" placeholder="24">
+    <label>Jackpot Chance (%):</label>
+    <input type="number" id="wheelJackpotChance" placeholder="1" min="0" max="100">
+    <label>Spin Again Cost (Points):</label>
+    <input type="number" id="wheelSpinAgainCost" placeholder="100">
+    <button id="saveWheelConfigBtn">Save Wheel Config</button>
+  </div>
+
+  <div class="section" id="shop-config-section">
+    <h2>Shop Configuration</h2>
+    <button id="loadShopBtn" style="margin-bottom: 10px;">Load Shop</button>
+    
+    <h4 style="color:#ccc; margin-top:15px;">Cosmetic Items (Chat Bubbles)</h4>
+    <div style="background:rgba(255,255,255,0.05); padding:10px; margin-bottom:15px; border-radius:5px;">
+      <h4>Add New Item</h4>
+      <input type="text" id="newShopId" placeholder="ID (e.g. green)" style="width:100px;">
+      <input type="text" id="newShopName" placeholder="Name (e.g. Matrix)" style="width:120px;">
+      <input type="number" id="newShopCost" placeholder="Cost" style="width:80px;">
+      <input type="text" id="newShopStyle" placeholder="CSS Background (e.g. green or linear-gradient...)" style="width:250px;">
+      <button id="addShopItemBtn">Add Item</button>
+    </div>
+
+    <div id="shopItemsList"></div>
+    <button id="saveShopConfigBtn" style="margin-top:10px;">Save Shop Changes</button>
+
+    <hr style="margin: 30px 0; border-color: var(--border-color);">
+
+    <h4 style="color:#ccc;">Functional Items</h4>
+    <div id="specialShopItemsList"></div>
+    <button id="saveSpecialShopConfigBtn" style="margin-top:10px;">Save Functional Items</button>
+  </div>
+
+  <div class="section" id="allowed-pics-section">
+    <h2>Allowed Profile Pictures</h2>
+    <button id="loadPicsBtn" style="margin-bottom: 10px;">Load Pictures</button>
+    <div id="allowedPicsList" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+    <input type="text" id="newAllowedPic" placeholder="Paste image URL or Base64 string" />
+    <button id="addAllowedPicBtn">Add Allowed Picture</button>
+  </div>
+
+  <div class="section" id="update-log-section">
+    <h2>Manage Updates</h2>
+    <button id="loadUpdatesBtn" style="margin-bottom: 10px;">Load Updates</button>
+    <div id="updatesList"></div>
+    <h3>Add New Update</h3>
+    <input type="text" id="updateLogHeading" placeholder="Update Heading (e.g. v1.0 Released)" />
+    <textarea id="updateLogDescription" rows="5" placeholder="Update Description"></textarea>
+    <button id="saveUpdateLogBtn">Post Update</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, get, set, update, remove, query, limitToLast, limitToFirst, orderByChild, startAt, endAt, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfTDFXdh1tifQIyY6415IORbdXIffYUJ4",
+      authDomain: "team-waffles.firebaseapp.com",
+      databaseURL: "https://team-waffles-default-rtdb.firebaseio.com",
+      projectId: "team-waffles",
+      storageBucket: "team-waffles.appspot.com",
+      messagingSenderId: "891460090478",
+      appId: "1:891460090478:web:c01b6db1af21745769047f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    // --- Maintenance & Broadcast ---
+    function setupAdminControls() {
+        const maintToggle = document.getElementById('admin-maint-toggle');
+        const maintImg = document.getElementById('admin-maint-img');
+        const maintMsg = document.getElementById('admin-maint-msg');
+        const maintSaveBtn = document.getElementById('admin-save-btn');
+
+        const scheduleTimeInput = document.getElementById('maint-end-time');
+        const scheduleBtn = document.getElementById('schedule-maint-btn');
+
+        const broadcastMsg = document.getElementById('broadcast-msg');
+        const broadcastSendBtn = document.getElementById('send-broadcast-btn');
+        const clearBroadcastsBtn = document.getElementById('clear-broadcasts-btn');
+
+        // Load current maintenance state
+        get(ref(db, 'config/maintenance')).then(snap => {
+            const data = snap.val() || {};
+            maintToggle.checked = data.enabled || false;
+            maintImg.value = data.imageURL || '';
+            maintMsg.value = data.message || '';
+        });
+
+        // Save maintenance state
+        maintSaveBtn.onclick = () => {
+            update(ref(db, 'config/maintenance'), {
+                enabled: maintToggle.checked,
+                imageURL: maintImg.value.trim(),
+                message: maintMsg.value.trim(),
+                endsAt: null // Manually saving clears any schedule
+            }).then(() => alert("Maintenance config saved!"));
+        };
+
+        // Schedule maintenance
+        scheduleBtn.onclick = () => {
+            const endTimeValue = scheduleTimeInput.value;
+            if (!endTimeValue) {
+                return alert("Please select a date and time for the maintenance to end.");
+            }
+            const endTime = new Date(endTimeValue).getTime();
+            if (isNaN(endTime) || endTime <= Date.now()) {
+                return alert("Please select a time in the future.");
+            }
+            if (!confirm(`This will activate maintenance mode and set a countdown until ${new Date(endTimeValue).toLocaleString()}. Are you sure?`)) return;
+
+            update(ref(db, 'config/maintenance'), {
+                enabled: true,
+                imageURL: maintImg.value.trim(),
+                message: maintMsg.value.trim(),
+                endsAt: endTime
+            }).then(() => alert("Scheduled maintenance has been activated!"));
+        };
+
+        // Send broadcast
+        broadcastSendBtn.onclick = () => {
+            const message = broadcastMsg.value.trim();
+            if (!message) return alert("Broadcast message cannot be empty.");
+            if (!confirm("Are you sure you want to send this broadcast to all users?")) return;
+
+            const newBroadcastRef = push(ref(db, 'config/broadcast'));
+            set(newBroadcastRef, { message, timestamp: serverTimestamp() }).then(() => {
+                alert("Broadcast sent!");
+                broadcastMsg.value = "";
+            });
+        };
+
+        // Clear broadcasts
+        clearBroadcastsBtn.onclick = () => {
+            if (confirm("Are you sure you want to delete all broadcast history? This cannot be undone.")) {
+                remove(ref(db, 'config/broadcast')).then(() => {
+                    alert("All broadcasts have been cleared.");
+                }).catch((error) => alert("Failed to clear broadcasts: " + error.message));
+            }
+        };
+    }
+
+    function setupPinToggles() {
+        const adminPinInput = document.getElementById('configAdminPin');
+        const toggleAdminPinBtn = document.getElementById('toggleAdminPinView');
+        if (toggleAdminPinBtn) {
+            toggleAdminPinBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (adminPinInput.type === 'password') {
+                    adminPinInput.type = 'text';
+                    toggleAdminPinBtn.textContent = 'Hide';
+                } else {
+                    adminPinInput.type = 'password';
+                    toggleAdminPinBtn.textContent = 'View';
+                }
+            });
+        }
+
+        const rescuePinInput = document.getElementById('configRescuePin');
+        const toggleRescuePinBtn = document.getElementById('toggleRescuePinView');
+        if (toggleRescuePinBtn) {
+            toggleRescuePinBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (rescuePinInput.type === 'password') {
+                    rescuePinInput.type = 'text';
+                    toggleRescuePinBtn.textContent = 'Hide';
+                } else {
+                    rescuePinInput.type = 'password';
+                    toggleRescuePinBtn.textContent = 'View';
+                }
+            });
+        }
+    }
+
+    // Load Security PINs
+    get(ref(db, 'config/adminPin')).then(s => document.getElementById('configAdminPin').value = s.val() || "1234");
+    get(ref(db, 'config/rescuePin')).then(s => document.getElementById('configRescuePin').value = s.val() || "9999");
+
+    document.getElementById('saveAdminPinBtn').onclick = () => {
+        set(ref(db, 'config/adminPin'), document.getElementById('configAdminPin').value.trim());
+        alert("Admin PIN updated.");
+    };
+    document.getElementById('saveRescuePinBtn').onclick = () => {
+        set(ref(db, 'config/rescuePin'), document.getElementById('configRescuePin').value.trim());
+        alert("Rescue PIN updated.");
+    };
+
+    async function loadBadges() {
+      const container = document.getElementById("badges");
+      container.innerHTML = "Loading...";
+      const snap = await get(ref(db, "badges"));
+      container.innerHTML = "";
+      if (!snap.exists()) return container.innerHTML = "<p>No badges found.</p>";
+      const badges = snap.val();
+      for (const [id, data] of Object.entries(badges)) {
+        const div = document.createElement("div");
+        div.className = "badge-item";
+        div.innerHTML = `<div class='badge-name'>${id} (${data.name})</div><p>${data.description || "No description"}</p>`;
+        const btn = document.createElement("button");
+        btn.textContent = "Remove Badge";
+        btn.className = "remove";
+        btn.onclick = async () => {
+          if (confirm(`Delete badge '${id}'?`)) {
+            await remove(ref(db, `badges/${id}`));
+            loadBadges();
+          }
+        };
+        div.appendChild(btn);
+        container.appendChild(div);
+      }
+    }
+
+    async function banUser(uid, name, isBanned) {
+        if (isBanned) { // If currently banned, unban
+            if (confirm(`Are you sure you want to unban ${name}?`)) {
+                await set(ref(db, `users/${uid}/ban`), null);
+                // Write an unban_token so the dashboard clears the localStorage ban key
+                // even if the user's tab is open or they refresh before the token is seen
+                await set(ref(db, `users/${uid}/unban_token`), Date.now());
+                alert(`User ${name} has been unbanned.`);
+                searchUsers();
+            }
+        } else { // If not banned, ban
+            const reason = prompt(`Enter a reason for banning ${name} (e.g., "Spamming", "Cheating"). This will be shown to the user.`, "Violation of Terms of Service.");
+            if (reason) {
+                const code = prompt("Enter an error code (e.g., CODE_4_ADMIN)", "CODE_4_ADMIN");
+                if (code) {
+                    await set(ref(db, `users/${uid}/ban`), { code, reason, issuedAt: Date.now() });
+                    alert(`User ${name} has been banned.`);
+                    searchUsers();
+                }
+            }
+        }
+    }
+
+    async function warnUser(uid, name) {
+        const message = prompt(`Enter a warning message for ${name}:`);
+        if (message && message.trim()) {
+            const warningRef = push(ref(db, `user_warnings/${uid}`));
+            await set(warningRef, {
+                message: message.trim(),
+                timestamp: serverTimestamp()
+            });
+            alert(`Warning sent to ${name}.`);
+        }
+    }
+
+    async function clearUserWarnings(uid, name) {
+        if (confirm(`Are you sure you want to clear ALL warnings for ${name}? This cannot be undone.`)) {
+            await remove(ref(db, `user_warnings/${uid}`));
+            alert(`All warnings for ${name} have been cleared.`);
+        }
+    }
+
+    async function searchUsers() {
+      const container = document.getElementById("users");
+      const term = document.getElementById("userSearchInput").value.trim();
+      if (!term) {
+          alert("Please enter a username or UID.");
+          return;
+      }
+
+      container.innerHTML = "Searching...";
+      
+      // Query for username prefix match
+      const usernameQuery = query(ref(db, "users"), orderByChild("permanentUsername"), startAt(term), endAt(term + "\uf8ff"), limitToFirst(10));
+      
+      const [usersSnap, badgesSnap, directUidSnap] = await Promise.all([
+        get(usernameQuery),
+        get(ref(db, "badges")),
+        get(ref(db, "users/" + term)) // Check exact UID match
+      ]);
+
+      container.innerHTML = "";
+      const badges = badgesSnap.exists() ? badgesSnap.val() : {};
+      
+      let users = usersSnap.exists() ? usersSnap.val() : {};
+      if (directUidSnap.exists()) users[term] = directUidSnap.val();
+
+      if (Object.keys(users).length === 0) return container.innerHTML = "<p>No users found matching '" + term + "'.</p>";
+
+      for (const [uid, userData] of Object.entries(users)) {
+        const div = document.createElement("div");
+        div.className = "user";
+        const trollData = userData.activeTrolls;
+        const isTrolled = trollData && Object.keys(trollData).length > 0;
+        const banData = userData.ban;
+        const isBanned = !!banData;
+        let trollStatus = '';
+        if (isTrolled) {
+            const trollCount = Object.keys(trollData).length;
+            trollStatus = `<span style="color:orange; font-weight:bold;"> (TROLLED: ${trollCount} effect${trollCount > 1 ? 's' : ''})</span>`;
+        }
+        const banStatus = isBanned ? `<span style="color:var(--danger); font-weight:bold;"> (BANNED: ${banData.reason || 'No reason given'})</span>` : '';
+
+        div.innerHTML = `<div class='user-info'>UID: ${uid} — Username: ${userData.permanentUsername || "(none)"}${banStatus}${trollStatus}</div>`;
+
+        const badgeContainer = document.createElement("div");
+        badgeContainer.className = "badges";
+        (userData.badges || []).forEach(badgeId => {
+          const span = document.createElement("span");
+          span.className = "badge";
+          span.textContent = badges[badgeId]?.name || badgeId;
+          badgeContainer.appendChild(span);
+        });
+        div.appendChild(badgeContainer);
+
+        // Points Management
+        const pointsDiv = document.createElement("div");
+        pointsDiv.style.marginTop = "5px";
+        pointsDiv.innerHTML = `Points: <strong>${userData.points || 0}</strong> `;
+        
+        const btnAddPoints = document.createElement("button");
+        btnAddPoints.textContent = "+100 Pts";
+        btnAddPoints.onclick = async () => {
+            await update(ref(db, `users/${uid}`), { points: (userData.points || 0) + 100 });
+            searchUsers();
+        };
+        const btnSubPoints = document.createElement("button");
+        btnSubPoints.textContent = "-100 Pts";
+        btnSubPoints.className = "remove";
+        btnSubPoints.onclick = async () => {
+            await update(ref(db, `users/${uid}`), { points: Math.max(0, (userData.points || 0) - 100) });
+            searchUsers();
+        };
+        pointsDiv.appendChild(btnAddPoints);
+        pointsDiv.appendChild(btnSubPoints);
+
+        const btnHistory = document.createElement("button");
+        btnHistory.textContent = "View History";
+        btnHistory.style.marginLeft = "10px";
+        btnHistory.style.backgroundColor = "#17a2b8";
+        btnHistory.onclick = () => {
+            const modal = document.getElementById('historyModal');
+            const content = document.getElementById('historyModalContent');
+            document.getElementById('historyModalTitle').innerText = `History: ${userData.displayName || userData.permanentUsername}`;
+            content.innerHTML = "";
+            
+            if (userData.redeemed_codes) {
+                Object.entries(userData.redeemed_codes).forEach(([code, info]) => {
+                    const date = info.timestamp ? new Date(info.timestamp).toLocaleString() : "Unknown Date";
+                    const pts = info.pointsAwarded ? `(+${info.pointsAwarded} pts)` : "";
+                    content.innerHTML += `<div class="history-entry"><strong>${code}</strong> ${pts}<br><small>${date}</small></div>`;
+                });
+            } else {
+                content.innerHTML = "<p>No redemption history found.</p>";
+            }
+            modal.style.display = "flex";
+        };
+        pointsDiv.appendChild(btnHistory);
+        div.appendChild(pointsDiv);
+
+        // Ban button
+        const banBtn = document.createElement("button");
+        banBtn.textContent = isBanned ? "Unban User" : "Ban User";
+        banBtn.className = isBanned ? "" : "remove";
+        banBtn.style.backgroundColor = isBanned ? "#28a745" : "";
+        banBtn.onclick = () => banUser(uid, userData.displayName || userData.permanentUsername, isBanned);
+        div.appendChild(banBtn);
+
+        // Warn button
+        const warnBtn = document.createElement("button");
+        warnBtn.textContent = "Warn User";
+        warnBtn.style.backgroundColor = "#ffc107";
+        warnBtn.style.color = "black";
+        warnBtn.style.marginLeft = "10px";
+        warnBtn.onclick = () => warnUser(uid, userData.displayName || userData.permanentUsername);
+        div.appendChild(warnBtn);
+
+        // Clear Warnings button
+        const clearWarnBtn = document.createElement("button");
+        clearWarnBtn.textContent = "Clear Warnings";
+        clearWarnBtn.className = "remove";
+        clearWarnBtn.style.marginLeft = "10px";
+        clearWarnBtn.onclick = () => clearUserWarnings(uid, userData.displayName || userData.permanentUsername);
+        div.appendChild(clearWarnBtn);
+
+        if (isTrolled) {
+            const removeTrollBtn = document.createElement("button");
+            removeTrollBtn.textContent = "Remove Trolls";
+            removeTrollBtn.className = "remove";
+            removeTrollBtn.style.backgroundColor = "orange";
+            removeTrollBtn.style.marginLeft = "10px";
+            removeTrollBtn.onclick = () => removeUserTroll(uid, userData.displayName || userData.permanentUsername);
+            div.appendChild(removeTrollBtn);
+        }
+
+        div.appendChild(document.createElement("hr"));
+
+        const addSelect = document.createElement("select");
+        const addDefault = document.createElement("option");
+        addDefault.text = "Select badge to add";
+        addSelect.appendChild(addDefault);
+        Object.entries(badges).forEach(([id, badge]) => {
+          if ((userData.badges || []).includes(id)) return;
+          const opt = document.createElement("option");
+          opt.value = id;
+          opt.text = badge.name;
+          addSelect.appendChild(opt);
+        });
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "Add Badge";
+        addBtn.onclick = async () => {
+          const val = addSelect.value;
+          if (!val) return alert("Select a badge");
+          const updated = [...(userData.badges || []), val];
+          await update(ref(db, `users/${uid}`), { badges: updated });
+          searchUsers();
+        };
+
+        const removeSelect = document.createElement("select");
+        const removeDefault = document.createElement("option");
+        removeDefault.text = "Select badge to remove";
+        removeSelect.appendChild(removeDefault);
+        (userData.badges || []).forEach(badgeId => {
+          const opt = document.createElement("option");
+          opt.value = badgeId;
+          opt.text = badges[badgeId]?.name || badgeId;
+          removeSelect.appendChild(opt);
+        });
+        const removeBtn = document.createElement("button");
+        removeBtn.textContent = "Remove Badge";
+        removeBtn.className = "remove";
+        removeBtn.onclick = async () => {
+          const val = removeSelect.value;
+          const updated = (userData.badges || []).filter(b => b !== val);
+          await update(ref(db, `users/${uid}`), { badges: updated });
+          searchUsers();
+        };
+
+        div.appendChild(addSelect);
+        div.appendChild(addBtn);
+        div.appendChild(removeSelect);
+        div.appendChild(removeBtn);
+        container.appendChild(div);
+      }
+    }
+
+    async function removeUserTroll(uid, name) {
+        if (confirm(`Are you sure you want to remove ALL active trolls from ${name}?`)) {
+            await remove(ref(db, `users/${uid}/activeTrolls`));
+            alert(`All trolls removed from ${name}.`);
+            searchUsers(); 
+        }
+    }
+
+    async function loadPromoCodes() {
+        const container = document.getElementById("promoCodesList");
+        container.innerHTML = "Loading...";
+        const snap = await get(ref(db, "promo_codes"));
+        container.innerHTML = "";
+        if (!snap.exists()) {
+            container.innerHTML = "<p>No promo codes found.</p>";
+            return;
+        }
+        const codes = snap.val();
+        for (const [code, data] of Object.entries(codes)) {
+            const div = document.createElement("div");
+            div.className = "badge-item"; // Re-use style
+            const expiryDate = data.expiry ? new Date(data.expiry).toLocaleString() : "Never";
+            const usesText = data.maxUses === 0 ? "Unlimited" : `${data.uses} / ${data.maxUses}`;
+            div.innerHTML = `
+                <div class='badge-name'>Code: <strong>${code}</strong></div>
+                <p>Points: ${data.points} | Uses Left: ${usesText} | Expires: ${expiryDate}</p>
+            `;
+            const btn = document.createElement("button");
+            btn.textContent = "Delete Code";
+            btn.className = "remove";
+            btn.onclick = async () => {
+                if (confirm(`Delete promo code '${code}'? This cannot be undone.`)) {
+                    await remove(ref(db, `promo_codes/${code}`));
+                    loadPromoCodes();
+                }
+            };
+            div.appendChild(btn);
+            container.appendChild(div);
+        }
+    }
+
+    async function loadAllowedPics() {
+      const listDiv = document.getElementById("allowedPicsList");
+      listDiv.innerHTML = "Loading...";
+      const snap = await get(ref(db, "config/allowedProfilePictures"));
+      listDiv.innerHTML = "";
+      if (!snap.exists()) return listDiv.innerHTML = "<p>No profile pictures allowed yet.</p>";
+      const pics = snap.val();
+      for (const [id, url] of Object.entries(pics)) {
+        const box = document.createElement("div");
+        box.style.position = "relative";
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.width = "80px";
+        img.style.height = "80px";
+        img.style.borderRadius = "50%";
+        img.style.objectFit = "cover";
+        box.appendChild(img);
+
+        const btn = document.createElement("button");
+        btn.textContent = "X";
+        btn.className = "remove";
+        btn.style.position = "absolute";
+        btn.style.top = "-10px";
+        btn.style.right = "-10px";
+        btn.onclick = async () => {
+          await remove(ref(db, `config/allowedProfilePictures/${id}`));
+          loadAllowedPics();
+        };
+        box.appendChild(btn);
+        listDiv.appendChild(box);
+      }
+    }
+
+    async function loadUpdateLog() {
+      const container = document.getElementById("updatesList");
+      container.innerHTML = "Loading updates...";
+      const snap = await get(ref(db, "config/updates"));
+      container.innerHTML = "";
+      
+      if (!snap.exists()) {
+        container.innerHTML = "<p>No updates found.</p>";
+        return;
+      }
+      
+      const updates = [];
+      snap.forEach(child => {
+        updates.unshift({ key: child.key, ...child.val() }); // Newest first
+      });
+      
+      updates.forEach(u => {
+        const div = document.createElement("div");
+        div.className = "badge-item";
+        div.innerHTML = `<div class='badge-name'>${u.heading}</div><p>${u.description}</p>`;
+        
+        const btn = document.createElement("button");
+        btn.textContent = "Delete";
+        btn.className = "remove";
+        btn.onclick = async () => {
+            if(confirm("Delete this update?")) {
+                await remove(ref(db, `config/updates/${u.key}`));
+                loadUpdateLog();
+            }
+        };
+        div.appendChild(btn);
+        container.appendChild(div);
+      });
+    }
+
+    async function loadWheelConfig() {
+      const snap = await get(ref(db, "config/wheel"));
+      if (snap.exists()) {
+        const data = snap.val();
+        document.getElementById("wheelPrizes").value = (data.prizes || []).join(", ");
+        document.getElementById("wheelExoticPrizes").value = (data.exoticPrizes || []).join(", ");
+        document.getElementById("wheelCooldown").value = data.cooldown || 24;
+        document.getElementById("wheelJackpotChance").value = data.jackpotChance || 1;
+        document.getElementById("wheelSpinAgainCost").value = data.spinAgainCost || 100;
+      }
+    }
+
+    async function loadShopConfig() {
+      const container = document.getElementById("shopItemsList");
+      container.innerHTML = "Loading...";
+      
+      let snap = await get(ref(db, "config/shopItems"));
+      let items = snap.exists() ? snap.val() : {};
+
+      container.innerHTML = "";
+      
+      for (const [key, item] of Object.entries(items)) {
+        const div = document.createElement("div");
+        div.style.marginBottom = "10px";
+        div.style.padding = "10px";
+        div.style.background = "rgba(255,255,255,0.05)";
+        div.style.borderRadius = "5px";
+        
+        div.innerHTML = `
+          <strong>ID: ${key}</strong><br>
+          Name: <input type="text" id="shop_name_${key}" value="${item.name}" style="width:150px;">
+          Cost: <input type="number" id="shop_cost_${key}" value="${item.cost}" style="width:80px;">
+          Class: <input type="text" id="shop_class_${key}" value="${item.class || ''}" placeholder="CSS Class" style="width:100px;">
+          Style: <input type="text" id="shop_style_${key}" value="${item.style || ''}" placeholder="CSS Background" style="width:200px;">
+        `;
+        container.appendChild(div);
+      }
+
+      // Load special items
+      const specialContainer = document.getElementById("specialShopItemsList");
+      specialContainer.innerHTML = "Loading...";
+      
+      const specialSnap = await get(ref(db, "config/specialShopItems"));
+      let specialItems = specialSnap.exists() ? specialSnap.val() : {
+          "troll_shield": { name: "Troll Shield", cost: 1500, description: "Protects you from one troll attempt." }
+      };
+
+      specialContainer.innerHTML = "";
+
+      for (const [key, item] of Object.entries(specialItems)) {
+          const div = document.createElement("div");
+          div.style.marginBottom = "10px";
+          div.style.padding = "10px";
+          div.style.background = "rgba(255,255,255,0.05)";
+          div.style.borderRadius = "5px";
+          
+          div.innerHTML = `
+              <strong>ID: ${key}</strong><br>
+              Name: <input type="text" data-key="${key}" data-field="name" value="${item.name}" style="width:150px;">
+              Cost: <input type="number" data-key="${key}" data-field="cost" value="${item.cost}" style="width:80px;">
+              Description: <input type="text" data-key="${key}" data-field="description" value="${item.description || ''}" style="width:250px;">
+          `;
+          specialContainer.appendChild(div);
+      }
+    }
+
+
+    document.getElementById("addBadgeBtn").onclick = async () => {
+      const id = document.getElementById("newBadgeName").value.trim();
+      const name = document.getElementById("newBadgeDisplayName").value.trim();
+      const desc = document.getElementById("newBadgeDescription").value.trim();
+      if (!id || !name || /\s/.test(id)) return alert("Invalid badge ID or name");
+      await set(ref(db, `badges/${id}`), { name, description: desc });
+      loadBadges();
+    };
+    
+
+    document.getElementById("addAllowedPicBtn").onclick = async () => {
+      const url = document.getElementById("newAllowedPic").value.trim();
+      if (!url) return alert("Enter a valid image or base64 URL");
+      const id = Date.now();
+      await set(ref(db, `config/allowedProfilePictures/${id}`), url);
+      document.getElementById("newAllowedPic").value = "";
+      loadAllowedPics();
+    };
+
+    document.getElementById("saveUpdateLogBtn").onclick = async () => {
+      const heading = document.getElementById("updateLogHeading").value;
+      const description = document.getElementById("updateLogDescription").value;
+      if(!heading || !description) return alert("Please fill in both fields");
+      
+      const newRef = ref(db, "config/updates/" + Date.now());
+      await set(newRef, { heading, description });
+      
+      document.getElementById("updateLogHeading").value = "";
+      document.getElementById("updateLogDescription").value = "";
+      loadUpdateLog();
+      alert("Update posted!");
+    };
+
+    document.getElementById("saveWheelConfigBtn").onclick = async () => {
+      const prizesStr = document.getElementById("wheelPrizes").value;
+      const exoticPrizesStr = document.getElementById("wheelExoticPrizes").value;
+      let cooldownVal = document.getElementById("wheelCooldown").value;
+      let jackpotChanceVal = document.getElementById("wheelJackpotChance").value;
+      let spinAgainCostVal = document.getElementById("wheelSpinAgainCost").value;
+
+      let cooldown = parseInt(cooldownVal);
+      if (isNaN(cooldown)) cooldown = 24;
+      const prizes = prizesStr.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      const exoticPrizes = exoticPrizesStr.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      const jackpotChance = parseInt(jackpotChanceVal) || 1;
+      const spinAgainCost = parseInt(spinAgainCostVal) || 100;
+      
+      await set(ref(db, "config/wheel"), { prizes, exoticPrizes, cooldown, jackpotChance, spinAgainCost });
+      alert("Wheel config saved!");
+      loadWheelConfig();
+    };
+
+    document.getElementById("addShopItemBtn").onclick = async () => {
+      const id = document.getElementById("newShopId").value.trim();
+      const name = document.getElementById("newShopName").value.trim();
+      const cost = parseInt(document.getElementById("newShopCost").value) || 0;
+      const style = document.getElementById("newShopStyle").value.trim();
+      
+      if (!id || !name) return alert("ID and Name are required");
+      
+      await update(ref(db, `config/shopItems/${id}`), { name, cost, style });
+      alert("Item added!");
+      loadShopConfig();
+    };
+
+    document.getElementById("saveShopConfigBtn").onclick = async () => {
+      // We iterate over the known keys to gather values
+      // Note: This simple editor modifies existing keys. To add new ones, you'd need an "Add Item" button.
+      const container = document.getElementById("shopItemsList");
+      const inputs = container.querySelectorAll("input");
+      const newConfig = {};
+      
+      inputs.forEach(input => {
+        const parts = input.id.split("_"); // e.g. ["shop", "cost", "blue"]
+        const field = parts[1];
+        const key = parts.slice(2).join("_");
+        
+        if (!newConfig[key]) newConfig[key] = {};
+        newConfig[key][field] = field === "cost" ? parseInt(input.value) : input.value;
+      });
+
+      await set(ref(db, "config/shopItems"), newConfig);
+      alert("Shop config saved!");
+    };
+
+    document.getElementById("saveSpecialShopConfigBtn").onclick = async () => {
+      const container = document.getElementById("specialShopItemsList");
+      const inputs = container.querySelectorAll("input");
+      const newConfig = {};
+      
+      inputs.forEach(input => {
+        const key = input.dataset.key;
+        const field = input.dataset.field;
+        if (!newConfig[key]) newConfig[key] = {};
+        newConfig[key][field] = field === "cost" ? parseInt(input.value) : input.value;
+      });
+
+      await set(ref(db, "config/specialShopItems"), newConfig);
+      alert("Functional items saved!");
+    };
+
+    let TROLL_CATALOG = {}; // This will hold the merged catalog
+
+    const DEFAULT_TROLL_CATALOG = {
+        'blur': { name: 'Blur Screen', cost: 500, duration: 3600000 },
+        'invert': { name: 'Invert Colors', cost: 300, duration: 3600000 },
+        'ban': { name: 'Temporary Ban', cost: 2000, duration: 1800000 },
+        'cursor_dance': { name: 'Cursor Dance', cost: 750, duration: 120000 },
+        'test': { name: 'Test Troll', cost: 10, duration: 10000 }
+    };
+
+    async function loadTrollSettings() {
+        const container = document.getElementById("trollSettingsContainer");
+        container.innerHTML = "Loading...";
+        const [trollSnap, gambleSnap, multipliersSnap] = await Promise.all([
+            get(ref(db, "config/trollCatalog")),
+            get(ref(db, "config/trollGambleCost")),
+            get(ref(db, "config/gambleMultipliers"))
+        ]);
+        
+        if (gambleSnap.exists()) {
+            document.getElementById('trollGambleCost').value = gambleSnap.val();
+        } else {
+            document.getElementById('trollGambleCost').value = 500; // Default
+        }
+
+        if (multipliersSnap.exists()) {
+            let multipliers = multipliersSnap.val() || [];
+            if (multipliers && typeof multipliers === 'object' && !Array.isArray(multipliers)) {
+                multipliers = Object.values(multipliers);
+            }
+            document.getElementById('trollGambleMultipliers').value = multipliers.join(", ");
+        } else {
+            document.getElementById('trollGambleMultipliers').value = "x0, x2, x0.5, x5, x0, x1.5";
+        }
+        
+        let dbCatalog = {};
+        if (!trollSnap.exists()) {
+            container.innerHTML = "<p>No troll settings found in config. They will be created on first save from dashboard.</p>";
+        } else {
+            dbCatalog = trollSnap.val();
+        }
+
+        // Merge default catalog with DB catalog to show new trolls and respect saved values
+        TROLL_CATALOG = {...DEFAULT_TROLL_CATALOG};
+        for (const key in dbCatalog) {
+            if (TROLL_CATALOG[key]) {
+                // Update existing properties from DB
+                TROLL_CATALOG[key].cost = dbCatalog[key].cost;
+                TROLL_CATALOG[key].duration = dbCatalog[key].duration;
+            } else {
+                // Add trolls that are only in DB (maybe old ones)
+                TROLL_CATALOG[key] = dbCatalog[key];
+            }
+        }
+
+        container.innerHTML = "";
+        for (const [key, troll] of Object.entries(TROLL_CATALOG)) {
+            const div = document.createElement("div");
+            div.style.marginBottom = "10px";
+            div.innerHTML = `
+                <label style="font-weight:bold;">${troll.name} (ID: ${key})</label>
+                Cost: <input type="number" id="troll_cost_${key}" value="${troll.cost}" style="width:100px; display:inline-block;">
+                Duration (mins): <input type="number" id="troll_duration_${key}" value="${troll.duration / 60000}" style="width:100px; display:inline-block;">
+            `;
+            container.appendChild(div);
+        }
+    }
+
+    async function saveTrollSettings() {
+        if (Object.keys(TROLL_CATALOG).length === 0) return alert("Load settings first.");
+        if (!confirm("Are you sure you want to save these troll settings?")) return;
+
+        const newCatalog = { ...TROLL_CATALOG };
+        for (const key of Object.keys(TROLL_CATALOG)) {
+            const cost = parseInt(document.getElementById(`troll_cost_${key}`).value);
+            const durationMins = parseInt(document.getElementById(`troll_duration_${key}`).value);
+            if (isNaN(cost) || isNaN(durationMins)) return alert(`Invalid input for ${key}.`);
+            newCatalog[key].cost = cost;
+            newCatalog[key].duration = durationMins * 60000;
+        }
+
+        const gambleCost = parseInt(document.getElementById('trollGambleCost').value);
+        if (isNaN(gambleCost) || gambleCost < 0) return alert("Invalid gamble cost.");
+
+        const multipliersStr = document.getElementById("trollGambleMultipliers").value;
+        const multipliers = multipliersStr.split(",").map(s => s.trim()).filter(s => s !== "");
+
+        await Promise.all([
+            set(ref(db, 'config/trollCatalog'), newCatalog),
+            set(ref(db, 'config/trollGambleCost'), gambleCost),
+            set(ref(db, 'config/gambleMultipliers'), multipliers)
+        ]);
+        alert("Troll settings saved!");
+    }
+
+    document.getElementById("addPromoCodeBtn").onclick = async () => {
+        const code = document.getElementById("newPromoCode").value.trim().toUpperCase();
+        const points = parseInt(document.getElementById("newPromoPoints").value);
+        const uses = parseInt(document.getElementById("newPromoUses").value);
+        let expiryValue = document.getElementById('newPromoExpiry').value;
+        
+        if (!code || isNaN(points)) return alert("Invalid promo code or points value.");
+        if (uses < 0) return alert("Max Uses must be 0 or more");
+
+        let expiry = null;
+        if (expiryValue) {
+            expiry = new Date(expiryValue).getTime();
+            if (isNaN(expiry)) return alert("Invalid expiry date/time");
+        }
+
+        const promoRef = ref(db, `promo_codes/${code}`);
+
+        try {
+            await set(promoRef, {
+                points: points,
+                uses: uses,
+                maxUses: uses,
+                expiry: expiry
+            });
+            alert("Promo code added successfully!");
+            document.getElementById("newPromoCode").value = "";
+            document.getElementById("newPromoPoints").value = "";
+            document.getElementById("newPromoUses").value = "0";
+            document.getElementById('newPromoExpiry').value = null;
+        } catch (error) {
+            alert("Failed to add promo code: " + error.message);
+        }
+    };
+
+    async function loadGameLimits() {
+        const container = document.getElementById("gameLimitsList");
+        container.innerHTML = "Loading...";
+        const snap = await get(ref(db, "config/gameLimits"));
+        const limits = snap.exists() ? snap.val() : {};
+        
+        const defaults = {
+            'Flappy Waffle': 500,
+            'Waffle Tower': 200,
+            'Waffle Breaker': 66,
+            'Waffle Jump': 50000,
+            'Waffle Pong': 100,
+            'Waffle Memory': 100,
+            'Waffle Invaders': 5000,
+            'Waffle Whack': 500,
+            '2048 Waffles': 50000,
+            'Snake': 500,
+            'Word Search': 50
+        };
+        
+        const merged = { ...defaults, ...limits };
+        container.innerHTML = "";
+
+        for (const [game, limit] of Object.entries(merged)) {
+            const div = document.createElement("div");
+            div.style.marginBottom = "5px";
+            div.innerHTML = `
+                <label style="display:inline-block; width:200px;">${game}:</label>
+                <input type="number" data-game="${game}" value="${limit}" style="width:100px;">
+            `;
+            container.appendChild(div);
+        }
+    }
+
+    document.getElementById("loadGameLimitsBtn").onclick = loadGameLimits;
+    document.getElementById("saveGameLimitsBtn").onclick = async () => {
+        const container = document.getElementById("gameLimitsList");
+        const inputs = container.querySelectorAll("input");
+        const newLimits = {};
+        inputs.forEach(input => {
+            const game = input.dataset.game;
+            newLimits[game] = parseInt(input.value);
+        });
+        await set(ref(db, "config/gameLimits"), newLimits);
+        alert("Game limits saved!");
+    };
+    async function loadCheatLogs() {
+        const container = document.getElementById("cheatLogsList");
+        container.innerHTML = "Loading...";
+        const snap = await get(query(ref(db, "cheat_logs"), limitToLast(50)));
+        container.innerHTML = "";
+        
+        if (!snap.exists()) {
+            container.innerHTML = "<p>No cheat attempts recorded.</p>";
+            return;
+        }
+
+        const logs = [];
+        snap.forEach(child => {
+            logs.unshift({ key: child.key, ...child.val() });
+        });
+
+        logs.forEach(log => {
+            const div = document.createElement("div");
+            div.className = "badge-item";
+            div.style.borderLeft = "4px solid #f04747";
+            const date = log.timestamp ? new Date(log.timestamp).toLocaleString() : "Unknown";
+            div.innerHTML = `
+                <div class='badge-name'>UID: ${log.uid}</div>
+                <p>Email: ${log.email}</p>
+                <p>Time: ${date}</p>
+                <p>Details: ${log.details}</p>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    document.getElementById("loadCheatLogsBtn").onclick = loadCheatLogs;
+    document.getElementById("clearCheatLogsBtn").onclick = async () => {
+        if(confirm("Are you sure you want to clear all security logs?")) {
+            await remove(ref(db, "cheat_logs"));
+            loadCheatLogs();
+        }
+    };
+
+
+
+
+
+
+    document.getElementById("verifyPinBtn").onclick = async () => {
+      const input = document.getElementById("adminPinInput").value.trim();
+      // Fetch PIN from DB or default to 1234
+      const snap = await get(ref(db, "config/adminPin"));
+      const realPin = snap.exists() ? String(snap.val()) : "1234";
+      
+      if (input === realPin) {
+        document.getElementById("pinOverlay").style.display = "none";
+        // Setup controls now that user is verified
+        setupAdminControls();
+        setupPinToggles();
+      } else {
+        alert("Incorrect PIN!");
+      }
+    };
+
+    document.getElementById("loadBadgesBtn").onclick = loadBadges;
+    document.getElementById("userSearchBtn").onclick = searchUsers;
+    document.getElementById("userSearchInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") searchUsers();
+    });
+    document.getElementById("loadWheelBtn").onclick = loadWheelConfig;
+    document.getElementById("loadShopBtn").onclick = loadShopConfig;
+    document.getElementById("loadPicsBtn").onclick = loadAllowedPics;
+    document.getElementById("loadUpdatesBtn").onclick = loadUpdateLog;
+    document.getElementById("loadTrollSettingsBtn").onclick = loadTrollSettings;
+    document.getElementById("saveTrollSettingsBtn").onclick = saveTrollSettings;
+    document.getElementById("loadPromoCodesBtn").onclick = loadPromoCodes;
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("pinOverlay").style.display = "flex";
+      } else {
+        alert("No user detected. Please log in.");
+        window.location.href = "index.html";
+      }
+    });
+  </script>
+</body>
+</html>
