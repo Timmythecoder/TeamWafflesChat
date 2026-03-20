@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Snake</title>
+<style>
+  html, body { height: 100%; margin: 0; background: #202225; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; overflow: hidden; }
+  canvas { border: 2px solid #444; background: black; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+  h1 { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<h1>Snake</h1>
+<canvas id="game" width="400" height="400"></canvas>
+<script>
+var canvas = document.getElementById('game');
+var context = canvas.getContext('2d');
+var grid = 20; // Increased size
+var count = 0;
+var snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4 };
+var apple = { x: 320, y: 320 };
+var score = 0;
+var highScore = localStorage.getItem('snakeHighScore') || 0;
+var gameOver = false;
+const urlParams = new URLSearchParams(window.location.search);
+const isChallenge = urlParams.get('challenge') === 'true';
+let challengeSubmitted = false;
+
+function finishChallenge() {
+    if (challengeSubmitted) return;
+    challengeSubmitted = true;
+    window.parent.postMessage({ type: 'GAME_OVER', score: score }, '*');
+}
+
+function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min)) + min; }
+
+function resetGame() {
+  snake.x = 160;
+  snake.y = 160;
+  snake.cells = [];
+  snake.maxCells = 4;
+  snake.dx = grid;
+  snake.dy = 0;
+  score = 0;
+  apple.x = getRandomInt(0, 20) * grid;
+  apple.y = getRandomInt(0, 20) * grid;
+  gameOver = false;
+  challengeSubmitted = false;
+}
+
+function loop() {
+  requestAnimationFrame(loop);
+  // Slow down the game loop
+  if (++count < 4) return;
+  count = 0;
+  context.clearRect(0,0,canvas.width,canvas.height);
+
+  if (gameOver) {
+    context.fillStyle = 'white';
+    context.font = '35px sans-serif';
+    context.textAlign = 'center';
+    context.fillText('Game Over', canvas.width / 2, canvas.height / 2 - 40);
+    context.font = '20px sans-serif';
+    context.fillText('Score: ' + score, canvas.width / 2, canvas.height / 2);
+    context.font = '16px sans-serif';
+    if (isChallenge) {
+      context.fillText('Click or Press any key to Collect Points', canvas.width / 2, canvas.height / 2 + 70);
+    } else {
+      context.fillText('High Score: ' + highScore, canvas.width / 2, canvas.height / 2 + 30);
+      context.fillText('Press any key to restart', canvas.width / 2, canvas.height / 2 + 70);
+    }
+    return;
+  }
+
+  snake.x += snake.dx;
+  snake.y += snake.dy;
+  // Wrap snake position
+  if (snake.x < 0) snake.x = canvas.width - grid;
+  else if (snake.x >= canvas.width) snake.x = 0;
+  if (snake.y < 0) snake.y = canvas.height - grid;
+  else if (snake.y >= canvas.height) snake.y = 0;
+
+  snake.cells.unshift({x: snake.x, y: snake.y});
+  if (snake.cells.length > snake.maxCells) snake.cells.pop();
+
+  // Draw apple
+  context.fillStyle = '#ff4081';
+  context.fillRect(apple.x, apple.y, grid-1, grid-1);
+
+  // Draw score
+  context.fillStyle = 'white';
+  context.font = '20px sans-serif';
+  context.textAlign = 'left';
+  context.fillText('Score: ' + score, 10, 25);
+
+  // Draw snake
+  context.fillStyle = '#45ffbc';
+  snake.cells.forEach(function(cell, index) {
+    context.fillRect(cell.x, cell.y, grid-1, grid-1);
+
+    // Check collision with apple
+    if (cell.x === apple.x && cell.y === apple.y) {
+      snake.maxCells++;
+      score++;
+      apple.x = getRandomInt(0, 20) * grid;
+      apple.y = getRandomInt(0, 20) * grid;
+    }
+
+    // Check collision with self
+    for (var i = index + 1; i < snake.cells.length; i++) {
+      if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem('snakeHighScore', highScore);
+        }
+        gameOver = true;
+      }
+    }
+  });
+}
+document.addEventListener('keydown', function(e) {
+  if (gameOver) {
+    if (isChallenge) {
+      finishChallenge();
+    } else {
+      resetGame();
+    }
+    return;
+  }
+
+  // Prevent snake from reversing
+  if (e.which === 37 && snake.dx === 0) { snake.dx = -grid; snake.dy = 0; } // left
+  else if (e.which === 38 && snake.dy === 0) { snake.dy = -grid; snake.dx = 0; } // up
+  else if (e.which === 39 && snake.dx === 0) { snake.dx = grid; snake.dy = 0; } // right
+  else if (e.which === 40 && snake.dy === 0) { snake.dy = grid; snake.dx = 0; } // down
+});
+
+// Add click listener for mobile/mouse users in challenge mode
+canvas.addEventListener('click', function() {
+    if (gameOver && isChallenge) {
+        finishChallenge();
+    }
+});
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
