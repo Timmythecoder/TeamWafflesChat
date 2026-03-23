@@ -1,51 +1,158 @@
+<!--26 - VER3.7-->
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-D9ZY0SVXBN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-D9ZY0SVXBN');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login/Signup</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Optional for styling -->
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Team Waffles - Login/Sign Up</title>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-        
-    </head>
-    <body>
-    
+    <title>Team Waffles - Login/Sign Up</title>
+    <link rel="icon" type="image/png" href="TWL O.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .auth-container {
+            animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: transform 0.3s ease;
+        }
+
+        input {
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        body {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        .loading-spinner video {
+            width: 250px;
+        }
+    </style>
+</head>
+
+<body>
     <div class="auth-container">
         <div class="logo">
-            <img src="TWL O - Copy.png" alt="Team Waffles Logo"> <!-- Replace with your logo URL -->
+            <img src="TWL O.png" alt="Team Waffles Logo">
         </div>
-    
+
         <h2 id="form-title">Sign In</h2>
-        <h3 id="form-title">Use Real Emails
-    
+        <h3 id="form-subtitle">A verification email will be sent to the email you signup with</h3>
+
         <div class="error-message" id="error-message"></div>
-    
+        <div class="success-message" id="success-message"></div>
+
         <input type="email" id="email" placeholder="Enter your email" required>
         <input type="password" id="password" placeholder="Enter your password" required>
-    
+
+        <div style="text-align: right; margin-bottom: 15px; width: 100%;">
+            <a href="#" onclick="forgotPassword()"
+                style="color: #007bff; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
+        </div>
+
+        <div class="g-recaptcha" data-sitekey="6Lf-6fwrAAAAAC8z64ODrxnDG6da2DM_ZYdsQpzG"></div>
+
+
+
+        <!-- Continue with Google -->
+        <div class="google-login">
+            <button id="googleSignInBtn" onclick="signInWithGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
+                Continue with Google
+            </button>
+        </div>
+
+        <br>
+
+
+
         <button id="auth-button" onclick="authAction()">Sign In</button>
-    
+
+        <div class="loading-spinner" id="loading-spinner">
+            <video autoplay loop muted onplay="this.playbackRate=2.0">
+                <source src="Loading.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
         <div class="toggle-text" id="toggle-text">
             Don't have an account? <a href="#" onclick="toggleForm()">Sign Up</a>
         </div>
     </div>
-<!-- Back to Team Waffles Website Button -->
-<a href="https://bit.ly/teamwaffleswebsite" class="home-button">
-    </div>
+
+    <!-- Back to Team Waffles Website Button -->
+    <a href="https://bit.ly/teamwaffleswebsite" class="home-button"></a>
 
     <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
 
-    
     <script src="teamwafflesauth.js"></script>
+    <script src="https://teamwaffles1.statuspage.io/embed/script.js"></script>
 </body>
+
+
 </html>
