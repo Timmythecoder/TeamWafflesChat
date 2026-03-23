@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waffle Snake</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700&display=swap");
+  body {
+    background-color: #202225;
+    color: white;
+    font-family: "Be Vietnam Pro", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+  }
+  canvas {
+    background-color: #2f3136;
+    border: 2px solid #faa61a;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  }
+  #score-board {
+    font-size: 24px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 20px;
+  }
+  .score-val { color: #faa61a; }
+  #game-over {
+    position: absolute;
+    background: rgba(0,0,0,0.85);
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    display: none;
+  }
+  button {
+    background: #faa61a;
+    border: none;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+  }
+  button:hover { background: #e69510; }
+</style>
+</head>
+<body>
+
+<div id="score-board">
+  <div>Score: <span id="score" class="score-val">0</span></div>
+  <div>Best: <span id="high-score" class="score-val">0</span></div>
+</div>
+
+<canvas id="gameCanvas" width="400" height="400"></canvas>
+
+<div id="game-over">
+  <h1 style="color:#faa61a; margin-top:0;">Game Over</h1>
+  <p>Score: <span id="final-score">0</span></p>
+  <button onclick="resetGame()">Play Again</button>
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  const gridSize = 20;
+  const tileCount = canvas.width / gridSize;
+  
+  let score = 0;
+  let highScore = localStorage.getItem('waffleSnakeHigh') || 0;
+  document.getElementById('high-score').innerText = highScore;
+
+  let velocity = { x: 0, y: 0 };
+  let snake = [{ x: 10, y: 10 }];
+  let food = { x: 15, y: 15 };
+  let gameInterval;
+  let isRunning = false;
+
+  function gameLoop() {
+    update();
+    draw();
+  }
+
+  function update() {
+    const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
+
+    // Wall Collision
+    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+      gameOver();
+      return;
+    }
+
+    // Self Collision
+    for (let i = 0; i < snake.length; i++) {
+      if (head.x === snake[i].x && head.y === snake[i].y) {
+        gameOver();
+        return;
+      }
+    }
+
+    snake.unshift(head);
+
+    // Eat Food
+    if (head.x === food.x && head.y === food.y) {
+      score++;
+      document.getElementById('score').innerText = score;
+      placeFood();
+    } else {
+      snake.pop();
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = '#2f3136';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Food
+    ctx.font = '18px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🧈', food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2 + 2);
+
+    // Draw Snake
+    ctx.fillStyle = '#faa61a';
+    for (let i = 0; i < snake.length; i++) {
+      ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize - 2, gridSize - 2);
+    }
+  }
+
+  function placeFood() {
+    food.x = Math.floor(Math.random() * tileCount);
+    food.y = Math.floor(Math.random() * tileCount);
+    // Ensure food doesn't spawn on snake
+    for (let part of snake) {
+      if (part.x === food.x && part.y === food.y) placeFood();
+    }
+  }
+
+  function gameOver() {
+    clearInterval(gameInterval);
+    isRunning = false;
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem('waffleSnakeHigh', highScore);
+      document.getElementById('high-score').innerText = highScore;
+    }
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('game-over').style.display = 'block';
+  }
+
+  function resetGame() {
+    snake = [{ x: 10, y: 10 }];
+    score = 0;
+    document.getElementById('score').innerText = score;
+    document.getElementById('game-over').style.display = 'none';
+    placeFood();
+    
+    clearInterval(gameInterval); // Clear any existing loop
+    isRunning = true;
+    gameInterval = setInterval(gameLoop, 100);
+  }
+
+  // Allow clicking anywhere to start (fixes iframe focus issues)
+  window.addEventListener('click', (e) => {
+    if(e.target.tagName === 'BUTTON') return; // Let buttons handle themselves
+    window.focus();
+    if (!isRunning && document.getElementById('game-over').style.display === 'none') {
+        velocity = { x: 1, y: 0 }; // Default start direction: right
+        resetGame();
+    }
+  });
+
+  window.addEventListener('keydown', e => {
+    // Prevent arrow keys from scrolling the parent page when inside the iframe
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight", " "].includes(e.key)) {
+        e.preventDefault();
+    }
+
+    let newVelocity = null;
+    switch (e.key) {
+      case 'ArrowUp':
+      case 'w':
+        if (velocity.y === 0) newVelocity = { x: 0, y: -1 };
+        break;
+      case 'ArrowDown':
+      case 's':
+        if (velocity.y === 0) newVelocity = { x: 0, y: 1 };
+        break;
+      case 'ArrowLeft':
+      case 'a':
+        if (velocity.x === 0) newVelocity = { x: -1, y: 0 };
+        break;
+      case 'ArrowRight':
+      case 'd':
+        if (velocity.x === 0) newVelocity = { x: 1, y: 0 };
+        break;
+    }
+
+    if (newVelocity) {
+      if (!isRunning && document.getElementById('game-over').style.display === 'none') {
+        velocity = newVelocity;
+        resetGame();
+      } else {
+        velocity = newVelocity;
+      }
+    }
+  });
+
+  // Touch Controls (Swipe)
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  window.addEventListener('touchstart', e => {
+    if(e.target.tagName !== 'BUTTON') e.preventDefault();
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, {passive: false});
+
+  window.addEventListener('touchend', e => {
+    if(e.target.tagName !== 'BUTTON') e.preventDefault();
+    const touchEndX = e.changedTouches[0].screenX;
+    const touchEndY = e.changedTouches[0].screenY;
+    
+    const dx = touchEndX - touchStartX;
+    const dy = touchEndY - touchStartY;
+    
+    // Start game on swipe if not running
+    const isGameOver = document.getElementById('game-over').style.display !== 'none';
+
+    if (Math.abs(dx) > 30 || Math.abs(dy) > 30) { // Check for significant swipe
+        if (!isRunning && !isGameOver) {
+            resetGame();
+        }
+
+        if (Math.abs(dx) > Math.abs(dy)) { // Horizontal swipe
+            if (dx > 0 && velocity.x === 0) velocity = { x: 1, y: 0 }; // Right
+            else if (dx < 0 && velocity.x === 0) velocity = { x: -1, y: 0 }; // Left
+        } else { // Vertical swipe
+            if (dy > 0 && velocity.y === 0) velocity = { x: 0, y: 1 }; // Down
+            else if (dy < 0 && velocity.y === 0) velocity = { x: 0, y: -1 }; // Up
+        }
+    } else {
+        // It was a tap, start game if not running
+        if (!isRunning && !isGameOver) {
+            velocity = { x: 1, y: 0 };
+            resetGame();
+        }
+    }
+  }, {passive: false});
+
+  // Initial draw
+  draw();
+  ctx.fillStyle = 'white';
+  ctx.font = '16px "Be Vietnam Pro"';
+  ctx.textAlign = 'center';
+  ctx.fillText('Click, Press Keys, or Swipe to Start', canvas.width/2, canvas.height/2);
+
+</script>
+</body>
+</html>
