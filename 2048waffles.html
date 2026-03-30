@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>2048 Waffles</title>
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700&display=swap");
+    body {
+        margin: 0; padding: 0;
+        background-color: #202225;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: "Be Vietnam Pro", sans-serif;
+        overflow: hidden;
+    }
+    #game-container { text-align: center; }
+    #grid-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        width: 90vw; max-width: 400px;
+        height: 90vw; max-height: 400px;
+        background-color: #40444b;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    .grid-cell {
+        background-color: #2f3136;
+        border-radius: 5px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2em;
+        font-weight: bold;
+    }
+    .header { color: white; margin-bottom: 20px; }
+    .score { color: #faa61a; }
+    #game-over {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: white;
+    }
+    #game-over button {
+        background: #faa61a; border: none; padding: 10px 20px;
+        border-radius: 5px; font-weight: bold; cursor: pointer;
+    }
+    #tutorial {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+    }
+    #tutorial-content {
+        background: #2f3136;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #faa61a;
+        max-width: 300px;
+        text-align: left;
+        color: white;
+    }
+    #tutorial h2 { text-align: center; color: #faa61a; margin-top: 0; }
+    #tutorial ul { padding-left: 20px; }
+    #tutorial li { margin-bottom: 10px; }
+    .btn-help {
+        background: #7289da; border: none; padding: 5px 10px;
+        border-radius: 5px; color: white; cursor: pointer;
+        font-weight: bold; margin-top: 5px;
+    }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="header">
+        <h1>2048 Waffles</h1>
+        <button class="btn-help" onclick="toggleTutorial()">How to Play</button>
+        <h2>Score: <span id="score" class="score">0</span></h2>
+    </div>
+    <div id="grid-container"></div>
+</div>
+
+<div id="game-over">
+    <div>
+        <h1>Game Over!</h1>
+        <button id="restart-btn" onclick="restartGame()">Restart</button>
+        <button id="finish-challenge-btn" onclick="finishChallenge()" style="display:none;">Collect Points & Exit</button>
+    </div>
+</div>
+
+<div id="tutorial">
+    <div id="tutorial-content">
+        <h2>How to Play</h2>
+        <ul>
+            <li>Use <b>Arrow Keys</b> to move tiles.</li>
+            <li>Tiles with the same icon <b>merge</b> into one when they touch.</li>
+            <li>Merge tiles to upgrade them: 🧇 ➔ 🥞 ➔ 🍪 ...</li>
+            <li>Reach the <b>Crown 👑</b> to win!</li>
+        </ul>
+        <div style="text-align:center;">
+            <button onclick="toggleTutorial()" style="background:#faa61a; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const gridContainer = document.getElementById('grid-container');
+    const scoreEl = document.getElementById('score');
+    const size = 4;
+    let grid = [];
+    let score = 0;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const isChallenge = urlParams.get('challenge') === 'true';
+
+    const tiles = ['🧇', '🥞', '🍪', '🍩', '🍰', '🧁', '🥧', '🥨', '🥐', '🍞', '👑'];
+
+    function init() {
+        const savedState = JSON.parse(localStorage.getItem('2048WafflesSave'));
+        if (savedState) {
+            grid = savedState.grid;
+            score = savedState.score;
+            renderGrid();
+        } else {
+            restartGame();
+        }
+    }
+
+    function restartGame() {
+         grid = Array(size * size).fill(0);
+         score = 0;
+         document.getElementById('game-over').style.display = 'none';
+         addRandomTile();
+         addRandomTile();
+         renderGrid();
+         saveGame();
+    }
+
+    function renderGrid() {
+        gridContainer.innerHTML = '';
+        scoreEl.innerText = score;
+        for (let i = 0; i < size * size; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            const value = grid[i];
+            if (value > 0) {
+                cell.innerText = tiles[value - 1] || 'X';
+            }
+            gridContainer.appendChild(cell);
+        }
+    }
+
+    function addRandomTile() {
+        let emptyCells = [];
+        grid.forEach((val, index) => {
+            if (val === 0) emptyCells.push(index);
+        });
+        if (emptyCells.length > 0) {
+            const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            grid[randomIndex] = Math.random() > 0.9 ? 2 : 1;
+        }
+    }
+
+    function move(direction) {
+        let moved = false;
+        let rows = [];
+        for (let i = 0; i < size; i++) {
+            rows.push(grid.slice(i * size, i * size + size));
+        }
+
+        if (direction === 'left' || direction === 'right') {
+            for (let i = 0; i < size; i++) {
+                let row = rows[i].filter(val => val !== 0);
+                if (direction === 'right') row.reverse();
+                for (let j = 0; j < row.length - 1; j++) {
+                    if (row[j] === row[j + 1]) {
+                        row[j]++;
+                        score += Math.pow(2, row[j]);
+                        row.splice(j + 1, 1);
+                    }
+                }
+                while (row.length < size) {
+                    row.push(0);
+                }
+                if (direction === 'right') row.reverse();
+                if (JSON.stringify(row) !== JSON.stringify(rows[i])) moved = true;
+                rows[i] = row;
+            }
+        }
+
+        if (direction === 'up' || direction === 'down') {
+            let cols = [];
+            for (let i = 0; i < size; i++) {
+                let col = [];
+                for (let j = 0; j < size; j++) col.push(rows[j][i]);
+                cols.push(col);
+            }
+            for (let i = 0; i < size; i++) {
+                let col = cols[i].filter(val => val !== 0);
+                if (direction === 'down') col.reverse();
+                for (let j = 0; j < col.length - 1; j++) {
+                    if (col[j] === col[j + 1]) {
+                        col[j]++;
+                        score += Math.pow(2, col[j]);
+                        col.splice(j + 1, 1);
+                    }
+                }
+                while (col.length < size) {
+                    col.push(0);
+                }
+                if (direction === 'down') col.reverse();
+                if (JSON.stringify(col) !== JSON.stringify(cols[i])) moved = true;
+                cols[i] = col;
+            }
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) rows[j][i] = cols[i][j];
+            }
+        }
+
+        grid = rows.flat();
+        if (moved) {
+            addRandomTile();
+            renderGrid();
+            checkGameOver();
+            saveGame();
+        }
+    }
+
+    function checkGameOver() {
+        for (let i = 0; i < grid.length; i++) {
+            if (grid[i] === 0) return; // Empty cell exists
+            if (i % size !== size - 1 && grid[i] === grid[i + 1]) return; // Horizontal match
+            if (i < size * (size - 1) && grid[i] === grid[i + size]) return; // Vertical match
+        }
+        document.getElementById('game-over').style.display = 'flex';
+        if (isChallenge) {
+            document.getElementById('restart-btn').style.display = 'none';
+            document.getElementById('finish-challenge-btn').style.display = 'block';
+        }
+    }
+
+    function saveGame() {
+       localStorage.setItem('2048WafflesSave', JSON.stringify({ grid, score }));
+    }
+
+    function toggleTutorial() {
+        const el = document.getElementById('tutorial');
+        el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function finishChallenge() {
+        window.parent.postMessage({ type: 'GAME_OVER', score: score }, '*');
+    }
+
+    window.addEventListener('keydown', e => {
+        e.preventDefault();
+        switch (e.key) {
+            case 'ArrowUp': move('up'); break;
+            case 'ArrowDown': move('down'); break;
+            case 'ArrowLeft': move('left'); break;
+            case 'ArrowRight': move('right'); break;
+        }
+    });
+
+    init();
+</script>
+</body>
+</html>
