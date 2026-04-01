@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Waffle Jump</title>
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700&display=swap");
+    body {
+        margin: 0; padding: 0;
+        background-color: #202225;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: "Be Vietnam Pro", sans-serif;
+        overflow: hidden;
+    }
+    canvas {
+        background: linear-gradient(#2f3136, #1a1b1e);
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    #ui-layer {
+        position: absolute;
+        color: white;
+        text-align: center;
+        pointer-events: none;
+    }
+    #score { font-size: 3em; font-weight: 700; text-shadow: 3px 3px 0 rgba(0,0,0,0.2); }
+    #message-box {
+        display: none;
+        background: rgba(0,0,0,0.8);
+        padding: 20px 40px;
+        border-radius: 15px;
+        pointer-events: auto;
+    }
+    #message-box h1 { color: #faa61a; }
+
+    /* Pause Button & Overlay */
+    #pause-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+        color: white;
+        font-size: 1.1rem;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+        z-index: 10;
+        transition: background 0.15s;
+    }
+    #pause-btn:hover { background: rgba(255,255,255,0.15); }
+
+    #pause-overlay {
+        display: none;
+        position: absolute;
+        background: rgba(0,0,0,0.75);
+        padding: 24px 48px;
+        border-radius: 16px;
+        pointer-events: auto;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    #pause-overlay h2 { color: #45ffbc; margin: 0; }
+    #pause-overlay button {
+        background: #45ffbc; border: none; border-radius: 8px;
+        padding: 10px 24px; font-size: 1rem; font-weight: 700;
+        cursor: pointer; color: #000;
+    }
+    #pause-overlay button:hover { opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="ui-layer">
+    <div id="score">0</div>
+    <div id="message-box">
+        <h1 id="end-title">Game Over</h1>
+        <p>Score: <span id="final-score">0</span></p>
+        <p>Best: <span id="best-score">0</span></p>
+        <p id="restart-hint" style="margin-top:20px;">Click to restart</p>
+        <button onclick="finishChallenge()" id="finish-challenge-btn" style="display:none; background:#43b581; border:none; padding:10px; border-radius:5px; color:white; font-weight:bold; margin-top:10px; pointer-events:auto; cursor:pointer;">Collect Points & Exit</button>
+    </div>
+    <div id="pause-overlay">
+        <h2>⏸ Paused</h2>
+        <button onclick="togglePause()">▶ Resume</button>
+    </div>
+</div>
+
+<button id="pause-btn" onclick="togglePause()">⏸</button>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+canvas.width  = Math.min(window.innerWidth  - 20, 400);
+canvas.height = Math.min(window.innerHeight - 20, 600);
+
+const W = canvas.width, H = canvas.height;
+
+let score, highScore, player, platforms, enemies, particles, isGameOver, isPaused, keys, frameCount, difficulty, floorY, lastFrameTime;
+highScore = parseInt(localStorage.getItem('waffleJumpHigh') || 0);
+const urlParams   = new URLSearchParams(window.location.search);
+const isChallenge = urlParams.get('challenge') === 'true';
+
+function isAdminAbuseLive() {
+    return (typeof window.aaIsLive === 'function' && window.aaIsLive()) ||
+           (window.parent && typeof window.parent.aaIsLive === 'function' && window.parent.aaIsLive());
+}
+
+function reportAdminAbuseScore(score) {
+    const payload = {
+        score: score,
+        livePoints: score,
+        game: 'Waffle Jump'
+    };
+
+    if (typeof window.aaReportScore === 'function') {
+        window.aaReportScore(payload);
+    } else if (window.parent && typeof window.parent.aaReportScore === 'function') {
+        window.parent.aaReportScore(payload);
+    }
+}
+
+function floorSpeed() {
+    if (score < 8) return 0;
+    // Faster rise than original version
+    return 0.55 + Math.min((score - 8) / 25, 1) * 1.65;
+}
+
+function makePlatform(x, y, scoreVal) {
+    const d = Math.min(1, scoreVal / 40);
+    const roll = Math.random();
+    let type = 'normal';
+    if (scoreVal > 5  && roll < 0.12 + d * 0.1)  type = 'spring';
+    else if (scoreVal > 8  && roll < 0.28 + d * 0.1)  type = 'wood';
+    else if (scoreVal > 3  && roll < 0.52 + d * 0.18) type = 'moving';
+
+    const w = type === 'spring' ? 50 : 55 + Math.random() * 35;
+    return {
+        x, y, w,
+        type,
+        dir: Math.random() < 0.5 ? 1 : -1,
+        speed: 1.2 + Math.random() * 1.8 + d * 1.5,
+        crumbleTimer: 0,
+        crumbling: false,
+        fallen: false,
+        fallSpeed: 0,
+        compressed: 0,
+    };
+}
+
+function spawnEnemy(y) {
+    const d = Math.min(1, score / 50);
+    return {
+        x:     Math.random() * (W - 30),
+        y,
+        w:     28, h: 28,
+        dir:   Math.random() < 0.5 ? 1 : -1,
+        speed: 1.0 + Math.random() * 1.2 + d * 1.0,
+        type:  Math.random() < 0.3 ? 'fly' : 'walk',
+        flyOsc: Math.random() * Math.PI * 2,
+        baseY:  y,
+    };
+}
+
+function spawnParticle(x, y, color) {
+    for (let i = 0; i < 8; i++) {
+        particles.push({
+            x, y,
+            dx: (Math.random() - 0.5) * 5,
+            dy: -Math.random() * 5 - 1,
+            life: 1, color,
+            r: 3 + Math.random() * 4,
+        });
+    }
+}
+
+function init() {
+    score        = 0;
+    frameCount   = 0;
+    isGameOver   = false;
+    isPaused     = false;
+    keys         = {};
+    particles    = [];
+    enemies      = [];
+    difficulty   = 0;
+    floorY       = H + 80;   // start below screen
+
+    player = { x: W / 2 - 15, y: H - 80, w: 30, h: 30, dy: 0, invincible: 0 };
+
+    platforms = [{ x: W / 2 - 50, y: H - 20, w: 100, type: 'normal', dir: 1, speed: 0, crumbling: false, crumbleTimer: 0, fallen: false, fallSpeed: 0, compressed: 0 }];
+    for (let i = 0; i < 10; i++) {
+        const px = Math.random() * (W - 60);
+        const py = H - 75 * i - 75;
+        platforms.push(makePlatform(px, py, 0));
+    }
+
+    document.getElementById('score').innerText = '0';
+    document.getElementById('message-box').style.display = 'none';
+    document.getElementById('pause-overlay').style.display = 'none';
+    document.getElementById('pause-btn').style.display = 'flex';
+    document.getElementById('pause-btn').innerText = '⏸';
+
+    lastFrameTime = performance.now();
+    requestAnimationFrame(loop);
+}
+
+function loop(timestamp) {
+    if (isGameOver) return;
+    if (isPaused) {
+        lastFrameTime = timestamp || performance.now();
+        requestAnimationFrame(loop);
+        return;
+    }
+
+    const delta = timestamp ? timestamp - lastFrameTime : 16.6667;
+    const dt = Math.min(delta, 40);
+    const speedFactor = dt / 16.6667;
+    lastFrameTime = timestamp || performance.now();
+
+    frameCount++;
+    difficulty = Math.min(1, score / 60);
+
+    // Rising lava floor (faster than original)
+    floorY -= floorSpeed() * speedFactor;
+
+    // Player physics
+    player.dy += 0.25 * speedFactor;
+    player.y  += player.dy * speedFactor;
+    if (player.invincible > 0) player.invincible -= speedFactor;
+    if (player.invincible < 0) player.invincible = 0;
+
+    const moveSpeed = (4.5 + difficulty * 1.5) * speedFactor;
+    if (keys.ArrowLeft  || keys.a) player.x -= moveSpeed;
+    if (keys.ArrowRight || keys.d) player.x += moveSpeed;
+
+    if (player.x > W)        player.x = -player.w;
+    else if (player.x < -player.w) player.x = W;
+
+    // Camera scroll
+    if (player.y < H / 2 && player.dy < 0) {
+        const shift = H / 2 - player.y;
+        player.y = H / 2;
+
+        platforms.forEach(p => p.y += shift);
+        enemies.forEach(e => { e.y += shift; e.baseY += shift; });
+        floorY += shift;
+
+        platforms.forEach(p => {
+            if (p.y > H + 20) {
+                score++;
+                const newY = -10 - Math.random() * 30;
+                Object.assign(p, makePlatform(Math.random() * (W - 70), newY, score));
+                if (score > 6 && Math.random() < 0.12 + difficulty * 0.12) {
+                    enemies.push(spawnEnemy(newY - 35));
+                }
+            }
+        });
+
+        // Report score live to admin abuse leaderboard (throttled every 3 score points)
+        if (isAdminAbuseLive() && score % 3 === 0) {
+            reportAdminAbuseScore(score);
+        }
+
+        enemies = enemies.filter(e => e.y < H + 50);
+    }
+
+    // Platform logic (moving, wood, spring)
+    platforms.forEach(p => {
+        if (p.type === 'moving') {
+            p.x += p.dir * p.speed * speedFactor;
+            if (p.x < 0 || p.x + p.w > W) p.dir *= -1;
+        }
+        if (p.crumbling) {
+            p.crumbleTimer -= speedFactor;
+            if (p.crumbleTimer <= 0) {
+                p.fallen = true;
+                p.fallSpeed += 0.8 * speedFactor;
+                p.y += p.fallSpeed * speedFactor;
+            }
+        }
+        if (p.compressed > 0) p.compressed = Math.max(0, p.compressed - speedFactor);
+    });
+    platforms = platforms.filter(p => !p.fallen || p.y < H + 30);
+
+    // Platform collision
+    platforms.forEach(p => {
+        if (p.fallen) return;
+        const foot = player.y + player.h;
+        const onX  = player.x + player.w > p.x + 2 && player.x < p.x + p.w - 2;
+        const hitY = player.dy > 0 && foot > p.y && foot < p.y + 18;
+
+        if (onX && hitY) {
+            if (p.type === 'spring') {
+                player.dy = -18;
+                p.compressed = 12;
+                spawnParticle(p.x + p.w / 2, p.y, '#43b581');
+            } else {
+                player.dy = -(7.5 + difficulty * 1.0);
+                if (p.type === 'wood' && !p.crumbling) {
+                    p.crumbling = true;
+                    p.crumbleTimer = 28;
+                    spawnParticle(p.x + p.w / 2, p.y, '#8B6333');
+                }
+            }
+        }
+    });
+
+    // Enemy logic
+    enemies.forEach(e => {
+        e.x += e.dir * e.speed * speedFactor;
+        if (e.x < 0 || e.x + e.w > W) e.dir *= -1;
+        if (e.type === 'fly') {
+            e.flyOsc += 0.08 * speedFactor;
+            e.y = e.baseY + Math.sin(e.flyOsc) * 20;
+        }
+
+        if (player.invincible === 0 &&
+            player.x < e.x + e.w - 4 && player.x + player.w > e.x + 4 &&
+            player.y < e.y + e.h - 4 && player.y + player.h > e.y + 4) {
+
+            if (player.dy > 0 && player.y + player.h < e.y + e.h / 2 + 8) {
+                spawnParticle(e.x + e.w / 2, e.y, '#f04747');
+                e.dead = true;
+                player.dy = -7;
+            } else {
+                gameOver();
+            }
+        }
+    });
+    enemies = enemies.filter(e => !e.dead);
+
+    // Death conditions
+    if (player.y + player.h >= floorY || player.y > H + 20) {
+        gameOver();
+        return;
+    }
+
+    // Particles
+    particles.forEach(p => {
+        p.x += p.dx * speedFactor;
+        p.y += p.dy * speedFactor;
+        p.dy += 0.15 * speedFactor;
+        p.life -= 0.035 * speedFactor;
+    });
+    particles = particles.filter(p => p.life > 0);
+
+    // ── Draw ──
+    ctx.clearRect(0, 0, W, H);
+
+    // Platforms
+    platforms.forEach(p => {
+        if (p.y > H + 30 || p.y < -30) return;
+        const alpha = p.crumbling ? Math.max(0.3, p.crumbleTimer / 28) : 1;
+        ctx.globalAlpha = alpha;
+
+        if (p.type === 'normal') ctx.fillStyle = '#e6a15c';
+        else if (p.type === 'moving') ctx.fillStyle = '#5865f2';
+        else if (p.type === 'wood') {
+            ctx.fillStyle = p.crumbling
+                ? `rgb(${Math.floor(180 - (1-alpha)*100)},${Math.floor(100 - (1-alpha)*60)},40)`
+                : '#8B6333';
+        } else if (p.type === 'spring') {
+            ctx.fillStyle = '#888';
+            ctx.fillRect(p.x + p.w * 0.3, p.y + 4 + p.compressed, p.w * 0.4, 6 - p.compressed);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 2;
+            const coilH = 10 - p.compressed * 0.5;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(p.x + p.w * 0.25, p.y + (coilH / 3) * i + 2);
+                ctx.lineTo(p.x + p.w * 0.75, p.y + (coilH / 3) * i + (coilH / 6) + 2);
+                ctx.stroke();
+            }
+            ctx.fillStyle = '#43b581';
+            ctx.fillRect(p.x, p.y + coilH, p.w, 5 - p.compressed);
+            ctx.globalAlpha = 1;
+            return;
+        }
+
+        const ph = p.type === 'wood' && p.crumbling ? Math.max(4, 10 - Math.floor((28 - p.crumbleTimer) / 4)) : 10;
+        ctx.fillRect(p.x, p.y, p.w, ph);
+        ctx.globalAlpha = 1;
+    });
+
+    // Enemies
+    enemies.forEach(e => {
+        ctx.font = '26px Arial';
+        ctx.fillText(e.type === 'fly' ? '🍳' : '🥞', e.x, e.y + e.h);
+    });
+
+    // Particles
+    particles.forEach(p => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    });
+
+    // Player
+    if (player.invincible === 0 || frameCount % 6 < 3) {
+        ctx.font = '30px Arial';
+        ctx.fillText('🧇', player.x, player.y + player.h);
+    }
+
+    // Rising Lava
+    if (floorY < H + 80) {
+        const grad = ctx.createLinearGradient(0, floorY, 0, H);
+        grad.addColorStop(0,   'rgba(255,100,0,0.95)');
+        grad.addColorStop(0.4, 'rgba(220,40,0,0.85)');
+        grad.addColorStop(1,   'rgba(150,0,0,0.7)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, floorY, W, H - floorY + 10);
+
+        // Wavy surface
+        ctx.beginPath();
+        ctx.moveTo(0, floorY);
+        for (let x = 0; x <= W; x += 10) {
+            ctx.lineTo(x, floorY + Math.sin(x / 22 + frameCount * 0.12) * 6);
+        }
+        ctx.lineTo(W, floorY - 10);
+        ctx.lineTo(0, floorY - 10);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255,160,30,0.6)';
+        ctx.fill();
+
+        // Warning text
+        const gap = player.y + player.h - floorY;
+        if (gap < 140) {
+            const alpha = Math.min(1, (140 - gap) / 140);
+            ctx.globalAlpha = alpha;
+            ctx.font = '700 13px "Be Vietnam Pro", sans-serif';
+            ctx.fillStyle = '#ff6600';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚠ LAVA RISING ⚠', W / 2, Math.max(floorY - 10, 20));
+            ctx.textAlign = 'left';
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // HUD
+    document.getElementById('score').innerText = score;
+
+    requestAnimationFrame(loop);
+}
+
+function togglePause() {
+    if (isGameOver) return;
+    isPaused = !isPaused;
+    document.getElementById('pause-btn').innerText = isPaused ? '▶' : '⏸';
+    document.getElementById('pause-overlay').style.display = isPaused ? 'flex' : 'none';
+}
+
+function gameOver() {
+    if (isGameOver) return;
+    isGameOver = true;
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('waffleJumpHigh', highScore);
+    }
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('best-score').innerText  = highScore;
+    document.getElementById('message-box').style.display = 'block';
+    document.getElementById('pause-overlay').style.display = 'none';
+    document.getElementById('pause-btn').style.display = 'none';
+
+    if (isAdminAbuseLive()) {
+        reportAdminAbuseScore(score);
+    }
+
+    if (isChallenge) {
+        document.getElementById('restart-hint').style.display = 'none';
+        document.getElementById('finish-challenge-btn').style.display = 'block';
+    }
+}
+
+window.addEventListener('keydown', e => { 
+    keys[e.key] = true; 
+    keys[e.key.toLowerCase()] = true; 
+    if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') togglePause();
+});
+window.addEventListener('keyup', e => { 
+    keys[e.key] = false; 
+    keys[e.key.toLowerCase()] = false; 
+});
+
+canvas.addEventListener('click', () => { 
+    if (isGameOver && !isChallenge) init(); 
+});
+
+// Touch controls
+let touchStartX = null;
+canvas.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+canvas.addEventListener('touchmove', e => {
+    if (!touchStartX) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    keys.ArrowLeft  = dx < -10;
+    keys.ArrowRight = dx > 10;
+    e.preventDefault();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { 
+    keys.ArrowLeft = false; 
+    keys.ArrowRight = false; 
+    touchStartX = null; 
+});
+
+function finishChallenge() {
+    window.parent.postMessage({ type: 'GAME_OVER', score }, '*');
+}
+
+init();
+</script>
+</body>
+</html>
