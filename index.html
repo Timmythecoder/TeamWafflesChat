@@ -1,51 +1,259 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login/Signup</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Optional for styling -->
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Team Waffles - Login/Sign Up</title>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-        
-    </head>
-    <body>
-    
-    <div class="auth-container">
-        <div class="logo">
-            <img src="TWL O - Copy.png" alt="Team Waffles Logo"> <!-- Replace with your logo URL -->
-        </div>
-    
-        <h2 id="form-title">Sign In</h2>
-        <h3 id="form-title">Use Real Emails
-    
-        <div class="error-message" id="error-message"></div>
-    
-        <input type="email" id="email" placeholder="Enter your email" required>
-        <input type="password" id="password" placeholder="Enter your password" required>
-    
-        <button id="auth-button" onclick="authAction()">Sign In</button>
-    
-        <div class="toggle-text" id="toggle-text">
-            Don't have an account? <a href="#" onclick="toggleForm()">Sign Up</a>
-        </div>
-    </div>
-<!-- Back to Team Waffles Website Button -->
-<a href="https://bit.ly/teamwaffleswebsite" class="home-button">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TWC - We've Moved</title>
+  <meta http-equiv="refresh" content="5; url=https://timsautocleaning.au/">
+  <link rel="canonical" href="https://timsautocleaning.au/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue: #2563eb;
+      --gold: #f5c842;
+      --dark: #0a0a0a;
+      --mid: #141414;
+      --surface: #1c1c1c;
+      --text: #f0f0f0;
+      --muted: rgba(255,255,255,0.45);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridDrift 20s linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes gridDrift {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(48px); }
+    }
+
+    /* Glow blob */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50%       { transform: translate(-50%, -50%) scale(1.15); opacity: 0.7; }
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 56px 48px;
+      max-width: 520px;
+      width: 92vw;
+      background: rgba(20,20,20,0.85);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(37,99,235,0.15);
+      animation: cardIn 0.7s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(32px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo-wrap {
+      margin-bottom: 28px;
+      animation: cardIn 0.7s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .logo-icon {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 32px rgba(37,99,235,0.3), 0 0 0 3px rgba(37,99,235,0.2);
+    }
+
+    .logo-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(28px, 6vw, 38px);
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    .headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(36px, 9vw, 58px);
+      letter-spacing: 1px;
+      line-height: 1;
+      margin-bottom: 12px;
+      animation: cardIn 0.7s 0.15s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .headline span {
+      color: var(--gold);
+    }
+
+    .sub {
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 36px;
+      animation: cardIn 0.7s 0.2s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      margin-bottom: 32px;
+      animation: cardIn 0.7s 0.25s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--gold));
+      border-radius: 99px;
+      animation: fillBar 5s linear forwards;
+    }
+
+    @keyframes fillBar {
+      from { width: 0%; }
+      to   { width: 100%; }
+    }
+
+    .counter {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 36px;
+      background: var(--blue);
+      color: #fff;
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 6px 20px rgba(37,99,235,0.35);
+      animation: cardIn 0.7s 0.3s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(37,99,235,0.5);
+    }
+
+    .new-url {
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      animation: cardIn 0.7s 0.35s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .new-url a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="logo-wrap">
+      <div class="logo-icon"><img src="logo.png" alt="TWC" /></div>
+      
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.6.2/firebase-database.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <div class="headline">We've <span>Moved</span></div>
+    <p class="sub">Our site has a new home. You'll be redirected automatically in a few seconds.</p>
 
-    
-    <script src="teamwafflesauth.js"></script>
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Redirecting…</span>
+        <span class="counter" id="counter">5s</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill"></div>
+      </div>
+    </div>
+
+    <a class="btn" href="https://teamwafflesch.netlify.app/">Take Me There Now</a>
+    <p class="new-url">New address: <a href="https://teamwafflesch.netlify.app/">teamwafflesch.netlify.app</a></p>
+  </div>
+
+  <script>
+    // Countdown
+    let s = 5;
+    const el = document.getElementById('counter');
+    const t = setInterval(() => {
+      s--;
+      el.textContent = s + 's';
+      if (s <= 0) { clearInterval(t); window.location.replace('https://teamwafflesch.netlify.app/'); }
+    }, 1000);
+  </script>
+
 </body>
 </html>
